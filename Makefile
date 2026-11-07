@@ -1,4 +1,4 @@
-.PHONY: install dev test test-docker lint fmt migrate offline-data board impact
+.PHONY: install dev up adapty-login test test-docker lint fmt migrate offline-data board impact
 
 install:
 	python3 -m venv .venv && . .venv/bin/activate && pip install -U pip && pip install -e ".[dev]"
@@ -21,10 +21,16 @@ migrate:
 offline-data:
 	git clone --depth 1 https://github.com/kpotehin/adapty-seed-data-hack.git /tmp/seed-data && mkdir -p data/offline && cp /tmp/seed-data/data/offline/*.csv.gz data/offline/
 
+# Docker: the backend image with the Adapty CLI (see docker-compose.yml).
+up:
+	docker compose up --build api
+
+adapty-login:
+	docker compose run --rm adapty-login
+
 # No python3-venv on the host? Run the suite in a clean container (same as CI would).
 test-docker:
-	docker run --rm --user $$(id -u):$$(id -g) -e HOME=/tmp -v "$$PWD":/app -w /app python:3.12-slim \
-	  sh -c "pip install -q --user -e '.[dev]' && python -m pytest -q && python -m ruff check ."
+	docker compose run --rm --build test
 
 # Task graph (docs/tasks): `make board ROLE=A`, `make impact` (what your branch affects).
 board:
