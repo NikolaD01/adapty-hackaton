@@ -194,7 +194,7 @@
     {
       "id": "A7",
       "title": "Values, feature profile and TierStore",
-      "status": "todo",
+      "status": "done",
       "brief": "A ch.6",
       "steps": [
         "POST /values:recompute runs every rule for every user",

@@ -5,6 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, BackgroundTasks, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from feature_signal.api.v1.values import value_service
 from feature_signal.db.session import get_session
 from feature_signal.domain.models import Event
 from feature_signal.repositories.events import EventRepository
@@ -15,7 +16,7 @@ router = APIRouter(tags=["events (A)"])
 
 
 def ingest_service(session: Annotated[AsyncSession, Depends(get_session)]) -> IngestService:
-    return IngestService(EventRepository(session), session.commit)
+    return IngestService(EventRepository(session), session.commit, value_service(session).recompute_users)
 
 
 Ingest = Annotated[IngestService, Depends(ingest_service)]
