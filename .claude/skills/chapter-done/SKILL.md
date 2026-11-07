@@ -58,7 +58,7 @@ Run every step in order. Stop and tell the developer (in Serbian) if a step fail
 - If `gh` is available: `gh pr create --base main --title "<conventional title>" --body "<what, why, how to test>"`
   (no AI mention), then `gh pr merge --squash --delete-branch` once checks are green. Shared files in
   the diff → ask for one teammate's ack first and do not merge yourself.
-- No `gh`: tell the developer the branch is pushed and give the PR link
+- No `gh`: tell the developer the branch is pushed and give the PR link (the PR template has the checklist; CI must be green before squash-merge)
   `https://github.com/NikolaD01/adapty-hackaton/compare/main...<branch>`.
 - After merge: `git switch main && git pull --ff-only`, start the next chapter on a new branch.
 

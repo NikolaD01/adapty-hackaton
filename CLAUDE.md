@@ -91,7 +91,7 @@ The LLM touches exactly two services: `rule_suggest_service` (B) and `paywall_se
 | `domain/{ranking,uplift}.py`, `services/{rule_suggest,insight}_service.py`, `api/v1/insights.py`, `integrations/llm/**`, `scripts/train_from_offline.py` | B | read only |
 | `integrations/adapty/**`, `services/{proposal,activation,paywall,lookup}_service.py`, `api/v1/{proposals,settings,decisions,lookup}.py`, `repositories/{proposals,decisions}.py` | C | read only |
 | `web/**` | D | read only |
-| **Shared:** `schemas/**`, `domain/models.py`, `domain/ports.py`, `docs/contracts/**`, `core/**`, `main.py`, `api/v1/router.py`, `pyproject.toml`, `Makefile`, `.claude/**`, `CLAUDE.md` | everyone, **only via the `contract-change` skill** (small PR, one teammate acks) | |
+| **Shared:** `schemas/**`, `domain/models.py`, `domain/ports.py`, `docs/contracts/**`, `core/**`, `main.py`, `api/v1/router.py`, `pyproject.toml`, `Makefile`, `.claude/**`, `CLAUDE.md`, `tools/**`, `.github/**`, `docs/tasks/shared.json` | everyone, **only via the `contract-change` skill** (small PR, one teammate acks) | |
 | `docs/<your-area>/**`, `AI_LOG.md` (edit sections in place), `docs/STATUS.md` (your row only), `docs/tasks/<ROLE>.json` (your file only) | you | |
 | `docs/tasks/changes/*.json` (change notices) | anyone adds a new file | never edit others' notices |
 New tables: tell A (A owns migrations); C adds `proposals`/`decisions` table definitions to `db/tables.py`
