@@ -8,6 +8,7 @@ from feature_signal.api.v1 import (
     events,
     insights,
     lookup,
+    membership,
     proposals,
     rules,
     settings,
@@ -22,5 +23,5 @@ async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-for module in (catalog, events, rules, values, insights, proposals, settings, decisions, lookup):
+for module in (catalog, events, rules, values, insights, proposals, settings, decisions, lookup, membership):
     api_router.include_router(module.router)

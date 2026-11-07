@@ -10,11 +10,14 @@ from typing import Any
 from feature_signal.domain.models import (
     EventType,
     Explanation,
+    Feature,
     FeatureMatrix,
+    FeatureTier,
     ProposalDraft,
     Ranking,
     Rule,
     ServedFlow,
+    SyncResult,
 )
 
 
@@ -81,3 +84,36 @@ class FakeFlowLookup:
     async def served(self, customer_user_id: str, placement: str) -> ServedFlow:
         flow = self.mapping.get(customer_user_id)
         return ServedFlow(customer_user_id, segment_hash="fake", flow_id=flow, flow_name=flow)
+
+
+class FakeFeatureRepo:
+    def __init__(self) -> None:
+        self.items: dict[str, dict[str, Feature]] = defaultdict(dict)
+
+    async def upsert(self, app_id: str, feature: Feature) -> Feature:
+        self.items[app_id][feature.key] = feature
+        return feature
+
+    async def list(self, app_id: str) -> list[Feature]:
+        return list(self.items[app_id].values())
+
+
+class FakeTierStore:
+    def __init__(self) -> None:
+        self.items: dict[str, list[FeatureTier]] = defaultdict(list)
+
+    async def put_many(self, app_id: str, tiers: Sequence[FeatureTier]) -> None:
+        self.items[app_id] = list(tiers)
+
+    async def list(self, app_id: str) -> list[FeatureTier]:
+        return list(self.items[app_id])
+
+
+class FakeMembershipSync:
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, list[str] | None]] = []
+
+    async def sync_users(self, app_id: str, customer_user_ids: Sequence[str] | None) -> SyncResult:
+        ids = list(customer_user_ids) if customer_user_ids is not None else None
+        self.calls.append((app_id, ids))
+        return SyncResult(checked=len(ids or []), changed=0, attributes_written=0)

@@ -19,6 +19,9 @@ def test_every_contract_route_is_mounted(client):
     paths = set(client.app.openapi()["paths"])
     expected = {
         "/v1/apps/{app_id}/event-types",
+        "/v1/apps/{app_id}/features",
+        "/v1/apps/{app_id}/users/{customer_user_id}/features",
+        "/v1/apps/{app_id}/membership:sync",
         "/v1/apps/{app_id}/events",
         "/v1/apps/{app_id}/users/{customer_user_id}/timeline",
         "/v1/apps/{app_id}/rules",

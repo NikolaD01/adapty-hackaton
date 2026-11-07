@@ -5,7 +5,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-ProposalStatus = Literal["draft", "approved", "executing", "live", "failed", "rejected"]
+ProposalStatus = Literal["draft", "approved", "executing", "awaiting_publish", "live", "failed", "rejected"]
 Actor = Literal["human", "autopilot"]
 
 
@@ -15,10 +15,20 @@ class ProposalCondition(BaseModel):
     value: Any
 
 
+class AdaptyFilter(BaseModel):
+    """A filter on a field Adapty already knows (e.g. no active subscription), ANDed with the condition."""
+
+    field: str
+    op: Literal["IN", "NOT IN", ">", ">=", "<", "<=", "IS NULL", "IS NOT NULL"]
+    value: Any = None
+
+
 class ProposalAction(BaseModel):
     type: Literal["flow"] = "flow"
     flow_id: str
     flow_name: str | None = None
+    highlight_feature: str | None = None  # the feature the paywall promotes; must be in the offered plan
+    needs_publish: bool = False  # a new (draft) flow: A/B waits for a human publish, also in autopilot
 
 
 class ExpectedEffect(BaseModel):
@@ -48,6 +58,7 @@ class ProposalIn(BaseModel):
     trigger_placement: str
     segment_key: str
     condition: ProposalCondition
+    adapty_filters: list[AdaptyFilter] = Field(default_factory=list)
     action: ProposalAction
     holdout_pct: int = Field(default=20, ge=0, le=50)
     cooldown_days: int = Field(default=7, ge=0, le=90)
@@ -134,6 +145,17 @@ class LookupOut(BaseModel):
 class PaywallDraftIn(BaseModel):
     title: str = Field(min_length=1, max_length=80)
     product_ids: list[str] = Field(default_factory=list)
+    highlight_feature: str | None = None  # 422 if no offered product/plan includes it
+
+
+class MembershipSyncIn(BaseModel):
+    customer_user_ids: list[str] | None = None  # None = every user with values
+
+
+class MembershipSyncOut(BaseModel):
+    checked: int
+    changed: int
+    attributes_written: int
 
 
 class PaywallDraftOut(BaseModel):

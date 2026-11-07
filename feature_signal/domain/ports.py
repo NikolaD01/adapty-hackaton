@@ -11,16 +11,24 @@ from feature_signal.domain.models import (
     Event,
     EventType,
     Explanation,
+    Feature,
     FeatureMatrix,
+    FeatureTier,
     ProposalDraft,
     Ranking,
     Rule,
     ServedFlow,
+    SyncResult,
 )
 
 
+class FeatureRepo(Protocol):  # A — creating a feature also creates its default rules
+    async def upsert(self, app_id: str, feature: Feature) -> Feature: ...
+    async def list(self, app_id: str) -> list[Feature]: ...
+
+
 class EventTypeRepo(Protocol):  # A
-    async def upsert(self, app_id: str, key: str, name: str, description: str, family: str | None) -> EventType: ...
+    async def upsert(self, app_id: str, key: str, name: str, description: str, features: list[str]) -> EventType: ...
     async def list(self, app_id: str) -> list[EventType]: ...
 
 
@@ -41,6 +49,15 @@ class RuleRepo(Protocol):  # A
 class ValueStore(Protocol):  # A — read by B and C
     async def put_many(self, app_id: str, rule_key: str, values: dict[str, float]) -> None: ...
     async def matrix(self, app_id: str) -> FeatureMatrix: ...
+
+
+class TierStore(Protocol):  # A implements (A owns the DB), B writes after an insight run, C reads
+    async def put_many(self, app_id: str, tiers: Sequence[FeatureTier]) -> None: ...
+    async def list(self, app_id: str) -> list[FeatureTier]: ...
+
+
+class MembershipSync(Protocol):  # C implements; A calls it after an ingest batch commits
+    async def sync_users(self, app_id: str, customer_user_ids: Sequence[str] | None) -> SyncResult: ...
 
 
 class LLMProvider(Protocol):  # B — used by B (rules, explain) and C (paywall copy)

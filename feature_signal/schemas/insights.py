@@ -51,6 +51,17 @@ class UpliftOut(BaseModel):
     n_b: int
 
 
+class FeatureTierOut(BaseModel):
+    """Measured cut points for one feature value; only passed features get an Adapty attribute."""
+
+    feature: str
+    rule_key: str
+    attribute: str  # f_<feature>_tier
+    low_max: float  # value <= low_max -> "low"
+    mid_max: float  # value <= mid_max -> "mid", above -> "high"
+    passed: bool
+
+
 class InsightRunOut(BaseModel):
     run_id: str
     source: Literal["offline", "live"]
@@ -58,3 +69,5 @@ class InsightRunOut(BaseModel):
     rankings: list[RankingOut]
     segments: list[SegmentOut]
     uplift: list[UpliftOut]
+    tiers: list[FeatureTierOut] = []
+    hypotheses: list[str] = []  # rule keys with no outcome data yet: go to an A/B test, not to ranking
