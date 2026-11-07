@@ -5,6 +5,7 @@ Append newest first. Every change to a shared file (CLAUDE.md §6) gets a line h
 | Date | Area | Change | Who acked |
 |---|---|---|---|
 | 2026-11-08 | ingest | New `POST /adapty-webhook` (A), setting `ADAPTY_WEBHOOK_AUTH`, default rule `adapty_net_revenue_90d`; router mounts `adapty_webhook` | pending |
+| 2026-11-08 | adapty | `main.py` sets `app.state.membership_sync` and `app.state.attribute_writer` for the running app when `ADAPTY_SECRET_KEY` is set (not in `create_app()`, so tests never write to Adapty) | pending |
 | 2026-11-08 | ingest | `make offline-data` also copies `lumen_dataset.json.gz`; `make demo-events`; `data/*.json.gz` ignored | pending |
 | 2026-11-08 | ingest | Ingest calls `app.state.membership_sync` (set by C in `create_app`) in the background after commit | pending |
 | 2026-11-08 | ingest | `alembic.ini` owned by A; `docker compose up api` runs `alembic upgrade head` first; tables `app_settings` and `adapty_attribute_state` added for C; rule key max 80 chars (was 40); shared `tests/integration/conftest.py` (`db_url`, `api` fixtures); stored times are timezone-aware UTC (`UtcDateTime`); routes use `Annotated[..., Depends(...)]` | pending |
