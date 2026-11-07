@@ -248,7 +248,7 @@
     {
       "id": "C8",
       "title": "Paywall draft from live config",
-      "status": "todo",
+      "status": "done",
       "brief": "C ch.6",
       "steps": [
         "flows config get -> copy",
