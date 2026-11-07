@@ -1,0 +1,314 @@
+.overview-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.overview-heading h1 {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 28px;
+}
+
+.overview-docs {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.overview-toolbar {
+  display: grid;
+  gap: 8px;
+  margin-top: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.toolbar-row,
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.toolbar-row {
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.toolbar-group button,
+.add-filter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 40px;
+  white-space: nowrap;
+  color: #111;
+  font-weight: 500;
+  opacity: 1;
+}
+
+.toolbar-group button {
+  padding: 0 12px;
+  border: 1px solid #b8b8b8;
+  border-radius: 8px;
+}
+
+.toolbar-row > .toolbar-group:last-child button {
+  padding-inline: 16px;
+  gap: 8px;
+}
+
+.toolbar-group .period-control {
+  padding-right: 6px;
+}
+
+.toolbar-row:nth-child(2) .toolbar-group button {
+  width: 70px;
+  padding-inline: 0;
+}
+
+.toolbar-row:first-child .toolbar-group:first-child button:last-child {
+  margin-left: 8px;
+}
+
+.toolbar-comparison {
+  color: var(--muted);
+}
+
+.add-filter-icon {
+  display: grid;
+  place-items: center;
+  height: 22px;
+  width: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+}
+
+.money-section h2 {
+  margin: 16px 0;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.metric-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr);
+  align-items: start;
+  column-gap: 16px;
+  min-height: 200px;
+  padding: 16px;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 1px 8px rgb(1 0 48 / 10%);
+}
+
+.metric-label h3 {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.metric-label h3 svg {
+  color: #aaa;
+}
+
+.metric-label p {
+  margin-top: 4px;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.metric-chart {
+  --plot-height: 138px;
+  display: grid;
+  grid-template-columns: 2.6em minmax(0, 1fr);
+  grid-template-rows: var(--plot-height) auto;
+  gap: 4px 10px;
+  padding-right: 24px;
+  color: var(--muted);
+  container: metric-chart / inline-size;
+}
+
+.metric-chart-ticks {
+  position: relative;
+  white-space: nowrap;
+}
+
+.metric-chart-ticks span {
+  position: absolute;
+  right: 0;
+  transform: translateY(50%);
+}
+
+.metric-chart-plot {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+}
+
+.metric-chart-plot line {
+  stroke: var(--line);
+  vector-effect: non-scaling-stroke;
+}
+
+.metric-chart-plot rect {
+  fill: var(--accent);
+  fill-opacity: 0.55;
+}
+
+.metric-chart-dates {
+  grid-column: 2;
+  display: flex;
+  justify-content: space-between;
+  gap: 2px;
+  white-space: nowrap;
+  margin-inline: -10px;
+}
+
+.metric-options {
+  position: absolute;
+  top: 14px;
+  right: 12px;
+}
+
+@media (min-width: 1021px) {
+  .metric-card:nth-child(even) {
+    grid-template-columns: 82px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1020px) {
+  .overview-heading h1 {
+    font-size: 22px;
+    line-height: 28px;
+  }
+
+  .overview-docs,
+  .toolbar-comparison,
+  .toolbar-group button,
+  .add-filter {
+    font-size: 12px;
+  }
+
+  .overview-toolbar {
+    margin-top: 12px;
+    gap: 6px;
+    padding-bottom: 12px;
+  }
+
+  .toolbar-row,
+  .toolbar-group {
+    gap: 6px;
+  }
+
+  .toolbar-group button,
+  .toolbar-row > .toolbar-group:last-child button,
+  .add-filter {
+    height: 32px;
+    gap: 4px;
+  }
+
+  .toolbar-group button,
+  .toolbar-row > .toolbar-group:last-child button {
+    padding-inline: 6px;
+  }
+
+  .toolbar-row:nth-child(2) .toolbar-group button {
+    width: 52px;
+  }
+
+  .toolbar-row:first-child .toolbar-group:first-child button:last-child {
+    margin-left: 0;
+  }
+
+  .toolbar-group button svg,
+  .add-filter-icon svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .add-filter-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .money-section {
+    container-type: inline-size;
+  }
+
+  .money-section h2 {
+    margin: 10px 0;
+    font-size: 15px;
+    line-height: 22px;
+  }
+
+  .metrics-grid {
+    gap: 12px;
+  }
+
+  .metric-card {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: auto;
+    padding: 10px;
+    gap: 4px;
+  }
+
+  .metric-label h3 {
+    font-size: 12px;
+    line-height: 18px;
+  }
+
+  .metric-label p {
+    margin-top: 0;
+    font-size: 17px;
+    line-height: 22px;
+  }
+
+  .metric-chart {
+    --plot-height: 88px;
+    padding-right: 4px;
+    gap: 5px 6px;
+    font-size: 11px;
+  }
+
+  .metric-chart-dates {
+    margin-inline: -3px;
+  }
+
+  .metric-options {
+    top: 10px;
+    right: 10px;
+  }
+}
+
+@container (max-width: 530px) {
+  .metrics-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@container metric-chart (max-width: 225px) {
+  .metric-chart-dates span:not(:first-child, :nth-child(3), :last-child) {
+    display: none;
+  }
+}

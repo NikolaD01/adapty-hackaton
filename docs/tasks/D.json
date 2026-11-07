@@ -1,16 +1,16 @@
 {
   "role": "D",
   "name": "Dashboard & Demo",
-  "inbox_ack": "2026-11-07T00:00:00Z",
+  "inbox_ack": "2026-11-07T23:26:19Z",
   "tasks": [
     {
       "id": "D1",
       "title": "Web scaffold and MSW mocks from the contract",
-      "status": "todo",
+      "status": "doing",
       "brief": "D ch.1",
       "steps": [
         "Vite + React + TS + Tailwind + Router + TanStack Query",
-        "Dashboard shell recreated from the product owner's Adapty admin screenshot; only Behavioral Targeting is interactive, other sidebar entries disabled",
+        "Dashboard shell recreated from the product owner's Adapty admin screenshot. Overview and the logo return home, and Behavioral Targeting opens Events.",
         "MSW handlers from every api.md example",
         "VITE_API_BASE / VITE_USE_MOCKS / VITE_APP_ID",
         "Every route renders with mocks; 501 -> 'coming soon'"

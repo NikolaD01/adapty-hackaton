@@ -1,0 +1,87 @@
+@import "tailwindcss";
+@import "./dashboard.css";
+
+:root {
+  font-family: "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #111;
+  background: #fff;
+  font-synthesis: none;
+  --accent: #6720ff;
+  --muted: #696969;
+  --line: #e7e7e7;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.behavioral-section-name {
+  color: var(--muted);
+}
+
+.feature-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.feature-navigation a {
+  padding: 10px 12px;
+  border-bottom: 2px solid transparent;
+}
+
+.feature-navigation a[aria-current="page"] {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.feature-navigation .demo-link {
+  margin-left: auto;
+}
+
+.placeholder-page h1 {
+  font-size: 24px;
+  line-height: 28px;
+  font-weight: 600;
+}
+
+.placeholder-page p {
+  color: var(--muted);
+  margin-top: 12px;
+}
+
+.demo-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+.demo-page a {
+  display: inline-block;
+  margin-top: 24px;
+  color: var(--accent);
+}
+
+@media (max-width: 1020px) {
+  .feature-navigation {
+    gap: 4px;
+    margin: 12px 0 16px;
+  }
+
+  .feature-navigation a {
+    padding: 6px 8px;
+  }
+
+  .placeholder-page h1 {
+    font-size: 22px;
+  }
+
+  .placeholder-page p {
+    margin-top: 8px;
+  }
+}
