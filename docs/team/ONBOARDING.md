@@ -1,27 +1,29 @@
-# Onboarding (za ljude) — 10 minuta
+# Onboarding (for people) — 10 minutes
 
-1. **Kloniraj repo** i uđi u njega:
+1. **Get the code** (while setup lives on `chore/project-setup`):
    ```bash
    git clone https://github.com/NikolaD01/adapty-hackaton.git && cd adapty-hackaton
+   git switch chore/project-setup        # after it is merged: stay on main
    ```
-2. **Upiši svoju ulogu** (fajl se ne commit-uje):
+2. **Write your role** (this file is not committed):
    ```bash
-   echo "My role: A" > CLAUDE.local.md     # A, B, C ili D
+   echo "My role: A" > CLAUDE.local.md     # A, B, C or D
    ```
    A = Ingest & Rules · B = Brain · C = Adapty & Proposals · D = Dashboard & Demo
-3. **Napravi `.env`**: `cp .env.example .env`, pa upiši ključeve koje ti treba (C: `ADAPTY_SECRET_KEY`,
-   B: `OPENAI_API_KEY`). Ključeve deli preko password managera ili poruke 1-na-1, nikad u repo ili grupni chat.
-4. **Okruženje**
-   - Backend: `make install && make test` (traži `python3-venv`; ako ga nemaš: `make test-docker`).
-   - Offline dataset (B obavezno, ostali po potrebi): `make offline-data`.
-   - Frontend (D): `cd web && npm install && npm run dev` (posle prvog poglavlja).
-   - Adapty CLI (C): kontejner iz root-a hakaton foldera (`./dev adapty auth whoami`).
-5. **Pokreni Claude Code u root-u repoa** i pošalji mu prvu poruku:
-   > Pročitaj CLAUDE.md i svoj brief iz docs/team/. Napravi granu za prvo poglavlje i kreni. Kad završiš poglavlje, pokreni chapter-done.
-6. **Ritam rada**
-   - Jedno poglavlje = jedna grana `<oblast>/<kratko-ime>` = jedan PR, idealno ispod 2 sata.
-   - Na početku sesije i kad neko javi merge: `sync-main` skill.
-   - Zajednički fajlovi (šeme, portovi, ugovor) samo preko `contract-change` skill-a, uz OK jednog kolege.
-   - Commit poruke: Conventional Commits, engleski, bez ikakvog pominjanja AI-ja.
-7. **Sync tačke (10 min, svi)**: S1 kad ingest i D-ovi mockovi rade · S2 prvi krug od kraja do kraja
-   (događaj → vrednost → uvid → predlog → odobri → segment u Adapty-ju) · S3 proba demoa.
+3. **Create `.env`**: `cp .env.example .env`, then fill in the keys you need (C: `ADAPTY_SECRET_KEY`,
+   B: `OPENAI_API_KEY`). Share keys one-to-one or through a password manager, never in the repo or a group chat.
+4. **Environment**
+   - Backend: `make install && make test` (needs `python3-venv`; without it: `make test-docker`).
+   - Offline dataset (B must, others if needed): `make offline-data`.
+   - Frontend (D): `cd web && npm install && npm run dev` (after the first chapter).
+   - Adapty CLI (C): the team's dev container (`./dev adapty auth whoami` from the hackathon folder).
+5. **Start Claude Code in the repo root** and send:
+   > Read CLAUDE.md and your role brief in docs/team/. Create a branch for the first chapter and start. When the chapter is done, run chapter-done.
+6. **Working rhythm**
+   - One chapter = one branch `<area>/<short-name>` = one PR, ideally under 2 hours.
+   - At the start of a session and whenever someone announces a merge: the `sync-main` skill.
+   - Shared files (schemas, ports, contract) only through the `contract-change` skill, with one teammate's OK.
+   - Commit messages: Conventional Commits, English, no mention of AI anywhere.
+   - Everything written into the repo is in English. You may talk to your agent in Serbian.
+7. **Sync points (10 min, everyone)**: S1 when ingest and D's mocks run · S2 first end-to-end loop
+   (event → value → insight → proposal → approve → segment in Adapty) · S3 demo dry run.

@@ -1,90 +1,132 @@
-# Dodatak za Adapty: ponuda po tome šta ljudi rade u aplikaciji
-Finalni plan. 7. novembar 2026. (Izvor istine za ceo tim; agenti ga čitaju, a kod prati `docs/contracts/`.)
+# Adapty add-on: offers based on what people do in the app
+Final plan, 7 November 2026. Source of truth for the team; code follows `docs/contracts/`, rules follow `CLAUDE.md`.
 
-## Šta pravimo
-Pravimo dodatak za Adapty koji iz toga kako ljudi koriste aplikaciju predlaže kojoj grupi korisnika da prikažemo koju ponudu. Cilj je da više ljudi iz te grupe kupi pretplatu, jer im paywall jasno pokaže šta dobijaju za ono što već rade u aplikaciji.
-Ne pravimo editor paywall-ova, SDK za naplatu ni analitiku. Sve to Adapty ima. Mi dodajemo ono što mu fali: znanje o tome šta se dešava u proizvodu pre kupovine.
+## What we build
+An add-on for Adapty that uses how people use the app to propose which group of users should see which
+offer. The goal is that more people in that group buy a subscription, because the paywall clearly shows
+what they get for what they already do in the app.
+We do not build a paywall editor, a billing SDK or analytics — Adapty has all of that. We add what it lacks:
+knowledge of what happens in the product before the purchase.
 
-## Zašto to fali
-Adapty ume da pokaže različit paywall različitoj grupi. Grupa se pravi kao segment nad custom atributima, poljima koja aplikacija upiše na profil korisnika.
-Ali Adapty te atribute ne skuplja. Aplikacija mora sama da izračuna vrednost i da je pošalje. U njihovoj agent-skill datoteci audiences to stoji kao upozorenje developerima: „A segment over an attribute nobody sets matches nobody."
-I još jedna stvar, koju smo proverili: atribut pamti samo trenutnu vrednost. Nema istoriju. Ako danas upišemo 7 a za nedelju 12, Adapty zna samo 12. Zato istorija radnji mora da živi kod nas.
-U demo podacima koje smo dobili to se dobro vidi. Lumen profili imaju ai_edits_first_day, već izračunat i upisan — kao da je neko problem već rešio. A niko ga nije rešio: seed skripta je pročitala broj iz datoteke i poslala ga. U pravoj aplikaciji tog polja nema, i neko mora da odluči šta se broji i da pogodi.
+## Why it is missing
+Adapty can show a different paywall to a different group. A group is a segment over custom attributes —
+fields the app writes on the user's profile.
+But Adapty doesn't collect those attributes: the app has to compute the value and send it. Adapty's
+`audiences` agent skill warns developers: "A segment over an attribute nobody sets matches nobody."
+We also verified that an attribute keeps only its current value, no history. If we write 7 today and 12
+next week, Adapty only knows 12. The history of actions therefore has to live with us.
+The demo data shows it well: Lumen profiles have `ai_edits_first_day`, already computed — as if someone had
+solved the problem. Nobody did: the seed script read the number from a file. In a real app the field doesn't
+exist, and someone has to decide what to count, and guess.
 
-## Šta developer beleži
-Preko našeg SDK-a developer beleži radnje koje su bitne za njegovu aplikaciju. Svaka vrsta događaja ima naziv i opis, a po potrebi developer može da označi povezane događaje — da znamo da su uklanjanje i zamena pozadine ista porodica.
-U aplikaciji za obradu fotografija tako pratimo uvoz slike, uklanjanje pozadine, izvoz, i pokušaj izvoza u punoj rezoluciji.
-Opis nije ukras. On je ono što omogućava da se nalaz napiše ljudski — „ko redovno uklanja pozadinu" umesto „ključ bg_remove". Ali opis se ne koristi za izbor šta je važno. Izbor dolazi iz merenja, i o tome niže.
+## What the developer tracks
+Through our SDK the developer tracks the actions that matter for their app. Each event type has a name and a
+description, and optionally a family (background removal and background replacement are the same family).
+In a photo app we track photo import, background removal, export and the attempt to export in full resolution.
+The description is not decoration: it lets us write findings in human words ("people who regularly remove
+backgrounds" instead of "key bg_remove"). It is not used to decide what matters — measurement decides that.
 
-## Tri tabele
-Katalog događaja. Jedan red po vrsti događaja: naziv, opis, porodica. Upisuje se jednom.
-Istorija zabeleženih radnji. Samo se dopisuje, nikad ne menja. Svaki red nosi i kad se desilo na telefonu i kad je stiglo kod nas, jer telefon bufferuje offline — sa jednim vremenom brojač „zadnjih 7 dana" tiho laže. Svaki događaj nosi i svoj id, pa ponovljen zahtev posle timeout-a ne duplira.
-Pravila po kojima iz radnji dobijamo atribute. Ovo je tabela a ne kod, da bi pravilo moglo da se doda ili promeni bez novog izdanja.
-Pošto Adapty ne pamti istoriju atributa, ova istorija je jedino mesto gde postoji vremenska osa. To nije zaobilaženje platforme nego podela posla: oni drže trenutnu odluku, mi držimo put do nje.
+## Three tables
+Event catalog: one row per event type (name, description, family), written once.
+Event history: append-only. Each row carries when it happened on the phone and when it reached us (phones
+buffer offline; with one timestamp a "last 7 days" counter silently lies), and its own id, so a retried
+request after a timeout doesn't duplicate.
+Rules for deriving values from actions: a table, not code, so a rule can be added or changed without a release.
+Because Adapty keeps no attribute history, this history is the only time axis. That is a division of labor:
+they hold the current decision, we hold the path to it.
 
-## AI predlaže šta vredi izračunati
-Ovo je prvo mesto gde AI radi, i najvažnije.
-Iz kataloga događaja i njihovih opisa AI predlaže koje vrednosti vredi izvesti. Na primer: koliko je različitih slika korisnik obradio u poslednjih sedam dana, koliko ih je izvezao, i da li ga je besplatan paket zaustavio pri izvozu u punoj rezoluciji.
-Vredi primetiti da to nisu sirovi brojači nego sastavljene vrednosti — različite slike a ne sve radnje, prozor od sedam dana a ne od početka, i jedan događaj kao prepreka a ne kao upotreba. Takve stvari niko ne instrumentira unapred, jer ne zna koja će biti važna.
-A izbor se posle meri, ne nagađa. Predložena vrednost ulazi u rangiranje i mora da se pokaže na korisnicima koje model nije video. Ako ne razdvaja ljude, pada.
-Zašto to nije prepušteno modelu: u ovim istim podacima photos_imported zvuči jednako razumno kao ai_edits_first_day, a ne predviđa ništa — od 8,73 do 9,55 dolara, ravna linija, dok drugi daje od 3,73 do 16,57. Nijedan model to ne bi pogodio iz naziva. Uvoz slike je priprema; obrada je momenat kad proizvod isporuči. Prediktivno je obično ovo drugo, a developer prvo instrumentira ovo prvo, jer je lakše.
+## AI suggests what is worth computing
+The first and most important place where AI works. From the catalog and its descriptions the AI suggests
+values worth deriving: how many different photos a user processed in the last seven days, how many they
+exported, whether the free plan stopped them at the full-resolution export. These are composed values, not
+raw counters — distinct photos, a 7-day window, one event as a barrier rather than usage. Nobody instruments
+those in advance because nobody knows which will matter.
+The choice is then measured, not guessed. A suggested value enters the ranking and must hold on users the
+model hasn't seen; if it doesn't separate people, it is dropped.
+Why this isn't left to the model: in the same data `photos_imported` sounds as reasonable as
+`ai_edits_first_day` and predicts nothing ($8.73–$9.55, flat) while the other goes $3.73–$16.57. Importing is
+preparation; processing is when the product delivers. Developers usually instrument the former first.
 
-## Od vrednosti do segmenta
-Naš sistem izračuna predložene vrednosti za svakog korisnika i kombinuje ih sa onim što Adapty već zna — stanjem pretplate, zemljom, platformom.
-Tako dobijemo, recimo, segment ljudi bez pretplate koji redovno uklanjaju pozadinu i već su pokušali da izvezu sliku u punoj rezoluciji.
-Kombinacija je ono što nosi vrednost. Jedan atribut u ovim podacima daje razliku od 4,4 puta; kombinacija od četiri ose daje 24 puta, po 55 užih grupa, od 0,89 do 21,78 dolara po korisniku. Pet puta više iz istih podataka, samo zato što se seče po više osa.
-U Adapty ide samo ono što segment mora da pročita, i to je mali i ograničen set polja — ne jedno polje po funkciji. Aplikacija sa pedeset funkcija piše isti broj polja kao i ona sa pet. Ostatak ostaje kod nas.
+## From values to a segment
+We compute the values for each user and combine them with what Adapty already knows — subscription state,
+country, platform — e.g. users without a subscription who regularly remove backgrounds and have already tried
+a full-resolution export. The combination carries the value: one attribute gives a 4.4× spread, four axes give
+24× across 55 narrow groups ($0.89–$21.78 per user).
+Only what a segment must read goes to Adapty — a small fixed set of fields, not one per feature. An app with
+fifty features writes as many fields as one with five; the rest stays with us.
 
-## Paywall za taj segment
-Za taj segment AI pripremi paywall koji ističe izvoz u punoj rezoluciji — ali samo ako ga ponuđeni paket uključuje. To je važna brana: ne obećavamo ono što proizvod ne daje.
-To je drugo mesto gde AI radi. Uzme živu konfiguraciju paywall-a, promeni naslov i listu planova, i upload-uje je. Može i da je sastavi sam, ali tada uz validator i pad na izmenjenu kopiju ako generisana ne prođe — jer upload odbija nevalidnu konfiguraciju, a na demou imaš jedan pokušaj.
-Ne delimo popuste. Ističemo ono što čovek već radi i šta bi za to dobio. Popust je druga tema i za njega u ovim podacima nema randomizovane ruke, pa o njemu ne tvrdimo ništa.
+## The paywall for that segment
+For that segment the AI prepares a paywall that highlights full-resolution export — only if the offered plan
+includes it (we never promise what the product doesn't give). This is the second place AI works: it takes the
+live paywall config, changes the title and plan list and uploads it; if it composes one itself, a validator
+checks it and we fall back to the edited copy, because the upload rejects invalid configs and the demo has one try.
+No discounts: we highlight what the user already does. There is no randomized discount arm in this data, so
+we claim nothing about discounts.
 
-## Human i Autopilot
-Dva režima, i podrazumevani je Human.
-U režimu Human tim pregleda predlog i odlučuje da li će ga pustiti. Vidi nalaz, predloženo pravilo, šta se menja na paywall-u, očekivani efekat, i tri dugmeta: odobri, izmeni, odbij. „Izmeni" menja vrednosti pravila, ne JSON paywall-a. Izmena se beleži, jer je čovekova korekcija podatak: ako sistem stalno promaši granicu, to se vidi.
-U režimu Autopilot sistem sam pokrene A/B test prema unapred zadatim podešavanjima.
-Autopilot je ograničen i kad je uključen. Sme da upiše atribute, napravi segment, zakači audience, napravi A/B test i napiše konfiguraciju paywall-a. Objavljivanje flow-a ostaje čoveku, jer objavljen paywall korisnici vide odmah — a i Adapty sam traži potvrdu na toj komandi, pa nam se granica poklapa sa njihovom.
-Svaka odluka nosi oznaku ko ju je doneo, čovek ili autopilot. Tako se posle može uporediti da li je autopilot radio jednako dobro.
+## Human and Autopilot
+Two modes, Human by default. In Human the team reviews each proposal: finding, proposed rule, what changes
+on the paywall, expected effect, and approve / edit / reject. "Edit" changes rule values, never paywall JSON;
+every edit is logged because a human correction is data.
+In Autopilot the system starts the A/B test by itself within preset limits. It may write attributes, create
+the segment, attach the audience, create the A/B test and write the paywall config. Publishing a flow stays
+human — users see a published paywall immediately, and Adapty itself asks for confirmation on that command.
+Every decision records who made it, human or autopilot, so we can compare them later.
 
-## Kako merimo
-Deo korisnika u segmentu vidi postojeći paywall, a deo novi. Tako merimo da li uz novu ponudu veći procenat korisnika iz te grupe zaista kupuje.
-Deo koji vidi stari paywall nije gubitak nego uslov. Bez njega ne znamo da li je razlika došla od naše promene ili od toga kakvi su ti ljudi bili. I kad počnemo da delujemo po svojim nalazima, taj deo je jedino što čuva mogućnost da i dalje merimo — ako grupa uvek dobija novi paywall, nikad više ne vidimo šta bi bila bez njega.
-Merimo kupovinu umanjenu za refundacije, u istom prozoru za obe strane. Konverzija sama po sebi vara: weekly plan u ovim podacima ima 6,9 odsto refundacija, pa bi optimizacija konverzije aktivno štetila.
-Jedna glava prednosti koju imamo: u datim podacima već postoje A/B ruke sa slučajnom podelom. Odatle vidimo koja ponuda koju grupu diže pre nego što pustimo svoj prvi test — lifetime ponuda vredi 14,40 dolara korisnicima sa pet i više obrada, a 5,36 onima bez ijedne. Dakle grupa menja i koja je ponuda bolja, ne samo koliko ko plaća.
+## How we measure
+Part of the segment sees the existing paywall, part the new one. The control part is a requirement, not a
+loss: without it we can't tell whether the difference came from our change or from who those people are, and
+once we act on findings it is the only thing that keeps measurement possible.
+We measure purchases minus refunds, in the same window for both sides. Conversion alone misleads: the weekly
+plan has 6.9% refunds here. The data already contains randomized A/B arms, so we see which offer lifts which
+group before our first test: the lifetime offer is worth $14.40 for users with 5+ edits and $5.36 for users
+with none — the group changes which offer is better, not just how much people pay.
 
-## Šta ne tvrdimo
-Paywall koji se pojavi kad čovek udari u limit nosi 31,18 dolara po korisniku, a onaj na onboardingu 6,14. To ukazuje da je trenutak važan, ali ne dokazuje: ko stigne do limita već ima 5,42 obrade prvog dana prema 3,34 na onboardingu, a dodela placementa nije slučajna. Broj iznosimo kao nagoveštaj.
-Adapty izvršava po grupi, ne po korisniku. Svakog čoveka ocenjujemo pojedinačno, ali sadržaj se servira segmentu, jer platforma tako radi. Zato ne govorimo „personalizacija po korisniku".
-Lumen dataset je sintetički. Oblik mu je realan i veze između ponašanja i plaćanja su namerno ugrađene, ali brojevi su demo podloga, ne tržišna istina.
-Ne predviđamo čoveka nego ga stavljamo u izmerenu grupu. Ne tvrdimo „ovaj pojedinac će kupiti", nego „ovaj pojedinac je u grupi čiji je izmereni efekat bio toliki".
+## What we don't claim
+The limit-reached paywall earns $31.18 per user vs $6.14 on onboarding. That suggests timing matters but
+doesn't prove it: users reaching the limit already have 5.42 first-day edits vs 3.34, and placement assignment
+isn't random. We present it as a hint.
+Adapty serves per segment, not per user. We score each person individually, but content is served to the
+segment, so we don't say "per-user personalization".
+The Lumen dataset is synthetic: realistic shape, relationships built in on purpose, numbers are a demo base.
+We don't predict a person; we place them in a measured group.
 
-## Integracija sa Adaptyjem
-Sve posle prvog koraka već postoji i radi; mi dodajemo samo prvi. Sve ispod je provereno izvršavanjem 7. novembra.
-Upis atributa ide PATCH-om na https://api.adapty.io/api/v2/server-side-api/profile/, sa headerima Authorization: Api-Key i adapty-customer-user-id. Telo je lista a ne objekat, {"custom_attributes":[{"key":"...","value":"..."}]}, jer objekat vraća 400 „value is not a valid list". I PATCH i POST spajaju sa postojećim atributima, nijedan ne zamenjuje — postojeća polja su bezbedna; value postavljen na null briše jedno polje. Limiti: 30 atributa po profilu, ključ do 30 znakova, vrednost do 50. Promena stigne do segmenta za 0,6 sekunde, a SDK keš vraća stari flow dok se profil ne osveži — zato posle upisa zovemo osvežavanje profila. Da je upis sleteo vidi se po tome što se segment_hash na profilu promeni.
-Segment se pravi kroz adapty segments create, a filter se piše u obliku polje:OPERATOR:vrednost. Custom atribut se adresira kao attributes__<ključ>@string ili @float. Poređenja rade samo nad @float; string podržava IN, NOT IN, IS NULL i IS NOT NULL. Filteri u jednom segmentu se spajaju sa AND.
-Audience na placementu kači segment, kroz adapty placements update. Svaki unos traži eksplicitan content_type, a priority odlučuje kad čovek upada u više njih — pobeđuje najviši. Placement mora imati najmanje jedan audience i podrazumevani, pa se ne može isprazniti: „ništa ne prikaži" ne postoji kao akcija, i zato je kontrolna strana audience koji pokazuje postojeći paywall. Pročitaj placements get pa pošalji celu listu, jer --audiences prima niz.
-Flow se pravi kroz flows create, pa flows config update --config-file, pa flows publish. Objavljivanje je asinhrono: vrati publishing, pa se čeka published. Nepublikovan flow zakačen na audience vraća 400.
-A/B test se pravi kroz ab-tests create pa start. Samo nacrt može da se pokrene; da bi se isti test pustio ponovo, pravi se kopija.
-Dve granice koje smo našli: prikazi paywall-a po korisniku ne dolaze kroz CLI, nego kroz S3 export ili zbirno u analitici; i na profilu nema polja o tome u kojoj je A/B ruci bio, pa sopstveni uplift iz živog testa ne možemo da računamo sami — čitamo Adaptyjev rezultat po ruci.
-Sve je povratno. Brisanje naših polja i segmenta vraća aplikaciju u prvobitno stanje; ništa ne dira kupovine, cene ni postojeće flow-ove.
+## Adapty integration (all verified on 7 November)
+Attribute write: `PATCH https://api.adapty.io/api/v2/server-side-api/profile/` with `Authorization: Api-Key`
+and `adapty-customer-user-id`; the body is a list `{"custom_attributes":[{"key":"…","value":"…"}]}` (an object
+returns 400 "value is not a valid list"). PATCH and POST both merge; `value: null` deletes one field. Limits:
+30 attributes per profile, key ≤30 chars, value ≤50. The change reaches the segment in 0.6 s (segment_hash
+changes); the SDK cache serves the old flow until the profile refreshes.
+Segments: `adapty segments create`, filter `field:OPERATOR:value`; custom attributes as
+`attributes__<key>@string` or `@float` (comparisons only on float; string supports IN, NOT IN, IS NULL,
+IS NOT NULL); filters are ANDed.
+Audiences: `adapty placements update`; each entry needs `content_type`, highest priority wins. A placement
+needs ≥1 audience and a default one, so "show nothing" doesn't exist; the control is the existing paywall.
+Read `placements get` and send the full list.
+Flows: `flows create` → `flows config update --config-file` → `flows publish` (async: publishing → published).
+An unpublished flow on an audience returns 400. A/B: `ab-tests create` then `start`; only a draft can start.
+Limits: per-user paywall views are only in the S3 export; the profile has no A/B arm field, so we read
+Adapty's per-arm result. Everything is reversible: deleting our fields and segment restores the app.
 
-## Kako kod treba da izgleda
-Portovi i adapteri: svaki sloj zna jednu stvar i ne zna ostale. Posledica je da se rizični delovi testiraju bez baze i bez mreže, a kriterijum ocenjivanja upravo to traži.
-Stek: FastAPI i uvicorn, pydantic v2 i pydantic-settings, SQLAlchemy 2.0 async i Alembic, pandas i scikit-learn, openai SDK, httpx, pytest.
-domain je srce, i u njemu nema ni jednog I/O poziva. Tri datoteke nose sve što je rizično: rules.py primeni pravilo na istoriju jednog korisnika i vrati broj; ranking.py nađe koja vrednost razdvaja ljude, sa proverom na odvojenom delu i bootstrap intervalom; uplift.py izračuna efekat ponude po grupi sa randomizovanih ruku.
-Pravila su podaci, ne kod. Statistika odlučuje a LLM objašnjava — domain ne uvozi integrations, pa ranking.py fizički ne može da pozove model. LLM dotiče tačno dva servisa: predlog pravila i pisanje konfiguracije paywall-a.
-Testovi na tri nivoa: unit nad domain bez I/O, service sa lažnim portovima bez I/O, i integration nad repozitorijumima na bazi u memoriji. Nijedan test ne ide na mrežu.
+## Code shape
+Ports and adapters; `domain/` has no I/O and holds the risky parts: `rules.py`, `ranking.py` (holdout +
+bootstrap interval), `uplift.py` (randomized arms). Rules are data. Statistics decides, the LLM explains —
+`domain/` cannot import integrations, so ranking physically can't call a model. The LLM touches two services:
+rule suggestions and paywall config. Tests on three levels, none touching the network.
 
-## Faze
-Faza 0 repo i check-in · Faza 1 ingest (curl → baza, isti id dvaput ne duplira) · Faza 2 mozak (AI predlog vrednosti, rangiranje sa holdout-om i bootstrap intervalom, uplift sa randomizovanih ruku) · Faza 3 krug u Adapty (najrizičnije, rano) · Faza 4 demo klijent i naša strana sa karticom predloga · Faza 5 paywall za segment (kopija žive konfiguracije) · Faza 6 README, AI_LOG, demo video · Faza 7 rezerva, proba, predaja.
-Ako zafali vremena režemo: generisanje konfiguracije od nule, naš MCP server, lepotu naše strane. Ne režemo fazu 3.
+## Phases
+0 repo · 1 ingest · 2 brain · 3 Adapty loop (riskiest, early) · 4 demo client + our page · 5 paywall for the
+segment · 6 README, AI_LOG, demo video · 7 buffer, rehearsal, submit. If late, cut: generating configs from
+scratch, our MCP server, dashboard polish. Never cut phase 3.
 
-## Demo, tri minuta
-20 s problem i citat · 40 s klikanje u aplikaciji i događaji · 40 s naša strana (AI predlog, šta je prošlo proveru, segment) · 60 s odobri pa prelaz na pravi Adapty dashboard (segment i A/B test) · 20 s isti SDK lookup za dva korisnika vraća različit flow (naziv flow-a ili screenshot).
+## Demo (3 minutes)
+20 s problem + quote · 40 s clicking in the app, events arriving · 40 s our page (what AI suggested, what passed
+the check, the resulting segment) · 60 s approve, then Adapty's real dashboard with the segment and A/B test ·
+20 s the same lookup for two users returns different flows (flow name or screenshot; flows don't render in a browser).
 
-## Šta ne radimo
-Kontekst signale (dark mode, klasa uređaja) · sesije i satnicu · dodatne modele za pLTV i rizik odlaska · bandit · dekompilaciju tuđih aplikacija kao sekciju demoa · generisanje paywall-a bez žive konfiguracije kao osnove.
+## Not doing
+Context signals (dark mode, device class) · sessions and time of day · extra pLTV/churn models · bandits ·
+decompiling other apps as a demo section · generating paywalls without the live config as a base.
 
-## Razgraničenje
-Helium bira između paywall-ova po onome što aplikacija pošalje; mi predlažemo šta uopšte vredi poslati i merimo da li je pomoglo. Adapty Autopilot radi po aplikaciji, placementu i zemlji; mi po užoj grupi izvedenoj iz ponašanja.
+## Positioning
+Helium chooses between paywalls based on what the app sends; we propose what is worth sending and measure
+whether it helped. Adapty Autopilot works per app, placement and country; we work per narrower behavior-derived group.
