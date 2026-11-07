@@ -44,7 +44,8 @@ one profile before writing code against it. (Also caught by review: the first pl
 choose both the group and the offer — split into ranking (who) and randomized arms (what to show).)
 
 ## What we would never delegate to AI
-- Publishing a paywall or starting/stopping an A/B test on real users — always a human click.
+- Publishing a flow to real users — always a human click. In Autopilot the system may start a bounded A/B
+  test, but it never publishes.
 - Deciding the success metric and the claims we make to the jury; every number is re-checked by a person.
 - Handling secrets and production credentials.
 - Prices and discounts.
