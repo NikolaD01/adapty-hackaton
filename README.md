@@ -2,6 +2,7 @@
 
 Behavior events in, segment and offer decisions out — executed by Adapty's own segments, audiences and A/B tests.
 
+- Flow in 8 steps (diagram): https://claude.ai/artifact/X9YbYnKEExYeSZjmAC733h
 - Plan: [docs/plan.md](docs/plan.md) · API contract: [docs/contracts/api.md](docs/contracts/api.md) · Status: [docs/STATUS.md](docs/STATUS.md)
 - Team onboarding: [docs/team/ONBOARDING.md](docs/team/ONBOARDING.md) · AI usage: [AI_LOG.md](AI_LOG.md)
 
