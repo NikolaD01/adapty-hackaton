@@ -241,6 +241,8 @@ POST /v1/apps/{app_id}/membership:sync { "customer_user_ids": ["u_42"] }   // nu
 For each user: compute `f_<feature>_tier` from the passed tiers and `p_segment` from the live proposals'
 conditions; PATCH only keys whose value changed (`null` when the user left). A calls the same service
 after every ingest batch commits (`MembershipSync` port), so a click reaches the Adapty segment in seconds.
+Wiring: C sets `app.state.membership_sync = <MembershipSync>` in `create_app()`; the ingest route runs it as a
+background task with the users of the batch (no-op while unset; a failure is logged, never fails ingest).
 
 ### Paywall draft (C, Phase 5)
 ```json
