@@ -21,10 +21,10 @@ it('serves the event catalog contract example through MSW', async () => {
   expect(catalog).toEqual([
     {
       action_id: 3,
-      key: 'bg_remove',
-      name: 'Background removed',
-      description: 'User removed the background of a photo with the AI tool',
-      family: 'background',
+      key: 'regenerate_click',
+      name: 'Regenerate clicked',
+      description: 'User asked for a new result after the first generation',
+      features: ['ai_generate'],
       created_at: '2026-11-07T18:00:00Z',
     },
   ])
