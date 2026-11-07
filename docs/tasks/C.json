@@ -50,7 +50,7 @@
     {
       "id": "C3",
       "title": "Proposals store, API and settings",
-      "status": "todo",
+      "status": "done",
       "brief": "C ch.3",
       "steps": [
         "ProposalSink.create_many (used by B)",
