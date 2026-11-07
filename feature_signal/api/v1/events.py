@@ -1,16 +1,46 @@
 """Event ingest and timeline routes (owner A)."""
 
-from fastapi import APIRouter
+from typing import Annotated
+
+from fastapi import APIRouter, BackgroundTasks, Depends, Request
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from feature_signal.core.errors import not_implemented
+from feature_signal.db.session import get_session
+from feature_signal.domain.models import Event
+from feature_signal.repositories.events import EventRepository
 from feature_signal.schemas.events import EventBatchIn, EventBatchOut, TimelineOut
+from feature_signal.services.ingest_service import IngestService, run_membership_sync
 
 router = APIRouter(tags=["events (A)"])
 
 
+def ingest_service(session: Annotated[AsyncSession, Depends(get_session)]) -> IngestService:
+    return IngestService(EventRepository(session), session.commit)
+
+
+Ingest = Annotated[IngestService, Depends(ingest_service)]
+
+
 @router.post("/apps/{app_id}/events", response_model=EventBatchOut)
-async def ingest_events(app_id: str, body: EventBatchIn) -> EventBatchOut:
-    raise not_implemented("ingest_events")
+async def ingest_events(
+    app_id: str, body: EventBatchIn, svc: Ingest, request: Request, background: BackgroundTasks
+) -> EventBatchOut:
+    events = [
+        Event(
+            event_id=str(e.event_id),
+            customer_user_id=e.customer_user_id,
+            key=e.key,
+            occurred_at=e.occurred_at,
+            props=dict(e.props),
+            decision_id=e.decision_id,
+        )
+        for e in body.events
+    ]
+    result, users = await svc.ingest(app_id, events)
+    # C registers its MembershipSync on app.state.membership_sync; until then this is a no-op.
+    background.add_task(run_membership_sync, getattr(request.app.state, "membership_sync", None), app_id, users)
+    return EventBatchOut(accepted=result.accepted, duplicates=result.duplicates, unknown_keys=result.unknown_keys)
 
 
 @router.get("/apps/{app_id}/users/{customer_user_id}/timeline", response_model=TimelineOut)

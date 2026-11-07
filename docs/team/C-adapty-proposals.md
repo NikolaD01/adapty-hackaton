@@ -57,7 +57,9 @@ send A the columns or do it via `contract-change`) · `tests/**/test_{adapty,pro
    the passed `f_<feature>_tier` values (`TierStore` + `ValueStore`) and `p_segment` (first live
    proposal whose condition matches, else `null`); keep the last written attributes per user (small
    table or cache) and PATCH **only changed keys**; same limits validation as chapter 1. Expose
-   `POST /membership:sync`; implement the `MembershipSync` port that A calls after ingest.
+   `POST /membership:sync`; implement the `MembershipSync` port that A calls after ingest, and register it
+   with `app.state.membership_sync = ...` in `main.py:create_app()` (contract-change; A's ingest already
+   calls it in the background, see `services/ingest_service.py:run_membership_sync`).
    *Done when:* fake-port tests: unchanged user → 0 writes; user crosses a tier → 1 write; user leaves
    the segment → `p_segment: null`; manual: clicking in the demo app moves a test user into the segment
    and `/lookup` shows the other flow.

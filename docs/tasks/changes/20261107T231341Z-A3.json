@@ -1,0 +1,158 @@
+{
+  "at": "2026-11-07T23:13:41Z",
+  "by": "A",
+  "task": "A3",
+  "reason": "POST /events is live. C9: register your MembershipSync on app.state.membership_sync in create_app(); ingest calls it after commit with the batch's users. D4/D7: real endpoint available.",
+  "affects": [
+    {
+      "id": "A4",
+      "role": "A",
+      "depth": 1,
+      "why": "hard dependency on A3"
+    },
+    {
+      "id": "A5",
+      "role": "A",
+      "depth": 1,
+      "why": "contract dependency on A3"
+    },
+    {
+      "id": "A7",
+      "role": "A",
+      "depth": 1,
+      "why": "hard dependency on A3"
+    },
+    {
+      "id": "A8",
+      "role": "A",
+      "depth": 1,
+      "why": "hard dependency on A3"
+    },
+    {
+      "id": "D7",
+      "role": "D",
+      "depth": 1,
+      "why": "hard dependency on A3"
+    },
+    {
+      "id": "S1",
+      "role": "ALL",
+      "depth": 1,
+      "why": "hard dependency on A3"
+    },
+    {
+      "id": "D4",
+      "role": "D",
+      "depth": 2,
+      "why": "contract dependency on A4 (via A4)"
+    },
+    {
+      "id": "B2",
+      "role": "B",
+      "depth": 2,
+      "why": "contract dependency on A7 (via A7)"
+    },
+    {
+      "id": "B8",
+      "role": "B",
+      "depth": 2,
+      "why": "hard dependency on A7 (via A7)"
+    },
+    {
+      "id": "C4",
+      "role": "C",
+      "depth": 2,
+      "why": "contract dependency on A7 (via A7)"
+    },
+    {
+      "id": "C9",
+      "role": "C",
+      "depth": 2,
+      "why": "contract dependency on A7 (via A7)"
+    },
+    {
+      "id": "S2",
+      "role": "ALL",
+      "depth": 2,
+      "why": "hard dependency on A7 (via A7)"
+    },
+    {
+      "id": "B3",
+      "role": "B",
+      "depth": 3,
+      "why": "hard dependency on B2 (via B2)"
+    },
+    {
+      "id": "B5",
+      "role": "B",
+      "depth": 3,
+      "why": "hard dependency on B2 (via B2)"
+    },
+    {
+      "id": "C5",
+      "role": "C",
+      "depth": 3,
+      "why": "hard dependency on C4 (via C4)"
+    },
+    {
+      "id": "C7",
+      "role": "C",
+      "depth": 3,
+      "why": "hard dependency on C4 (via C4)"
+    },
+    {
+      "id": "X1",
+      "role": "ALL",
+      "depth": 3,
+      "why": "hard dependency on S2 (via S2)"
+    },
+    {
+      "id": "X2",
+      "role": "ALL",
+      "depth": 3,
+      "why": "hard dependency on S2 (via S2)"
+    },
+    {
+      "id": "X3",
+      "role": "ALL",
+      "depth": 3,
+      "why": "hard dependency on S2 (via S2)"
+    },
+    {
+      "id": "B4",
+      "role": "B",
+      "depth": 4,
+      "why": "hard dependency on B3 (via B3)"
+    },
+    {
+      "id": "B7",
+      "role": "B",
+      "depth": 4,
+      "why": "hard dependency on B5 (via B5)"
+    },
+    {
+      "id": "D3",
+      "role": "D",
+      "depth": 4,
+      "why": "contract dependency on B5 (via B5)"
+    },
+    {
+      "id": "D6",
+      "role": "D",
+      "depth": 4,
+      "why": "contract dependency on C5 (via C5)"
+    },
+    {
+      "id": "S3",
+      "role": "ALL",
+      "depth": 4,
+      "why": "hard dependency on X1 (via X1)"
+    },
+    {
+      "id": "D8",
+      "role": "D",
+      "depth": 5,
+      "why": "hard dependency on D6 (via D6)"
+    }
+  ]
+}

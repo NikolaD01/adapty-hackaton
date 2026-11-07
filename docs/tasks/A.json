@@ -68,7 +68,7 @@
     {
       "id": "A3",
       "title": "Idempotent event ingest",
-      "status": "todo",
+      "status": "done",
       "brief": "A ch.3",
       "steps": [
         "EventSink.record_batch: insert ON CONFLICT(event_id) DO NOTHING",
