@@ -223,7 +223,7 @@
     {
       "id": "C7",
       "title": "Autopilot mode",
-      "status": "todo",
+      "status": "done",
       "brief": "C ch.4",
       "steps": [
         "Same activation with decided_by=autopilot",
