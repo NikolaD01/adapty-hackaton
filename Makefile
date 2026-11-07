@@ -1,4 +1,4 @@
-.PHONY: install dev test test-docker lint fmt migrate offline-data
+.PHONY: install dev test test-docker lint fmt migrate offline-data board impact
 
 install:
 	python3 -m venv .venv && . .venv/bin/activate && pip install -U pip && pip install -e ".[dev]"
@@ -25,3 +25,10 @@ offline-data:
 test-docker:
 	docker run --rm --user $$(id -u):$$(id -g) -e HOME=/tmp -v "$$PWD":/app -w /app python:3.12-slim \
 	  sh -c "pip install -q --user -e '.[dev]' && python -m pytest -q && python -m ruff check ."
+
+# Task graph (docs/tasks): `make board ROLE=A`, `make impact` (what your branch affects).
+board:
+	python3 tools/tasks.py board $(if $(ROLE),--role $(ROLE))
+
+impact:
+	python3 tools/tasks.py impact --diff origin/main

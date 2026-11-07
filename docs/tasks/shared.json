@@ -1,0 +1,30 @@
+{
+  "role": "ALL",
+  "name": "Milestones and shared",
+  "inbox_ack": "2026-11-07T00:00:00Z",
+  "tasks": [
+    {"id": "S1", "title": "Sync 1: ingest + mocks run", "status": "todo", "brief": "CLAUDE.md §11",
+     "steps": ["A shows curl ingest", "D shows the UI on mocks", "Agree on any contract fix"],
+     "depends_on": [{"id": "A3", "kind": "hard"}, {"id": "D1", "kind": "hard"}],
+     "produces": [], "consumes": [], "done_when": "10-minute sync held"},
+    {"id": "S2", "title": "Sync 2: first end-to-end loop", "status": "todo", "brief": "CLAUDE.md §11",
+     "steps": ["event -> value -> insight -> proposal -> approve -> segment in Adapty -> lookup differs"],
+     "depends_on": [{"id": "A7", "kind": "hard"}, {"id": "A8", "kind": "hard"}, {"id": "B5", "kind": "hard"},
+                    {"id": "C4", "kind": "hard"}, {"id": "C6", "kind": "hard"}, {"id": "D2", "kind": "hard"}],
+     "produces": ["milestone:e2e"], "consumes": [], "done_when": "loop runs once on Lumen"},
+    {"id": "X1", "title": "README assembled from chapter docs", "status": "todo", "brief": "Phase 6",
+     "steps": ["What is real vs synthetic", "How to run", "Architecture diagram"],
+     "depends_on": [{"id": "S2", "kind": "hard"}], "produces": ["doc:readme"], "consumes": [], "done_when": "README reviewed by all"},
+    {"id": "X2", "title": "AI_LOG final pass (half to one page)", "status": "todo", "brief": "Phase 6",
+     "steps": ["Tools, setup, 2-3 prompts, one AI mistake, never-delegate"],
+     "depends_on": [{"id": "S2", "kind": "hard"}], "produces": ["doc:ai-log"], "consumes": [], "done_when": "fits one page"},
+    {"id": "X3", "title": "Demo video (1-2 min)", "status": "todo", "brief": "Phase 6",
+     "steps": ["Record before time runs out; backup for the stage"],
+     "depends_on": [{"id": "S2", "kind": "hard"}, {"id": "D8", "kind": "hard"}], "produces": ["video:demo"], "consumes": [],
+     "done_when": "video uploaded"},
+    {"id": "S3", "title": "Sync 3: rehearsal and submission", "status": "todo", "brief": "Phase 7",
+     "steps": ["Rehearse 3-minute demo twice aloud", "Submit form before code freeze"],
+     "depends_on": [{"id": "X1", "kind": "hard"}, {"id": "X2", "kind": "hard"}, {"id": "X3", "kind": "hard"}],
+     "produces": [], "consumes": [], "done_when": "submitted"}
+  ]
+}

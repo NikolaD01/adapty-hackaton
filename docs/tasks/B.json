@@ -1,0 +1,247 @@
+{
+  "role": "B",
+  "name": "Brain",
+  "inbox_ack": "2026-11-07T00:00:00Z",
+  "tasks": [
+    {
+      "id": "B1",
+      "title": "Offline loader and 90-day net outcome",
+      "status": "todo",
+      "brief": "B ch.1",
+      "steps": [
+        "OfflineDataset adapter for users/transactions csv.gz",
+        "net_revenue_90d excluding refunds and late purchases",
+        "Keep only users with a full 90-day window",
+        "Unit test on a 5-row fixture"
+      ],
+      "depends_on": [],
+      "produces": [
+        "data:offline-outcome",
+        "path:scripts/train_from_offline.py"
+      ],
+      "consumes": [
+        "data:offline-dataset"
+      ],
+      "done_when": "script prints ~12.5k users and mean outcome; fixture test green"
+    },
+    {
+      "id": "B2",
+      "title": "Ranking with holdout and bootstrap CI",
+      "status": "todo",
+      "brief": "B ch.2",
+      "steps": [
+        "Best threshold per feature on 70% train",
+        "lift + direction up/down",
+        "Bootstrap 90% CI (~400 resamples)",
+        "holdout_lift on 30%; min 150 per side; passed flag",
+        "Test: pure-noise feature does not pass"
+      ],
+      "depends_on": [
+        {
+          "id": "B1",
+          "kind": "hard"
+        }
+      ],
+      "produces": [
+        "domain:ranking",
+        "path:feature_signal/domain/ranking.py"
+      ],
+      "consumes": [
+        "data:offline-outcome",
+        "port:ValueStore.matrix"
+      ],
+      "done_when": "ai_edits_first_day passes, photos_imported fails, with numbers"
+    },
+    {
+      "id": "B3",
+      "title": "Segment candidates",
+      "status": "todo",
+      "brief": "B ch.3",
+      "steps": [
+        "Combine passed features with subscription_state, country tier, platform",
+        "<=5 segments with size and net ARPU +- CI",
+        "Stable segment_key slugs (become p_segment values)"
+      ],
+      "depends_on": [
+        {
+          "id": "B2",
+          "kind": "hard"
+        }
+      ],
+      "produces": [
+        "domain:segments",
+        "contract:segment_key"
+      ],
+      "consumes": [
+        "domain:ranking"
+      ],
+      "done_when": "segments printed with size and CI; keys stable across runs"
+    },
+    {
+      "id": "B4",
+      "title": "Uplift from randomized arms",
+      "status": "todo",
+      "brief": "B ch.4",
+      "steps": [
+        "Per segment x randomized test: diff in net_revenue_90d + bootstrap CI",
+        "Recommend arm only if CI one-sided",
+        "Report refunds next to uplift",
+        "Test reproduces +14.40 (5+ edits) and +5.36 (0 edits) +-0.5"
+      ],
+      "depends_on": [
+        {
+          "id": "B1",
+          "kind": "hard"
+        },
+        {
+          "id": "B3",
+          "kind": "hard"
+        }
+      ],
+      "produces": [
+        "domain:uplift",
+        "path:feature_signal/domain/uplift.py"
+      ],
+      "consumes": [
+        "data:offline-outcome",
+        "domain:segments"
+      ],
+      "done_when": "both reference numbers reproduce in a test"
+    },
+    {
+      "id": "B5",
+      "title": "Insights API and proposal drafts",
+      "status": "todo",
+      "brief": "B ch.5",
+      "steps": [
+        "POST /insights:run {source}, GET /insights/latest",
+        "Build ProposalDraft: p_segment condition, better arm flow, effect + CI, reason",
+        "Hand drafts to ProposalSink (fake in tests)"
+      ],
+      "depends_on": [
+        {
+          "id": "B2",
+          "kind": "hard"
+        },
+        {
+          "id": "B3",
+          "kind": "hard"
+        },
+        {
+          "id": "B4",
+          "kind": "hard"
+        },
+        {
+          "id": "C3",
+          "kind": "contract"
+        }
+      ],
+      "produces": [
+        "api:insights",
+        "path:feature_signal/api/v1/insights.py",
+        "path:feature_signal/services/insight_service.py"
+      ],
+      "consumes": [
+        "port:ProposalSink",
+        "domain:uplift",
+        "domain:segments",
+        "domain:ranking"
+      ],
+      "done_when": "a run creates proposals visible at GET /proposals (fake sink in tests)"
+    },
+    {
+      "id": "B6",
+      "title": "LLM provider and rule suggestions",
+      "status": "todo",
+      "brief": "B ch.6",
+      "steps": [
+        "LLMProvider port + OpenAI adapter, model id verified via GET /v1/models",
+        "Structured output JSON schema",
+        "POST /rules:suggest returns schema-valid rules",
+        "Invalid model output -> no suggestion, no crash (test)",
+        "One manual real call recorded in docs/brain/"
+      ],
+      "depends_on": [
+        {
+          "id": "A2",
+          "kind": "contract"
+        },
+        {
+          "id": "A6",
+          "kind": "contract"
+        }
+      ],
+      "produces": [
+        "api:rules-suggest",
+        "port:LLMProvider",
+        "path:feature_signal/integrations/llm/**"
+      ],
+      "consumes": [
+        "api:event-types",
+        "api:rules"
+      ],
+      "done_when": "fake provider path tested; one real call documented"
+    },
+    {
+      "id": "B7",
+      "title": "Explanations on insights",
+      "status": "todo",
+      "brief": "B ch.6",
+      "steps": [
+        "LLMProvider.explain(ranking, catalog) -> summary/hypothesis/confidence",
+        "Attach to proposal reason text"
+      ],
+      "depends_on": [
+        {
+          "id": "B5",
+          "kind": "hard"
+        },
+        {
+          "id": "B6",
+          "kind": "hard"
+        }
+      ],
+      "produces": [
+        "text:proposal-reason"
+      ],
+      "consumes": [
+        "port:LLMProvider",
+        "api:insights"
+      ],
+      "done_when": "proposal reason reads as a human sentence; fake LLM test"
+    },
+    {
+      "id": "B8",
+      "title": "Live mode on ValueStore matrix",
+      "status": "todo",
+      "brief": "B ch.5",
+      "steps": [
+        "source=live reads ValueStore.matrix()",
+        "Join live values with outcome where available, else rank on offline only",
+        "Label live results synthetic when built on demo events"
+      ],
+      "depends_on": [
+        {
+          "id": "A7",
+          "kind": "hard"
+        },
+        {
+          "id": "A8",
+          "kind": "hard"
+        },
+        {
+          "id": "B5",
+          "kind": "hard"
+        }
+      ],
+      "produces": [
+        "api:insights-live"
+      ],
+      "consumes": [
+        "port:ValueStore.matrix",
+        "data:demo-events"
+      ],
+      "done_when": "insights:run {source:live} returns rankings on demo users"
+    }
+  ]
+}
