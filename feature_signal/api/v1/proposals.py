@@ -21,6 +21,7 @@ from feature_signal.schemas.proposals import (
     RejectIn,
 )
 from feature_signal.services.activation_service import ActivationService
+from feature_signal.services.autopilot_service import AutopilotService
 from feature_signal.services.membership_service import SqlMembershipSync
 from feature_signal.services.proposal_service import ProposalService
 
@@ -52,8 +53,21 @@ async def list_proposals(app_id: str, session: Session, status: ProposalStatus |
 
 
 @router.post("/apps/{app_id}/proposals", response_model=list[ProposalOut])
-async def create_proposals(app_id: str, body: ProposalsIn, session: Session) -> list[ProposalOut]:
-    return await ProposalService(session).create(app_id, body.proposals)
+async def create_proposals(
+    app_id: str,
+    body: ProposalsIn,
+    session: Session,
+    commands: Annotated[AdaptyCommands, Depends(get_adapty_commands)],
+    membership: Annotated[MembershipSync, Depends(get_membership_sync)],
+) -> list[ProposalOut]:
+    """Store drafts. In autopilot mode they are launched right away (within the limits); the answer shows the result."""
+    service = ProposalService(session)
+    created = await service.create(app_id, body.proposals)
+    launched = await AutopilotService(session, ActivationService(session, commands, membership)).run(app_id)
+    if not launched:
+        return created
+    current = {p.proposal_id: p for p in await service.list(app_id)}
+    return [current[p.proposal_id] for p in created]
 
 
 @router.patch("/proposals/{proposal_id}", response_model=ProposalOut)
