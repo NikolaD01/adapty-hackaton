@@ -28,7 +28,7 @@
     {
       "id": "C2",
       "title": "Adapty CLI adapter",
-      "status": "todo",
+      "status": "done",
       "brief": "C ch.2",
       "steps": [
         "Subprocess runner with ADAPTY_CLI prefix and --json",
