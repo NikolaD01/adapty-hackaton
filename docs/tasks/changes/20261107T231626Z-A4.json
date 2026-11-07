@@ -1,0 +1,20 @@
+{
+  "at": "2026-11-07T23:16:26Z",
+  "by": "A",
+  "task": "A4",
+  "reason": "GET /users/{id}/timeline is live (newest first by occurred_at, limit 1-200).",
+  "affects": [
+    {
+      "id": "D4",
+      "role": "D",
+      "depth": 1,
+      "why": "contract dependency on A4"
+    },
+    {
+      "id": "D7",
+      "role": "D",
+      "depth": 1,
+      "why": "hard dependency on A4"
+    }
+  ]
+}

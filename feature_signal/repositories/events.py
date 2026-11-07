@@ -98,6 +98,28 @@ class EventRepository:
             for r, key in (await self.session.execute(stmt)).all()
         ]
 
+    async def recent(self, app_id: str, customer_user_id: str, limit: int) -> list[Event]:
+        """Newest first by occurred_at (phone time), for the timeline."""
+        stmt = (
+            select(EventRow, EventTypeRow.key)
+            .join(EventTypeRow, EventTypeRow.action_id == EventRow.action_id)
+            .where(EventRow.app_id == app_id, EventRow.customer_user_id == customer_user_id)
+            .order_by(EventRow.occurred_at.desc(), EventRow.received_at.desc())
+            .limit(limit)
+        )
+        return [
+            Event(
+                event_id=r.event_id,
+                customer_user_id=r.customer_user_id,
+                key=key,
+                occurred_at=r.occurred_at,
+                received_at=r.received_at,
+                props=dict(r.props or {}),
+                decision_id=r.decision_id,
+            )
+            for r, key in (await self.session.execute(stmt)).all()
+        ]
+
     async def users(self, app_id: str) -> list[str]:
         stmt = select(EventRow.customer_user_id).where(EventRow.app_id == app_id).distinct()
         return sorted(await self.session.scalars(stmt))
