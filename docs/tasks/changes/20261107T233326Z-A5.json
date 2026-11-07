@@ -1,0 +1,14 @@
+{
+  "at": "2026-11-07T23:33:26Z",
+  "by": "A",
+  "task": "A5",
+  "reason": "Real SDK in sdk/js (same exports as web/src/sdk-stub.ts). D: switch the vite alias + tsconfig path to ../sdk/js/src/index.ts; see docs/ingest/README.md 'For D'.",
+  "affects": [
+    {
+      "id": "D4",
+      "role": "D",
+      "depth": 1,
+      "why": "hard dependency on A5"
+    }
+  ]
+}
