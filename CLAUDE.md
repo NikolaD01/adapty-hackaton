@@ -145,6 +145,8 @@ through A or via a contract-change PR.
   · Contract touched · How to test · Limits / not claimed · Status). English, short sentences, numbers
   with units, no marketing words.
 - `docs/STATUS.md`: one row per area — update your row at every chapter end.
+- Indexes: `docs/README.md` (all docs, one row per area) and `docs/<area>/README.md` list every chapter;
+  the root `README.md` "What works today" table says what is real. Update them in the chapter's PR.
 - `AI_LOG.md` (jury criterion, **½–1 page**, fixed sections): tools used and for what · setup (rules files,
   agents, MCP, subagents) · 2–3 prompts that worked well · one thing AI got wrong and how it was caught ·
   what we'd never delegate to AI. Edit the sections in place (replace a weaker example with a better one);
