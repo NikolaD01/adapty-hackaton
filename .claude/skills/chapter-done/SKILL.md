@@ -35,6 +35,10 @@ Run every step in order. Stop and tell the developer (in Serbian) if a step fail
   better example than the current one, update that section in place. Keep the whole file within one page.
 - Language: every text you added (code, comments, docs, UI strings) is English.
 - If behavior differs from `docs/contracts/api.md` → that is a contract change: stop, use `contract-change`.
+- Task graph: `python3 tools/tasks.py set <task-id> done` for the finished task(s). Then
+  `python3 tools/tasks.py impact --diff origin/main --depth 1`: if a task of **another role** is listed and
+  this chapter changed an output it uses (shape, meaning, timing), run `tools/tasks.py flag <id> --by <role>
+  --reason "<what changed>"` and name those roles in the report. `tools/tasks.py check` must pass.
 
 ## 5. Commit in pieces
 - Group changes into logical commits, each with its tests: e.g. `feat(ingest): add events table`,
@@ -59,4 +63,4 @@ Run every step in order. Stop and tell the developer (in Serbian) if a step fail
 - After merge: `git switch main && git pull --ff-only`, start the next chapter on a new branch.
 
 ## 8. Report (to the developer, Serbian, 3–5 lines)
-What was done, tests run (count passed), doc path, PR/merge state, what the next chapter is.
+What was done, tests run (count passed), doc path, PR/merge state, flagged roles (if any), the next `ready` task from `board --role <me>`.

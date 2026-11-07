@@ -14,5 +14,7 @@ description: Use when the developer asks to sync, pull main, rebase or update th
    changed: `npm install` there. If `feature_signal/db/migrations/` changed: `alembic upgrade head`.
 4. Run the whole test suite (`make test`; `cd web && npm test -- --run` if web exists).
 5. On a branch with pushed commits: `git push --force-with-lease`. Never force-push `main`.
-6. Tell the developer (Serbian, 2 lines): what came in from main (`git log --oneline ORIG_HEAD..HEAD` or
-   the merged PR titles) and whether tests are green.
+6. `python3 tools/tasks.py inbox --role <me>` (role from `CLAUDE.local.md`). REVIEW NOW items: re-run the
+   affected tests; if something must change, `set <id> needs-review`. Then `ack --role <me>`.
+7. Tell the developer (Serbian, 2–4 lines): what came in from main (`git log --oneline ORIG_HEAD..HEAD` or
+   the merged PR titles), whether tests are green, and any inbox items that need their decision.

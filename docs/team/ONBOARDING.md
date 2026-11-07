@@ -25,5 +25,7 @@
    - Shared files (schemas, ports, contract) only through the `contract-change` skill, with one teammate's OK.
    - Commit messages: Conventional Commits, English, no mention of AI anywhere.
    - Everything written into the repo is in English. You may talk to your agent in Serbian.
+   - Your todo list: `make board ROLE=A`. Changes that hit your tasks: `python3 tools/tasks.py inbox --role A`.
+     Something you depend on is wrong? Ask your agent to `flag` it (see `docs/tasks/README.md`).
 7. **Sync points (10 min, everyone)**: S1 when ingest and D's mocks run · S2 first end-to-end loop
    (event → value → insight → proposal → approve → segment in Adapty) · S3 demo dry run.

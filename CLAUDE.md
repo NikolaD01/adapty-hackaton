@@ -92,7 +92,8 @@ The LLM touches exactly two services: `rule_suggest_service` (B) and `paywall_se
 | `integrations/adapty/**`, `services/{proposal,activation,paywall,lookup}_service.py`, `api/v1/{proposals,settings,decisions,lookup}.py`, `repositories/{proposals,decisions}.py` | C | read only |
 | `web/**` | D | read only |
 | **Shared:** `schemas/**`, `domain/models.py`, `domain/ports.py`, `docs/contracts/**`, `core/**`, `main.py`, `api/v1/router.py`, `pyproject.toml`, `Makefile`, `.claude/**`, `CLAUDE.md` | everyone, **only via the `contract-change` skill** (small PR, one teammate acks) | |
-| `docs/<your-area>/**`, `AI_LOG.md` (append only), `docs/STATUS.md` (your row only) | you | |
+| `docs/<your-area>/**`, `AI_LOG.md` (edit sections in place), `docs/STATUS.md` (your row only), `docs/tasks/<ROLE>.json` (your file only) | you | |
+| `docs/tasks/changes/*.json` (change notices) | anyone adds a new file | never edit others' notices |
 New tables: tell A (A owns migrations); C adds `proposals`/`decisions` table definitions to `db/tables.py`
 through A or via a contract-change PR.
 
@@ -146,6 +147,17 @@ through A or via a contract-change PR.
 - `contract-change` — the only way to change shared files (§6).
 Adapty's own skills are enabled too (`adapty-skills@adapty`: audiences, ab-tests, flow-generator, …):
 use them as reference for CLI usage.
+
+## 10a. Task graph (`docs/tasks/`, details in `docs/tasks/README.md`)
+Every task of every role lives in `docs/tasks/<ROLE>.json`: steps, `depends_on` (`hard` = wait,
+`contract` = start now on fakes, re-check later), `produces`/`consumes`, `done_when`. Use `tools/tasks.py`:
+- **Start of a session:** `board --role <me>` (pick a `ready` task, `set <id> doing`) and `inbox --role <me>`.
+- **Before changing an output others use** (schema, port, table, value meaning): `impact <id> --depth 1`.
+- **When an output changed or you found it wrong** — yours or someone else's: `flag <id> --by <me> --reason "…"`,
+  commit the notice, and tell the developer which roles to ping. Never edit another role's task file.
+- **On a REVIEW NOW hit in your inbox:** re-run your tests against the change; if something must change, `set <id>
+  needs-review` and fix it in the next chapter; then `ack --role <me>`.
+- New task or dependency discovered → add it to your file in the same PR; `check` is a unit test.
 
 ## 11. Phases and team sync points
 Phase 0 setup (done) · 1 ingest (A) · 2 brain (B) · 3 Adapty loop (C — riskiest, do it early while
