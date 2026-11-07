@@ -118,7 +118,8 @@ POST /v1/apps/{app_id}/events
 
 Optional `where: {"prop", "op": eq|lt|lte|gt|gte, "value"}` keeps only matching events first.
 `window_days` ∈ 1–90 or `null` (all history), always on `occurred_at`. `source` ∈ `human` | `ai` | `default`.
-`feature` (optional) puts the value into that feature's profile.
+`feature` (optional) puts the value into that feature's profile. Rule `key`: `^[a-z][a-z0-9_]{1,79}$`
+(default keys like `<feature>_used_<event>` can reach 68 chars; rule keys never go to Adapty).
 Examples: regenerate rate = `{"event_keys":["regenerate_click"],"measure":"ratio","denominator_event_keys":["generate_click"],"window_days":7}`;
 ran out of tokens = `{"event_keys":["generate_click","regenerate_click"],"measure":"exists","where":{"prop":"tokens_left","op":"lte","value":0},"window_days":7}`;
 tokens left = `{"event_keys":["generate_click","regenerate_click"],"measure":"last","value_prop":"tokens_left"}`.

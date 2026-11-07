@@ -23,6 +23,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 APP_ID = String(64)
 USER_ID = String(128)
 KEY = String(40)
+RULE_KEY = String(80)  # <feature>_used_<event> can reach 68 chars; rule keys never go to Adapty
 
 
 class Base(DeclarativeBase):
@@ -105,7 +106,7 @@ class RuleRow(Base):
 
     rule_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     app_id: Mapped[str] = mapped_column(APP_ID)
-    key: Mapped[str] = mapped_column(KEY)
+    key: Mapped[str] = mapped_column(RULE_KEY)
     name: Mapped[str] = mapped_column(String(120))
     description: Mapped[str] = mapped_column(String(500))
     source: Mapped[str] = mapped_column(String(10))  # human | ai | default
@@ -120,7 +121,7 @@ class UserValueRow(Base):
 
     app_id: Mapped[str] = mapped_column(APP_ID, primary_key=True)
     customer_user_id: Mapped[str] = mapped_column(USER_ID, primary_key=True)
-    rule_key: Mapped[str] = mapped_column(KEY, primary_key=True)
+    rule_key: Mapped[str] = mapped_column(RULE_KEY, primary_key=True)
     value: Mapped[float] = mapped_column(Float)
     computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
@@ -132,7 +133,7 @@ class FeatureTierRow(Base):
 
     app_id: Mapped[str] = mapped_column(APP_ID, primary_key=True)
     feature: Mapped[str] = mapped_column(String(22), primary_key=True)
-    rule_key: Mapped[str] = mapped_column(KEY)
+    rule_key: Mapped[str] = mapped_column(RULE_KEY)
     low_max: Mapped[float] = mapped_column(Float)
     mid_max: Mapped[float] = mapped_column(Float)
     passed: Mapped[bool] = mapped_column(Boolean)
