@@ -34,7 +34,7 @@
       "steps": [
         "Proposal card: finding, rule, paywall change, effect +- CI, holdout, reason",
         "Approve / Edit (PATCH whitelist) / Reject",
-        "Status chips; approve disabled while executing",
+        "Status chips incl. awaiting_publish ('publish the new paywall in Adapty'); show adapty_filters and highlighted feature",
         "Human/Autopilot toggle with warning banner",
         "Tests per status + edit payload"
       ],
@@ -64,6 +64,7 @@
       "brief": "D ch.3",
       "steps": [
         "Rankings table with CI bars, passed marks",
+        "Tiers per feature (cut points, which go to Adapty) and hypotheses labelled 'not measured yet -> A/B test'",
         "Segments + uplift with CI",
         "Rules list + Suggest with AI + Accept"
       ],
@@ -105,6 +106,7 @@
         "Buttons: import, remove background, AI enhance, export, export full-res (Pro only)",
         "Export in full resolution on a free user calls track('pt_track_hd_export_blocked') when the plan check blocks it",
         "User switcher (seed ids)",
+        "Side panel: feature profile from /users/{id}/features (values + tier), refreshed after each click",
         "track() per click; side panel from /timeline",
         "Test: button calls track with the right key"
       ],
@@ -120,6 +122,10 @@
         {
           "id": "A4",
           "kind": "contract"
+        },
+        {
+          "id": "A7",
+          "kind": "contract"
         }
       ],
       "produces": [
@@ -127,24 +133,30 @@
       ],
       "consumes": [
         "sdk:track",
-        "api:timeline"
+        "api:timeline",
+        "api:feature-profile"
       ],
       "done_when": "clicks produce events visible in the timeline"
     },
     {
       "id": "D5",
-      "title": "Events catalog screen + Add event",
+      "title": "Features and events screen",
       "status": "todo",
       "brief": "D screens",
       "steps": [
-        "GET /event-types table + live counter",
-        "Add event form: key, name, short description for AI, optional family -> POST /event-types",
-        "Test: form posts the right payload"
+        "Features list with their events + live counter",
+        "Add feature form: key (<=22), name, description, plans -> POST /features",
+        "Add event form: key, name, short description for AI, features multi-select -> POST /event-types",
+        "Tests: both forms post the right payload"
       ],
       "depends_on": [
         {
           "id": "D1",
           "kind": "hard"
+        },
+        {
+          "id": "A2",
+          "kind": "contract"
         },
         {
           "id": "A2",
@@ -155,9 +167,10 @@
         "web:events"
       ],
       "consumes": [
-        "api:event-types"
+        "api:event-types",
+        "api:features"
       ],
-      "done_when": "catalog renders; Add event creates pt_track_hd_export_blocked"
+      "done_when": "feature ai_enhance and event pt_track_hd_export_blocked can be created from the UI"
     },
     {
       "id": "D6",

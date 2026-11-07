@@ -8,7 +8,7 @@ description: Use whenever a change touches a shared file - schemas/, domain/mode
 Shared files are the contract between four people working at once. Change them small, explicit and fast.
 
 1. **Is it really needed?** Prefer an additive change (new optional field, new endpoint) over changing
-   or removing anything. Removing/renaming a field, an endpoint or an attribute key (`p_*`) needs the
+   or removing anything. Removing/renaming a field, an endpoint or an attribute key (`p_segment`, `f_<feature>_tier`) needs the
    whole team's yes — ask the developer to get it.
 2. Create a separate branch `contracts/<slug>` from fresh `origin/main` (do not mix with feature work).
 3. Make the change in all twins at once:

@@ -6,10 +6,21 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Literal
 
-Measure = Literal["count", "distinct", "exists", "days_active"]
+Measure = Literal["count", "distinct", "exists", "days_active", "ratio", "sum", "last", "max", "min"]
+Tier = Literal["low", "mid", "high"]
 Direction = Literal["up", "down"]
-ProposalStatus = Literal["draft", "approved", "executing", "live", "failed", "rejected"]
+ProposalStatus = Literal["draft", "approved", "executing", "awaiting_publish", "live", "failed", "rejected"]
 Actor = Literal["human", "autopilot"]
+
+
+@dataclass(frozen=True)
+class Feature:
+    """A group of events the developer defines; its width (how many events) is the developer's choice."""
+
+    key: str
+    name: str
+    description: str
+    plans: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -18,7 +29,7 @@ class EventType:
     key: str
     name: str
     description: str
-    family: str | None = None
+    features: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -40,11 +51,21 @@ class BatchResult:
 
 
 @dataclass(frozen=True)
+class Where:
+    prop: str
+    op: Literal["eq", "lt", "lte", "gt", "gte"]
+    value: float | str | bool
+
+
+@dataclass(frozen=True)
 class RuleDefinition:
     event_keys: list[str]
     measure: Measure
     window_days: int | None = None
     distinct_prop: str | None = None
+    value_prop: str | None = None
+    denominator_event_keys: list[str] | None = None
+    where: Where | None = None
 
 
 @dataclass(frozen=True)
@@ -53,7 +74,8 @@ class Rule:
     name: str
     description: str
     definition: RuleDefinition
-    source: Literal["human", "ai"] = "human"
+    source: Literal["human", "ai", "default"] = "human"
+    feature: str | None = None
     rule_id: int | None = None
 
 
@@ -78,6 +100,31 @@ class Ranking:
     n_above: int
     n_below: int
     passed: bool
+
+
+@dataclass(frozen=True)
+class FeatureTier:
+    """Measured cut points (B) that turn one feature value into f_<feature>_tier (written by C)."""
+
+    feature: str
+    rule_key: str
+    low_max: float
+    mid_max: float
+    passed: bool
+
+    @property
+    def attribute(self) -> str:
+        return f"f_{self.feature}_tier"
+
+    def tier(self, value: float) -> Tier:
+        return "low" if value <= self.low_max else "mid" if value <= self.mid_max else "high"
+
+
+@dataclass(frozen=True)
+class SyncResult:
+    checked: int
+    changed: int
+    attributes_written: int
 
 
 @dataclass(frozen=True)
@@ -125,6 +172,9 @@ class ProposalDraft:
     evidence: dict[str, Any] = field(default_factory=dict)
     holdout_pct: int = 20
     cooldown_days: int = 7
+    adapty_filters: list[Condition] = field(default_factory=list)
+    highlight_feature: str | None = None
+    needs_publish: bool = False
 
 
 @dataclass(frozen=True)
