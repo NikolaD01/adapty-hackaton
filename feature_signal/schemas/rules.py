@@ -38,7 +38,7 @@ class RuleDefinitionIn(BaseModel):
 
 
 class RuleIn(BaseModel):
-    key: str = Field(pattern=r"^[a-z][a-z0-9_]{1,39}$")
+    key: str = Field(pattern=r"^[a-z][a-z0-9_]{1,79}$")  # stays with us; default rules can be long
     name: str = Field(min_length=1, max_length=120)
     description: str = Field(min_length=1, max_length=500)
     source: Literal["human", "ai", "default"] = "human"  # default = created with the feature

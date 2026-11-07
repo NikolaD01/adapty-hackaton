@@ -6,7 +6,7 @@
     {
       "id": "A1",
       "title": "Tables and first migration",
-      "status": "todo",
+      "status": "done",
       "brief": "A ch.1",
       "steps": [
         "Define features, event_types, event_type_features, events, user_action_counts, rules (feature, source), user_values, feature_tiers in db/tables.py",

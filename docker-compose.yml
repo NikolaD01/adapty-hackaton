@@ -12,6 +12,7 @@ x-backend: &backend
     ADAPTY_CLI: adapty
   volumes:
     - ./feature_signal:/app/feature_signal
+    - ./alembic.ini:/app/alembic.ini
     - ./tests:/app/tests
     - ./tools:/app/tools
     - ./docs/tasks:/app/docs/tasks
@@ -24,7 +25,7 @@ services:
     <<: *backend
     ports:
       - "8000:8000"
-    command: uvicorn feature_signal.main:app --host 0.0.0.0 --port 8000 --reload
+    command: sh -c "alembic upgrade head && uvicorn feature_signal.main:app --host 0.0.0.0 --port 8000 --reload"
 
   test:
     <<: *backend
