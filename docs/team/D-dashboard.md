@@ -18,10 +18,11 @@ from the contract examples), Vitest + Testing Library. Env: `VITE_API_BASE` (def
 
 ## Dashboard reference
 
-The product owner will provide a screenshot of the Adapty admin dashboard before UI work starts.
-Recreate the dashboard shell 1:1 from that screenshot, including the sidebar labels, order, and styling.
-Only our feature, **Behavioral Targeting**, is interactive in the sidebar. The other entries are
-visible as visual references and disabled. Keep the feature screens below inside our section.
+Recreate the dashboard shell 1:1 from the [Adapty admin screenshot](../web/adapty-admin-reference.png),
+including the sidebar labels, order, and styling.
+Add **Behavioral Targeting** after **A/B tests**, followed by **Getting started**. The Adapty logo and
+**Overview** link to the home page. **Behavioral Targeting** opens Events. The rest of the sidebar is
+static. Keep the feature screens below inside our section.
 
 ## Screens (routes)
 1. `/demo` — fake Lumen app: buttons **Import photo**, **Remove background**, **AI enhance**, **Export**,
