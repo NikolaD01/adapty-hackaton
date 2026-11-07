@@ -1,15 +1,17 @@
 # CLAUDE.md — Feature Signal for Adapty
 
 Read this whole file before doing anything. Then read your role brief (below). Four developers and
-four agents work in this repo **at the same time** until code freeze (Sunday 15:00). Speed matters,
+four agents work in this repo **at the same time** until code freeze (Sunday 8 Nov, see the timeline in §11). Speed matters,
 but `main` must always run.
 
 ## 1. What we build (one paragraph)
 An add-on for Adapty that learns from what users *do* inside the app which group should see which
-offer. The app sends behavior events through our tiny SDK. We store the history, derive values with
-rules (AI suggests the rules, measurement decides which ones matter), find groups that really differ,
-pick the offer for each group from **randomized** A/B arms, and write the decision into Adapty as a
-few custom attributes. Adapty's own machinery then serves a different paywall to that segment and an
+offer. The developer groups events into **features** and the app sends them (with small numeric props
+like `tokens_left`) through our tiny SDK. We store the history, keep a profile per user and feature
+(default values + composed values the AI suggests), measure which values really separate buyers,
+turn passed ones into `low/mid/high` tiers, find groups that differ, pick the offer for each group from
+**randomized** A/B arms, and write only `p_segment` + `f_<feature>_tier` into Adapty (≤11 of 30 slots).
+A fast loop re-checks a user after every event and writes only changed attributes. Adapty's own machinery then serves a different paywall to that segment and an
 A/B test with a holdout measures net revenue. Two modes: **human** (default: a person approves,
 edits or rejects every proposal) and **autopilot** (bounded; publishing a flow is always human).
 We do **not** build a paywall editor, billing SDK or analytics — Adapty has those.
@@ -86,16 +88,19 @@ The LLM touches exactly two services: `rule_suggest_service` (B) and `paywall_se
 - Adapty CLI 0.18 has **no delete** for segments or placements (only create/get/list/update); deleting is
   manual in the dashboard. So: create segments only on approve, idempotent by title `[fs] <segment_key>`
   (look up with `segments list` first, then `update`); never create throwaway segments in tests or loops;
-  "undo" = remove the audience from the placement and null our `p_*` attributes. Tests use fakes only.
+  "undo" = remove the audience from the placement and null our `p_segment` / `f_*_tier` attributes. Tests use fakes only.
+- Feature keys ≤22 chars (they become `f_<key>_tier`, Adapty key max 30). Event props carry numbers and
+  short labels, never free text (prompts stay in the app). Quotas come from the app as state (`tokens_left`).
+- Time of day is not collected: Adapty serves per segment, not per hour.
 - LLM: OpenAI (key in `.env`). The model id in `.env.example` is a placeholder until B verifies it with
   `GET /v1/models`; never hard-code a model name outside `core/config.py`.
 
 ## 6. Ownership (who may edit what)
 | Path | Owner | Others |
 |---|---|---|
-| `sdk/js/**`, `api/v1/{events,catalog,rules,values}.py`, `repositories/{event_types,events,rules,values}.py`, `services/{ingest,rule,value}_service.py`, `domain/rules.py`, `db/**` (tables + migrations) | A | read only |
+| `sdk/js/**`, `api/v1/{events,catalog,rules,values}.py`, `repositories/{features,event_types,events,rules,values,tiers}.py`, `services/{ingest,rule,value}_service.py`, `domain/rules.py`, `db/**` (tables + migrations) | A | read only |
 | `domain/{ranking,uplift}.py`, `services/{rule_suggest,insight}_service.py`, `api/v1/insights.py`, `integrations/llm/**`, `scripts/train_from_offline.py` | B | read only |
-| `integrations/adapty/**`, `services/{proposal,activation,paywall,lookup}_service.py`, `api/v1/{proposals,settings,decisions,lookup}.py`, `repositories/{proposals,decisions}.py` | C | read only |
+| `integrations/adapty/**`, `services/{proposal,activation,paywall,lookup,membership}_service.py`, `api/v1/{proposals,settings,decisions,lookup,membership}.py`, `repositories/{proposals,decisions}.py` | C | read only |
 | `web/**` | D | read only |
 | **Shared:** `schemas/**`, `domain/models.py`, `domain/ports.py`, `docs/contracts/**`, `core/**`, `main.py`, `api/v1/router.py`, `pyproject.toml`, `Makefile`, `.claude/**`, `CLAUDE.md`, `tools/**`, `.github/**`, `docs/tasks/shared.json` | everyone, **only via the `contract-change` skill** (small PR, one teammate acks) | |
 | `docs/<your-area>/**`, `AI_LOG.md` (edit sections in place), `docs/STATUS.md` (your row only), `docs/tasks/<ROLE>.json` (your file only) | you | |

@@ -26,18 +26,24 @@ visible as visual references and disabled. Keep the feature screens below inside
 ## Screens (routes)
 1. `/demo` — fake Lumen app: buttons **Import photo**, **Remove background**, **AI enhance**, **Export**,
    **Export in full resolution** (shows "Pro only"), user switcher (2–3 seed ids). The app calls
-   `track()` from the SDK at the point where it knows what happened. A side panel shows the last
-   events from `/users/{id}/timeline`.
-2. `/dashboard/events` — event catalog (`GET /event-types`) and live counter. **Add event** saves a
-   key, name, and short description for AI using `POST /event-types`. Family is optional.
+   `track()` from the SDK at the point where it knows what happened, with numeric props where they
+   exist (`edits_left` after an AI edit). A side panel shows the last events from
+   `/users/{id}/timeline` and the user's feature profile from `/users/{id}/features` (values + tier),
+   so the audience sees a click change the profile and the tier.
+2. `/dashboard/events` — features and the event catalog. **Add feature** (`POST /features`: key, name,
+   description, which plans include it) and **Add event** (`POST /event-types`: key, name, short
+   description for AI, features multi-select). Show each feature with its events and live counter.
 3. `/dashboard/metrics` — rules list + **Suggest with AI** (`POST /rules:suggest`) → suggestion cards
    with rationale → **Accept** (POSTs the rule) / dismiss.
 4. `/dashboard/insights` — run (`POST /insights:run`), rankings table (feature, threshold, direction,
-   lift with CI bar, holdout, passed ✓/✗), segments, uplift per segment with CI.
+   lift with CI bar, holdout, passed ✓/✗), tiers per feature (cut points, which go to Adapty),
+   hypotheses (labelled "not measured yet → A/B test"), segments, uplift per segment with CI.
 5. `/dashboard/proposals` — the core screen. Card per proposal: finding, rule (trigger, condition,
    action), what changes on the paywall, expected effect ± CI, holdout %, reason; buttons
    **Approve / Edit / Reject**. Edit = form for the PATCH whitelist only (threshold/condition value,
-   holdout %, flow, cooldown). Status chips `draft/approved/executing/live/failed/rejected`.
+   holdout %, flow, cooldown). Status chips `draft/approved/executing/awaiting_publish/live/failed/rejected`
+   (`awaiting_publish` = "publish the new paywall in Adapty to start the test"). Show the Adapty filters
+   ("no subscription") next to the condition and the highlighted feature.
    Mode toggle **Human / Autopilot** (`GET/PUT /settings`), autopilot shows a warning banner.
 6. `/dashboard/decisions` — decision log with step-by-step results and `decided_by` badge.
 7. `/dashboard/lookup` — pick two users + placement → side-by-side served flow names (the demo finale).
