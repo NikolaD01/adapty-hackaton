@@ -1,5 +1,7 @@
 """Async engine and session factory (owner A). SQLite runs in WAL mode so demo reads don't block ingest."""
 
+from collections.abc import AsyncIterator
+
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
@@ -29,3 +31,9 @@ def enable_sqlite_pragmas(sync_engine: Engine) -> None:
 
 engine = make_engine(get_settings().database_url)
 SessionFactory = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+
+
+async def get_session() -> AsyncIterator[AsyncSession]:
+    """FastAPI dependency: one session per request. Services commit; an exception rolls back."""
+    async with SessionFactory() as session:
+        yield session

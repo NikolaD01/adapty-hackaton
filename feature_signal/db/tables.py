@@ -4,7 +4,7 @@ Column names follow docs/contracts/api.md. Nested contract parts are JSON column
 new Alembic migration in feature_signal/db/migrations/versions (never edit an applied one).
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import (
     JSON,
@@ -19,11 +19,31 @@ from sqlalchemy import (
     UniqueConstraint,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.types import TypeDecorator
 
 APP_ID = String(64)
 USER_ID = String(128)
 KEY = String(40)
 RULE_KEY = String(80)  # <feature>_used_<event> can reach 68 chars; rule keys never go to Adapty
+
+
+class UtcDateTime(TypeDecorator):
+    """Stores UTC, returns timezone-aware UTC. SQLite drops the zone, the contract needs `...Z`."""
+
+    impl = DateTime(timezone=True)
+    cache_ok = True
+
+    def process_bind_param(self, value: datetime | None, dialect):  # noqa: ANN001
+        if value is None:
+            return None
+        if value.tzinfo is None:
+            raise ValueError("naive datetime: pass a timezone-aware UTC value")
+        return value.astimezone(timezone.utc)
+
+    def process_result_value(self, value: datetime | None, dialect):  # noqa: ANN001
+        if value is None:
+            return None
+        return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value.astimezone(timezone.utc)
 
 
 class Base(DeclarativeBase):
@@ -41,7 +61,7 @@ class FeatureRow(Base):
     name: Mapped[str] = mapped_column(String(100))
     description: Mapped[str] = mapped_column(String(500))
     plans: Mapped[list] = mapped_column(JSON, default=list)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime())
 
 
 class EventTypeRow(Base):
@@ -53,7 +73,7 @@ class EventTypeRow(Base):
     key: Mapped[str] = mapped_column(KEY)
     name: Mapped[str] = mapped_column(String(100))
     description: Mapped[str] = mapped_column(String(500))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime())
 
 
 class EventTypeFeatureRow(Base):
@@ -79,8 +99,8 @@ class EventRow(Base):
     app_id: Mapped[str] = mapped_column(APP_ID)
     customer_user_id: Mapped[str] = mapped_column(USER_ID)
     action_id: Mapped[int] = mapped_column(ForeignKey("event_types.action_id"))
-    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    occurred_at: Mapped[datetime] = mapped_column(UtcDateTime())
+    received_at: Mapped[datetime] = mapped_column(UtcDateTime())
     props: Mapped[dict] = mapped_column(JSON, default=dict)
     decision_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
@@ -94,7 +114,7 @@ class UserActionCountRow(Base):
     customer_user_id: Mapped[str] = mapped_column(USER_ID, primary_key=True)
     action_id: Mapped[int] = mapped_column(ForeignKey("event_types.action_id"), primary_key=True)
     n: Mapped[int] = mapped_column(Integer, default=0)
-    last_ts: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    last_ts: Mapped[datetime] = mapped_column(UtcDateTime())
 
 
 # ---------- rules and values ----------------------------------------------------------------------
@@ -113,7 +133,7 @@ class RuleRow(Base):
     feature: Mapped[str | None] = mapped_column(String(22), nullable=True)
     definition: Mapped[dict] = mapped_column(JSON)
     value_type: Mapped[str] = mapped_column(String(10), default="float")
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime())
 
 
 class UserValueRow(Base):
@@ -123,7 +143,7 @@ class UserValueRow(Base):
     customer_user_id: Mapped[str] = mapped_column(USER_ID, primary_key=True)
     rule_key: Mapped[str] = mapped_column(RULE_KEY, primary_key=True)
     value: Mapped[float] = mapped_column(Float)
-    computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    computed_at: Mapped[datetime] = mapped_column(UtcDateTime())
 
 
 class FeatureTierRow(Base):
@@ -137,7 +157,7 @@ class FeatureTierRow(Base):
     low_max: Mapped[float] = mapped_column(Float)
     mid_max: Mapped[float] = mapped_column(Float)
     passed: Mapped[bool] = mapped_column(Boolean)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(UtcDateTime())
 
 
 # ---------- C: proposals, decisions, settings, attribute state ------------------------------------
@@ -165,8 +185,8 @@ class ProposalRow(Base):
     evidence: Mapped[dict] = mapped_column(JSON, default=dict)
     edits: Mapped[list] = mapped_column(JSON, default=list)
     adapty: Mapped[dict] = mapped_column(JSON, default=dict)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime())
+    updated_at: Mapped[datetime] = mapped_column(UtcDateTime())
 
 
 class DecisionRow(Base):
@@ -178,7 +198,7 @@ class DecisionRow(Base):
     decided_by: Mapped[str] = mapped_column(String(10))
     action: Mapped[str] = mapped_column(String(20))
     steps: Mapped[list] = mapped_column(JSON, default=list)
-    at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    at: Mapped[datetime] = mapped_column(UtcDateTime())
 
 
 class AppSettingsRow(Base):
@@ -186,7 +206,7 @@ class AppSettingsRow(Base):
 
     app_id: Mapped[str] = mapped_column(APP_ID, primary_key=True)
     settings: Mapped[dict] = mapped_column(JSON)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(UtcDateTime())
 
 
 class AdaptyAttributeStateRow(Base):
@@ -197,4 +217,4 @@ class AdaptyAttributeStateRow(Base):
     app_id: Mapped[str] = mapped_column(APP_ID, primary_key=True)
     customer_user_id: Mapped[str] = mapped_column(USER_ID, primary_key=True)
     attributes: Mapped[dict] = mapped_column(JSON, default=dict)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(UtcDateTime())
