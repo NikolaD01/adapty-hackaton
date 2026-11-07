@@ -1,0 +1,17 @@
+.git
+.env
+.env.*
+!.env.example
+CLAUDE.local.md
+.claude/settings.local.json
+.venv
+**/__pycache__
+*.egg-info
+.pytest_cache
+.ruff_cache
+data/*.db
+data/*.db-*
+data/offline
+**/node_modules
+**/dist
+web

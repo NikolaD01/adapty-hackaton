@@ -18,21 +18,35 @@ jobs:
       - run: ruff check . && ruff format --check .
       - run: pytest -q
       - run: python tools/tasks.py check
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose build api
+      - run: docker compose run --rm test
+      - run: docker compose run --rm api adapty --version
+  # web/ and sdk/js/ don't exist yet; each job skips itself until its package.json lands.
   web:
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('web/package.json') != '' }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - id: has
+        run: echo "pkg=$([ -f web/package.json ] && echo yes || echo no)" >> "$GITHUB_OUTPUT"
+      - if: steps.has.outputs.pkg == 'yes'
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: cd web && (npm ci || npm install) && npm test -- --run && npm run build
+      - if: steps.has.outputs.pkg == 'yes'
+        run: cd web && (npm ci || npm install) && npm test -- --run && npm run build
   sdk:
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('sdk/js/package.json') != '' }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - id: has
+        run: echo "pkg=$([ -f sdk/js/package.json ] && echo yes || echo no)" >> "$GITHUB_OUTPUT"
+      - if: steps.has.outputs.pkg == 'yes'
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: cd sdk/js && (npm ci || npm install) && npm test -- --run
+      - if: steps.has.outputs.pkg == 'yes'
+        run: cd sdk/js && (npm ci || npm install) && npm test -- --run

@@ -1,0 +1,41 @@
+# docker compose up api                      -> http://localhost:8000/docs (code hot-reloads)
+# docker compose run --rm test               -> lint + tests + task graph check
+# docker compose run --rm adapty-login       -> one-time Adapty CLI browser login (C only)
+# docker compose run --rm api adapty auth whoami
+x-backend: &backend
+  build: .
+  image: feature-signal:dev
+  env_file:
+    - path: .env
+      required: false
+  environment:
+    ADAPTY_CLI: adapty
+  volumes:
+    - ./feature_signal:/app/feature_signal
+    - ./tests:/app/tests
+    - ./tools:/app/tools
+    - ./docs/tasks:/app/docs/tasks
+    - ./scripts:/app/scripts
+    - ./data:/app/data
+    - adapty-config:/home/node/.config/adapty
+
+services:
+  api:
+    <<: *backend
+    ports:
+      - "8000:8000"
+    command: uvicorn feature_signal.main:app --host 0.0.0.0 --port 8000 --reload
+
+  test:
+    <<: *backend
+    profiles: [tools]
+    command: sh -c "ruff check . && ruff format --check . && pytest -q && python tools/tasks.py check"
+
+  adapty-login:
+    <<: *backend
+    profiles: [tools]
+    network_mode: host # the browser callback lands on localhost
+    command: adapty auth login
+
+volumes:
+  adapty-config:

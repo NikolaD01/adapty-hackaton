@@ -13,10 +13,14 @@
 3. **Create `.env`**: `cp .env.example .env`, then fill in the keys you need (C: `ADAPTY_SECRET_KEY`,
    B: `OPENAI_API_KEY`). Share keys one-to-one or through a password manager, never in the repo or a group chat.
 4. **Environment**
-   - Backend: `make install && make test` (needs `python3-venv`; without it: `make test-docker`).
+   - Backend with Docker (recommended, same as CI): `make up` → http://localhost:8000/docs (hot reload);
+     `make test-docker` runs lint + tests + task check in the image.
+   - Backend on the host: `make install && make test` (needs `python3-venv`).
    - Offline dataset (B must, others if needed): `make offline-data`.
    - Frontend (D): `cd web && npm install && npm run dev` (after the first chapter).
-   - Adapty CLI (C): the team's dev container (`./dev adapty auth whoami` from the hackathon folder).
+   - Adapty CLI (C): it is inside the image. Log in once with `make adapty-login` (browser opens; Linux host
+     networking), check with `docker compose run --rm api adapty auth whoami`. The login lives in the
+     `adapty-config` volume and survives rebuilds.
 5. **Start Claude Code in the repo root** and send:
    > Read CLAUDE.md and your role brief in docs/team/. Create a branch for the first chapter and start. When the chapter is done, run chapter-done.
 6. **Working rhythm**
