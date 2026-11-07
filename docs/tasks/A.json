@@ -132,7 +132,7 @@
     {
       "id": "A5",
       "title": "JS SDK track()",
-      "status": "todo",
+      "status": "done",
       "brief": "A ch.4",
       "steps": [
         "sdk/js package (tsc, vitest)",
