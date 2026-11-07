@@ -30,6 +30,8 @@ Run every step in order. Stop and tell the developer (in Serbian) if a step fail
 - Create or update `docs/<area>/<NN>-<slug>.md` from `docs/templates/chapter.md`. Fill every section;
   "How to test" must contain the exact command and the expected output. Numbers with units.
 - `docs/STATUS.md`: update only your area's row (chapter, state, next).
+- Index: add the chapter link to your area's row in `docs/README.md` and to `docs/<area>/README.md`;
+  if the chapter changes what works, update the "What works today" table in the root `README.md`.
 - `AI_LOG.md` (½–1 page, fixed sections — keep the structure): if this chapter added a tool, an agent/MCP
   setup piece, a prompt that clearly worked better than the listed ones, or a caught AI mistake that is a
   better example than the current one, update that section in place. Keep the whole file within one page.
