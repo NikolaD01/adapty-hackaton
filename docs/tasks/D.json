@@ -3,59 +3,275 @@
   "name": "Dashboard & Demo",
   "inbox_ack": "2026-11-07T00:00:00Z",
   "tasks": [
-    {"id": "D1", "title": "Web scaffold and MSW mocks from the contract", "status": "todo", "brief": "D ch.1",
-     "steps": ["Vite + React + TS + Tailwind + Router + TanStack Query", "MSW handlers from every api.md example",
-               "VITE_API_BASE / VITE_USE_MOCKS / VITE_APP_ID", "Every route renders with mocks; 501 -> 'coming soon'"],
-     "depends_on": [],
-     "produces": ["web:scaffold", "web:mocks", "path:web/**"],
-     "consumes": ["contract:api"],
-     "done_when": "all routes render with mocks; vitest smoke test green"},
-    {"id": "D2", "title": "Proposals screen + mode toggle", "status": "todo", "brief": "D ch.2",
-     "steps": ["Proposal card: finding, rule, paywall change, effect +- CI, holdout, reason", "Approve / Edit (PATCH whitelist) / Reject",
-               "Status chips; approve disabled while executing", "Human/Autopilot toggle with warning banner", "Tests per status + edit payload"],
-     "depends_on": [{"id": "D1", "kind": "hard"}, {"id": "C3", "kind": "contract"}],
-     "produces": ["web:proposals"],
-     "consumes": ["api:proposals", "api:settings"],
-     "done_when": "approve/edit/reject flow works on mocks; tests green"},
-    {"id": "D3", "title": "Insights and metrics screens", "status": "todo", "brief": "D ch.3",
-     "steps": ["Rankings table with CI bars, passed marks", "Segments + uplift with CI", "Rules list + Suggest with AI + Accept"],
-     "depends_on": [{"id": "D1", "kind": "hard"}, {"id": "B5", "kind": "contract"}, {"id": "B6", "kind": "contract"},
-                    {"id": "A6", "kind": "contract"}],
-     "produces": ["web:insights", "web:metrics"],
-     "consumes": ["api:insights", "api:rules-suggest", "api:rules"],
-     "done_when": "screens render contract examples; accept posts a rule"},
-    {"id": "D4", "title": "Demo app with the real SDK", "status": "todo", "brief": "D ch.4",
-     "steps": ["Buttons: import, remove background, AI enhance, export, export full-res (Pro only)", "User switcher (seed ids)",
-               "track() per click; side panel from /timeline", "Test: button calls track with the right key"],
-     "depends_on": [{"id": "D1", "kind": "hard"}, {"id": "A5", "kind": "hard"}, {"id": "A4", "kind": "contract"}],
-     "produces": ["web:demo"],
-     "consumes": ["sdk:track", "api:timeline"],
-     "done_when": "clicks produce events visible in the timeline"},
-    {"id": "D5", "title": "Events catalog screen", "status": "todo", "brief": "D screens",
-     "steps": ["GET /event-types table + live counter"],
-     "depends_on": [{"id": "D1", "kind": "hard"}, {"id": "A2", "kind": "contract"}],
-     "produces": ["web:events"],
-     "consumes": ["api:event-types"],
-     "done_when": "catalog renders"},
-    {"id": "D6", "title": "Decisions and lookup screens", "status": "todo", "brief": "D ch.6",
-     "steps": ["Decision log with steps and decided_by badge", "Lookup: two users + placement -> side-by-side flow names"],
-     "depends_on": [{"id": "D1", "kind": "hard"}, {"id": "C5", "kind": "contract"}, {"id": "C6", "kind": "contract"}],
-     "produces": ["web:decisions", "web:lookup"],
-     "consumes": ["api:decisions", "api:lookup"],
-     "done_when": "both screens render contract examples"},
-    {"id": "D7", "title": "Switch to the real backend per endpoint", "status": "todo", "brief": "D ch.5",
-     "steps": ["Turn off mocks endpoint by endpoint as owners finish", "Keep MSW only for 501 routes"],
-     "depends_on": [{"id": "A2", "kind": "hard"}, {"id": "A3", "kind": "hard"}, {"id": "A4", "kind": "hard"},
-                    {"id": "A6", "kind": "hard"}, {"id": "B5", "kind": "hard"}, {"id": "B6", "kind": "hard"},
-                    {"id": "C3", "kind": "hard"}, {"id": "C5", "kind": "hard"}, {"id": "C6", "kind": "hard"}],
-     "produces": ["web:live"],
-     "consumes": ["contract:api"],
-     "done_when": "VITE_USE_MOCKS=false and the S2 loop works in the UI"},
-    {"id": "D8", "title": "Demo polish", "status": "todo", "brief": "D ch.6",
-     "steps": ["1280x800 readable", "Fast transitions", "Net revenue 90d and refunds shown, never conversion alone"],
-     "depends_on": [{"id": "D2", "kind": "hard"}, {"id": "D6", "kind": "hard"}],
-     "produces": ["web:polish"],
-     "consumes": [],
-     "done_when": "dry run S3 passes"}
+    {
+      "id": "D1",
+      "title": "Web scaffold and MSW mocks from the contract",
+      "status": "todo",
+      "brief": "D ch.1",
+      "steps": [
+        "Vite + React + TS + Tailwind + Router + TanStack Query",
+        "Dashboard shell recreated from the product owner's Adapty admin screenshot; only Behavioral Targeting is interactive, other sidebar entries disabled",
+        "MSW handlers from every api.md example",
+        "VITE_API_BASE / VITE_USE_MOCKS / VITE_APP_ID",
+        "Every route renders with mocks; 501 -> 'coming soon'"
+      ],
+      "depends_on": [],
+      "produces": [
+        "web:scaffold",
+        "web:mocks",
+        "path:web/**"
+      ],
+      "consumes": [
+        "contract:api"
+      ],
+      "done_when": "all routes render with mocks; vitest smoke test green"
+    },
+    {
+      "id": "D2",
+      "title": "Proposals screen + mode toggle",
+      "status": "todo",
+      "brief": "D ch.2",
+      "steps": [
+        "Proposal card: finding, rule, paywall change, effect +- CI, holdout, reason",
+        "Approve / Edit (PATCH whitelist) / Reject",
+        "Status chips; approve disabled while executing",
+        "Human/Autopilot toggle with warning banner",
+        "Tests per status + edit payload"
+      ],
+      "depends_on": [
+        {
+          "id": "D1",
+          "kind": "hard"
+        },
+        {
+          "id": "C3",
+          "kind": "contract"
+        }
+      ],
+      "produces": [
+        "web:proposals"
+      ],
+      "consumes": [
+        "api:proposals",
+        "api:settings"
+      ],
+      "done_when": "approve/edit/reject flow works on mocks; tests green"
+    },
+    {
+      "id": "D3",
+      "title": "Insights and metrics screens",
+      "status": "todo",
+      "brief": "D ch.3",
+      "steps": [
+        "Rankings table with CI bars, passed marks",
+        "Segments + uplift with CI",
+        "Rules list + Suggest with AI + Accept"
+      ],
+      "depends_on": [
+        {
+          "id": "D1",
+          "kind": "hard"
+        },
+        {
+          "id": "B5",
+          "kind": "contract"
+        },
+        {
+          "id": "B6",
+          "kind": "contract"
+        },
+        {
+          "id": "A6",
+          "kind": "contract"
+        }
+      ],
+      "produces": [
+        "web:insights",
+        "web:metrics"
+      ],
+      "consumes": [
+        "api:insights",
+        "api:rules-suggest",
+        "api:rules"
+      ],
+      "done_when": "screens render contract examples; accept posts a rule"
+    },
+    {
+      "id": "D4",
+      "title": "Demo app with the real SDK",
+      "status": "todo",
+      "brief": "D ch.4",
+      "steps": [
+        "Buttons: import, remove background, AI enhance, export, export full-res (Pro only)",
+        "Export in full resolution on a free user calls track('pt_track_hd_export_blocked') when the plan check blocks it",
+        "User switcher (seed ids)",
+        "track() per click; side panel from /timeline",
+        "Test: button calls track with the right key"
+      ],
+      "depends_on": [
+        {
+          "id": "D1",
+          "kind": "hard"
+        },
+        {
+          "id": "A5",
+          "kind": "hard"
+        },
+        {
+          "id": "A4",
+          "kind": "contract"
+        }
+      ],
+      "produces": [
+        "web:demo"
+      ],
+      "consumes": [
+        "sdk:track",
+        "api:timeline"
+      ],
+      "done_when": "clicks produce events visible in the timeline"
+    },
+    {
+      "id": "D5",
+      "title": "Events catalog screen + Add event",
+      "status": "todo",
+      "brief": "D screens",
+      "steps": [
+        "GET /event-types table + live counter",
+        "Add event form: key, name, short description for AI, optional family -> POST /event-types",
+        "Test: form posts the right payload"
+      ],
+      "depends_on": [
+        {
+          "id": "D1",
+          "kind": "hard"
+        },
+        {
+          "id": "A2",
+          "kind": "contract"
+        }
+      ],
+      "produces": [
+        "web:events"
+      ],
+      "consumes": [
+        "api:event-types"
+      ],
+      "done_when": "catalog renders; Add event creates pt_track_hd_export_blocked"
+    },
+    {
+      "id": "D6",
+      "title": "Decisions and lookup screens",
+      "status": "todo",
+      "brief": "D ch.6",
+      "steps": [
+        "Decision log with steps and decided_by badge",
+        "Lookup: two users + placement -> side-by-side flow names"
+      ],
+      "depends_on": [
+        {
+          "id": "D1",
+          "kind": "hard"
+        },
+        {
+          "id": "C5",
+          "kind": "contract"
+        },
+        {
+          "id": "C6",
+          "kind": "contract"
+        }
+      ],
+      "produces": [
+        "web:decisions",
+        "web:lookup"
+      ],
+      "consumes": [
+        "api:decisions",
+        "api:lookup"
+      ],
+      "done_when": "both screens render contract examples"
+    },
+    {
+      "id": "D7",
+      "title": "Switch to the real backend per endpoint",
+      "status": "todo",
+      "brief": "D ch.5",
+      "steps": [
+        "Turn off mocks endpoint by endpoint as owners finish",
+        "Keep MSW only for 501 routes"
+      ],
+      "depends_on": [
+        {
+          "id": "A2",
+          "kind": "hard"
+        },
+        {
+          "id": "A3",
+          "kind": "hard"
+        },
+        {
+          "id": "A4",
+          "kind": "hard"
+        },
+        {
+          "id": "A6",
+          "kind": "hard"
+        },
+        {
+          "id": "B5",
+          "kind": "hard"
+        },
+        {
+          "id": "B6",
+          "kind": "hard"
+        },
+        {
+          "id": "C3",
+          "kind": "hard"
+        },
+        {
+          "id": "C5",
+          "kind": "hard"
+        },
+        {
+          "id": "C6",
+          "kind": "hard"
+        }
+      ],
+      "produces": [
+        "web:live"
+      ],
+      "consumes": [
+        "contract:api"
+      ],
+      "done_when": "VITE_USE_MOCKS=false and the S2 loop works in the UI"
+    },
+    {
+      "id": "D8",
+      "title": "Demo polish",
+      "status": "todo",
+      "brief": "D ch.6",
+      "steps": [
+        "1280x800 readable",
+        "Fast transitions",
+        "Net revenue 90d and refunds shown, never conversion alone"
+      ],
+      "depends_on": [
+        {
+          "id": "D2",
+          "kind": "hard"
+        },
+        {
+          "id": "D6",
+          "kind": "hard"
+        }
+      ],
+      "produces": [
+        "web:polish"
+      ],
+      "consumes": [],
+      "done_when": "dry run S3 passes"
+    }
   ]
 }

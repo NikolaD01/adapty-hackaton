@@ -3,67 +3,248 @@
   "name": "Ingest & Rules",
   "inbox_ack": "2026-11-07T00:00:00Z",
   "tasks": [
-    {"id": "A1", "title": "Tables and first migration", "status": "todo", "brief": "A ch.1",
-     "steps": ["Define event_types, events, user_action_counts, rules, user_values in db/tables.py",
-               "Add proposals and decisions tables with C's columns", "Alembic init + first migration",
-               "Enable SQLite WAL", "Integration test: insert/read one row per table"],
-     "depends_on": [],
-     "produces": ["table:event_types", "table:events", "table:user_action_counts", "table:rules", "table:user_values",
-                  "table:proposals", "table:decisions", "path:feature_signal/db/**"],
-     "consumes": [],
-     "done_when": "alembic upgrade head creates all tables; integration test green"},
-    {"id": "A2", "title": "Event catalog API", "status": "todo", "brief": "A ch.2",
-     "steps": ["EventTypeRepo.upsert/list", "POST/GET /event-types (upsert by key)", "Tests: create, update same key, list"],
-     "depends_on": [{"id": "A1", "kind": "hard"}],
-     "produces": ["api:event-types", "port:EventTypeRepo", "path:feature_signal/api/v1/catalog.py",
-                  "path:feature_signal/repositories/event_types.py"],
-     "consumes": ["table:event_types"],
-     "done_when": "re-registering a key returns 200 with updated text; tests green"},
-    {"id": "A3", "title": "Idempotent event ingest", "status": "todo", "brief": "A ch.3",
-     "steps": ["EventSink.record_batch: insert ON CONFLICT(event_id) DO NOTHING",
-               "Increment user_action_counts only for rows actually inserted (same transaction)",
-               "Reject unknown keys into unknown_keys; max 500 per batch", "POST /events route",
-               "Tests: duplicate id counted once, counter unchanged on duplicate, unknown key"],
-     "depends_on": [{"id": "A1", "kind": "hard"}, {"id": "A2", "kind": "hard"}],
-     "produces": ["api:events", "port:EventSink", "path:feature_signal/api/v1/events.py",
-                  "path:feature_signal/repositories/events.py", "path:feature_signal/services/ingest_service.py"],
-     "consumes": ["table:events", "table:user_action_counts", "api:event-types"],
-     "done_when": "curl event lands in DB; same event_id twice -> duplicates:1, counter unchanged"},
-    {"id": "A4", "title": "User timeline API", "status": "todo", "brief": "A ch.3",
-     "steps": ["EventReader.history", "GET /users/{id}/timeline?limit", "Test ordering by occurred_at desc"],
-     "depends_on": [{"id": "A3", "kind": "hard"}],
-     "produces": ["api:timeline", "port:EventReader"],
-     "consumes": ["table:events"],
-     "done_when": "timeline returns last N events newest first"},
-    {"id": "A5", "title": "JS SDK track()", "status": "todo", "brief": "A ch.4",
-     "steps": ["sdk/js package (tsc, vitest)", "init/registerEventType/track", "Buffer, flush every 2 s or 20 events",
-               "Retry with the same event_ids", "Unit test with fake fetch"],
-     "depends_on": [{"id": "A3", "kind": "contract"}, {"id": "A2", "kind": "contract"}],
-     "produces": ["sdk:track", "path:sdk/js/**"],
-     "consumes": ["api:events", "api:event-types"],
-     "done_when": "D imports track() and events arrive; retry keeps ids (test)"},
-    {"id": "A6", "title": "Rules engine and rules API", "status": "todo", "brief": "A ch.5",
-     "steps": ["domain/rules.py apply(): count, distinct, exists, days_active", "window_days on occurred_at",
-               "RuleRepo + POST/GET /rules", "Unit tests per measure + window boundary"],
-     "depends_on": [{"id": "A1", "kind": "hard"}],
-     "produces": ["domain:rules.apply", "api:rules", "port:RuleRepo", "path:feature_signal/domain/rules.py",
-                  "path:feature_signal/api/v1/rules.py"],
-     "consumes": ["table:rules"],
-     "done_when": "all measures and the boundary case covered by unit tests"},
-    {"id": "A7", "title": "Values recompute and ValueStore.matrix", "status": "todo", "brief": "A ch.6",
-     "steps": ["POST /values:recompute runs every rule for every user", "GET /values paged",
-               "ValueStore.put_many + matrix() -> FeatureMatrix", "Integration test: 3 users x 2 rules"],
-     "depends_on": [{"id": "A3", "kind": "hard"}, {"id": "A6", "kind": "hard"}],
-     "produces": ["port:ValueStore.matrix", "api:values", "path:feature_signal/api/v1/values.py",
-                  "path:feature_signal/repositories/values.py"],
-     "consumes": ["table:user_values", "domain:rules.apply", "table:events"],
-     "done_when": "matrix shape matches FeatureMatrix contract; test green"},
-    {"id": "A8", "title": "Demo event loader (synthetic)", "status": "todo", "brief": "A ch.7",
-     "steps": ["Register Lumen event types", "Generate events for ~200 seed users consistent with ai_edits_first_day",
-               "props.synthetic=true", "Run recompute, check non-empty values"],
-     "depends_on": [{"id": "A2", "kind": "hard"}, {"id": "A3", "kind": "hard"}, {"id": "A7", "kind": "hard"}],
-     "produces": ["data:demo-events"],
-     "consumes": ["data:offline-dataset", "api:events"],
-     "done_when": "recompute returns values for the seeded demo users"}
+    {
+      "id": "A1",
+      "title": "Tables and first migration",
+      "status": "todo",
+      "brief": "A ch.1",
+      "steps": [
+        "Define event_types, events, user_action_counts, rules, user_values in db/tables.py",
+        "Add proposals and decisions tables with C's columns",
+        "Alembic init + first migration",
+        "Enable SQLite WAL",
+        "Integration test: insert/read one row per table"
+      ],
+      "depends_on": [],
+      "produces": [
+        "table:event_types",
+        "table:events",
+        "table:user_action_counts",
+        "table:rules",
+        "table:user_values",
+        "table:proposals",
+        "table:decisions",
+        "path:feature_signal/db/**"
+      ],
+      "consumes": [],
+      "done_when": "alembic upgrade head creates all tables; integration test green"
+    },
+    {
+      "id": "A2",
+      "title": "Event catalog API",
+      "status": "todo",
+      "brief": "A ch.2",
+      "steps": [
+        "EventTypeRepo.upsert/list",
+        "POST/GET /event-types (upsert by key)",
+        "Tests: create, update same key, list"
+      ],
+      "depends_on": [
+        {
+          "id": "A1",
+          "kind": "hard"
+        }
+      ],
+      "produces": [
+        "api:event-types",
+        "port:EventTypeRepo",
+        "path:feature_signal/api/v1/catalog.py",
+        "path:feature_signal/repositories/event_types.py"
+      ],
+      "consumes": [
+        "table:event_types"
+      ],
+      "done_when": "re-registering a key returns 200 with updated text; tests green"
+    },
+    {
+      "id": "A3",
+      "title": "Idempotent event ingest",
+      "status": "todo",
+      "brief": "A ch.3",
+      "steps": [
+        "EventSink.record_batch: insert ON CONFLICT(event_id) DO NOTHING",
+        "Increment user_action_counts only for rows actually inserted (same transaction)",
+        "Reject unknown keys into unknown_keys; max 500 per batch",
+        "POST /events route",
+        "Tests: duplicate id counted once, counter unchanged on duplicate, unknown key"
+      ],
+      "depends_on": [
+        {
+          "id": "A1",
+          "kind": "hard"
+        },
+        {
+          "id": "A2",
+          "kind": "hard"
+        }
+      ],
+      "produces": [
+        "api:events",
+        "port:EventSink",
+        "path:feature_signal/api/v1/events.py",
+        "path:feature_signal/repositories/events.py",
+        "path:feature_signal/services/ingest_service.py"
+      ],
+      "consumes": [
+        "table:events",
+        "table:user_action_counts",
+        "api:event-types"
+      ],
+      "done_when": "curl event lands in DB; same event_id twice -> duplicates:1, counter unchanged"
+    },
+    {
+      "id": "A4",
+      "title": "User timeline API",
+      "status": "todo",
+      "brief": "A ch.3",
+      "steps": [
+        "EventReader.history",
+        "GET /users/{id}/timeline?limit",
+        "Test ordering by occurred_at desc"
+      ],
+      "depends_on": [
+        {
+          "id": "A3",
+          "kind": "hard"
+        }
+      ],
+      "produces": [
+        "api:timeline",
+        "port:EventReader"
+      ],
+      "consumes": [
+        "table:events"
+      ],
+      "done_when": "timeline returns last N events newest first"
+    },
+    {
+      "id": "A5",
+      "title": "JS SDK track()",
+      "status": "todo",
+      "brief": "A ch.4",
+      "steps": [
+        "sdk/js package (tsc, vitest)",
+        "init/registerEventType/track",
+        "Buffer, flush every 2 s or 20 events",
+        "Retry with the same event_ids",
+        "Unit test with fake fetch"
+      ],
+      "depends_on": [
+        {
+          "id": "A3",
+          "kind": "contract"
+        },
+        {
+          "id": "A2",
+          "kind": "contract"
+        }
+      ],
+      "produces": [
+        "sdk:track",
+        "path:sdk/js/**"
+      ],
+      "consumes": [
+        "api:events",
+        "api:event-types"
+      ],
+      "done_when": "D imports track() and events arrive; retry keeps ids (test)"
+    },
+    {
+      "id": "A6",
+      "title": "Rules engine and rules API",
+      "status": "todo",
+      "brief": "A ch.5",
+      "steps": [
+        "domain/rules.py apply(): count, distinct, exists, days_active",
+        "window_days on occurred_at",
+        "RuleRepo + POST/GET /rules",
+        "Unit tests per measure + window boundary"
+      ],
+      "depends_on": [
+        {
+          "id": "A1",
+          "kind": "hard"
+        }
+      ],
+      "produces": [
+        "domain:rules.apply",
+        "api:rules",
+        "port:RuleRepo",
+        "path:feature_signal/domain/rules.py",
+        "path:feature_signal/api/v1/rules.py"
+      ],
+      "consumes": [
+        "table:rules"
+      ],
+      "done_when": "all measures and the boundary case covered by unit tests"
+    },
+    {
+      "id": "A7",
+      "title": "Values recompute and ValueStore.matrix",
+      "status": "todo",
+      "brief": "A ch.6",
+      "steps": [
+        "POST /values:recompute runs every rule for every user",
+        "GET /values paged",
+        "ValueStore.put_many + matrix() -> FeatureMatrix",
+        "Integration test: 3 users x 2 rules"
+      ],
+      "depends_on": [
+        {
+          "id": "A3",
+          "kind": "hard"
+        },
+        {
+          "id": "A6",
+          "kind": "hard"
+        }
+      ],
+      "produces": [
+        "port:ValueStore.matrix",
+        "api:values",
+        "path:feature_signal/api/v1/values.py",
+        "path:feature_signal/repositories/values.py"
+      ],
+      "consumes": [
+        "table:user_values",
+        "domain:rules.apply",
+        "table:events"
+      ],
+      "done_when": "matrix shape matches FeatureMatrix contract; test green"
+    },
+    {
+      "id": "A8",
+      "title": "Demo event loader (synthetic)",
+      "status": "todo",
+      "brief": "A ch.7",
+      "steps": [
+        "Register Lumen event types incl. pt_track_hd_export_blocked (first demo flow, see D brief)",
+        "Generate events for ~200 seed users consistent with ai_edits_first_day",
+        "props.synthetic=true",
+        "Run recompute, check non-empty values"
+      ],
+      "depends_on": [
+        {
+          "id": "A2",
+          "kind": "hard"
+        },
+        {
+          "id": "A3",
+          "kind": "hard"
+        },
+        {
+          "id": "A7",
+          "kind": "hard"
+        }
+      ],
+      "produces": [
+        "data:demo-events"
+      ],
+      "consumes": [
+        "data:offline-dataset",
+        "api:events"
+      ],
+      "done_when": "recompute returns values for the seeded demo users"
+    }
   ]
 }

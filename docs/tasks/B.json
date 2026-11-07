@@ -159,7 +159,8 @@
         "Structured output JSON schema",
         "POST /rules:suggest returns schema-valid rules",
         "Invalid model output -> no suggestion, no crash (test)",
-        "One manual real call recorded in docs/brain/"
+        "One manual real call recorded in docs/brain/",
+        "Demo case: suggest 'HD export blocked >=1 time in the last 7 days' from pt_track_hd_export_blocked"
       ],
       "depends_on": [
         {
