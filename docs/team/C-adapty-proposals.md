@@ -1,0 +1,59 @@
+# Role C — Adapty & Proposals (backend) — the riskiest part, start first
+
+**Mission:** close the loop inside Adapty. A proposal becomes attributes on profiles, a segment, an
+audience on a placement and an A/B test with a control arm — after a human approves (or autopilot,
+within limits). Without this phase we have no proof that we use Adapty, which is a third of the grade.
+
+## You own
+`feature_signal/integrations/adapty/**` (`profile_client.py`, `cli.py`, `lookup.py`, `models.py`) ·
+`feature_signal/services/{proposal,activation,paywall,lookup}_service.py` ·
+`feature_signal/api/v1/{proposals,settings,decisions,lookup}.py` ·
+`feature_signal/repositories/{proposals,decisions}.py` (tables are created by A in `db/tables.py` —
+send A the columns or do it via `contract-change`) · `tests/**/test_{adapty,proposal,activation,paywall,lookup}*.py` · `docs/adapty/**`.
+
+## Inputs / outputs
+- In: drafts from B (`ProposalSink`), values from A (`ValueStore`), human actions from D (PATCH/approve/reject).
+- Out: real changes in the Lumen Adapty app; decision log; lookup results for the demo.
+
+## Chapters
+1. **Profile client** — `AttributeWriter` over httpx: PATCH, body `{"custom_attributes":[{"key","value"}]}`,
+   validate key ≤30 / value ≤50 / ≤30 attributes **before** sending; `value=None` deletes; retries on
+   429/5xx. *Done when:* unit test asserts the exact payload (list, not object) with a mock transport;
+   one manual run on ONE test profile (create `pulse_test_*`, never touch all 6,000).
+2. **CLI adapter** — `AdaptyCli` wraps `adapty ... --json` via subprocess; command prefix from
+   `ADAPTY_CLI` env (`adapty`, or `docker compose -f ../docker-compose.yml run --rm -T dev adapty`).
+   Methods: `segments_create(title, filters)` with `attributes__p_segment@string IN [...]`,
+   `placements_get`, `placements_update(id, developer_id, title, audiences)` (always read → modify →
+   write the full list; segment audience priority 0, default stays last), `ab_tests_create/start`,
+   `flows_get/create/config_update/publish`. *Done when:* tests with a fake runner assert argv;
+   manual run creates a segment visible in the dashboard.
+3. **Proposals + modes** — store drafts from B; `GET/POST /proposals`, `PATCH` (allowed fields only,
+   every change appended to `edits`), `:reject` (reason), `GET/PUT /settings` (`human` default).
+   *Done when:* service tests for state transitions and the PATCH whitelist.
+4. **Activation (approve)** — `ActivationService.execute(proposal)`: (1) for every user in the segment
+   write `p_segment` (+ `p_tier`, `p_top_feature`, `p_top_feature_count`, `p_score`) — batch with a
+   concurrency limit; (2) `segments create`; (3) A/B test on the trigger placement: arm A = existing
+   default flow (control, `holdout_pct`), arm B = `action.flow_id`; create as draft, then start;
+   (4) decision log with every step `ok`/error; status `live` or `failed`. Idempotent: re-approving
+   doesn't duplicate segments (look up by title `[fs] <segment_key>`). In autopilot: same, `decided_by=autopilot`,
+   never publish flows, respect `max_live_proposals`. *Done when:* fake-port test of the full sequence
+   and a manual run on Lumen shows the segment + test in the dashboard.
+5. **Lookup** — `POST /lookup`: GET the profile (segment_hash) and call the SDK flow-variations
+   endpoint (`/api/v1/sdk/in-apps/<key prefix>/flow/variations/<placement>/<md5(placement:segment_hash)>/?disable_cache`,
+   headers `ADAPTY-SDK-PROFILE-ID`, `ADAPTY-PROFILE-SEGMENT-HASH`, `ADAPTY-SDK-PLATFORM`,
+   `ADAPTY-SDK-VERSION`). Reference implementation: `workspace/validation/pulse_validate.py` (outside
+   this repo, ask the developer). *Done when:* two users in/out of the segment return different `flow_id`.
+6. **Paywall draft (Phase 5)** — copy the live flow config (`flows config get`), change title + product
+   list at known paths only, validate, `flows create` + `config update` as a new draft. LLM only writes
+   the title text (port from B). Publishing = human. *Done when:* a draft flow exists in Adapty with the new title.
+
+## Tests you must have
+Attribute payload shape and limits · PATCH whitelist · state machine · activation step order and
+idempotency (fake CLI) · audiences list keeps the default audience last · autopilot never publishes.
+
+## Pitfalls
+- The placement can't be emptied; control = default flow. Read the placement before writing.
+- `placements update` requires `--developer-id`; a missing flag fails silently in scripts — check rc.
+- The SDK cache serves the old flow until the profile refreshes; the demo uses `/lookup`.
+- Never write attributes to all seed users in a loop during development; use a small list.
+- Leftovers on the account from validation: segment `[pulse-test] p_persona=power_editor`, placement `pulse_test` — don't reuse.
