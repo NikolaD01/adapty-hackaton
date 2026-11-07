@@ -80,7 +80,7 @@
     {
       "id": "C4",
       "title": "Activation on approve",
-      "status": "todo",
+      "status": "done",
       "brief": "C ch.4",
       "steps": [
         "Run membership sync for all users with values (p_segment + passed f_<feature>_tier)",
