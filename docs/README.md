@@ -1,6 +1,6 @@
 # Documentation index
 
-Start with the [diagram](https://claude.ai/artifact/X9YbYnKEExYeSZjmAC733h) and [plan.md](plan.md).
+Start with [plan.md](plan.md).
 
 ## Product and decisions
 - [plan.md](plan.md) — what we build, why, how we measure, what we don't claim, demo script.

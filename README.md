@@ -7,7 +7,6 @@ measure which values really separate buyers, and write only the decision into Ad
 A/B tests then serve and measure the offer. Human mode by default; autopilot within limits; publishing a
 paywall is always a human click.
 
-**Flow in 8 steps (diagram):** https://claude.ai/artifact/X9YbYnKEExYeSZjmAC733h ·
 **Plan:** [docs/plan.md](docs/plan.md) · **All docs:** [docs/README.md](docs/README.md)
 
 ## How it works
