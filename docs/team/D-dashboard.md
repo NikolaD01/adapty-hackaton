@@ -11,13 +11,21 @@ mocks from minute one and switch to the real backend per endpoint as it lands.
 React 18 + Vite + TypeScript, Tailwind, TanStack Query, React Router, MSW for mocks (handlers written
 from the contract examples), Vitest + Testing Library. Env: `VITE_API_BASE` (default `http://localhost:8000`),
 `VITE_USE_MOCKS=true|false`, `VITE_APP_ID=c6c7bdd1-1010-4343-8b29-837a77793cab`.
-Style: neutral, Adapty-like (white cards, left sidebar, one accent color). No component library needed.
+
+## Dashboard reference
+
+The product owner will provide a screenshot of the Adapty admin dashboard before UI work starts.
+Recreate the dashboard shell 1:1 from that screenshot, including the sidebar labels, order, and styling.
+Only our feature, **Behavioral Targeting**, is interactive in the sidebar. The other entries are
+visible as visual references and disabled. Keep the feature screens below inside our section.
 
 ## Screens (routes)
 1. `/demo` — fake Lumen app: buttons **Import photo**, **Remove background**, **AI enhance**, **Export**,
-   **Export in full resolution** (shows "Pro only"), user switcher (2–3 seed ids). Each click calls
-   `track()` from the SDK; a side panel shows the last events (from `/users/{id}/timeline`).
-2. `/dashboard/events` — event catalog (`GET /event-types`) + live counter.
+   **Export in full resolution** (shows "Pro only"), user switcher (2–3 seed ids). The app calls
+   `track()` from the SDK at the point where it knows what happened. A side panel shows the last
+   events from `/users/{id}/timeline`.
+2. `/dashboard/events` — event catalog (`GET /event-types`) and live counter. **Add event** saves a
+   key, name, and short description for AI using `POST /event-types`. Family is optional.
 3. `/dashboard/metrics` — rules list + **Suggest with AI** (`POST /rules:suggest`) → suggestion cards
    with rationale → **Accept** (POSTs the rule) / dismiss.
 4. `/dashboard/insights` — run (`POST /insights:run`), rankings table (feature, threshold, direction,
@@ -29,6 +37,14 @@ Style: neutral, Adapty-like (white cards, left sidebar, one accent color). No co
    Mode toggle **Human / Autopilot** (`GET/PUT /settings`), autopilot shows a warning banner.
 6. `/dashboard/decisions` — decision log with step-by-step results and `decided_by` badge.
 7. `/dashboard/lookup` — pick two users + placement → side-by-side served flow names (the demo finale).
+
+## First demo flow
+
+Register `pt_track_hd_export_blocked` in **Events**. In Lumen, select a free user and try **Export in
+full resolution**. The app calls `track("pt_track_hd_export_blocked")` when the plan check blocks the
+export. Show the event in the user's timeline, then use **Suggest with AI** to propose a rule for
+users whose HD export was blocked at least once in the past seven days. Run the flow against MSW
+first, then switch to the real SDK and backend as they become available.
 
 ## Chapters
 1. Scaffold (Vite, Tailwind, router, Query, MSW with all contract examples) — *done when* every route renders with mocks.
