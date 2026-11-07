@@ -34,21 +34,30 @@
         "lift + direction up/down",
         "Bootstrap 90% CI (~400 resamples)",
         "holdout_lift on 30%; min 150 per side; passed flag",
-        "Test: pure-noise feature does not pass"
+        "Test: pure-noise feature does not pass",
+        "Tiers: two cut points per passed feature value; keep only if net ARPU low<mid<high (CI low vs high apart); max 10",
+        "TierStore.put_many; hypotheses = rules without outcome data (never ranked)"
       ],
       "depends_on": [
         {
           "id": "B1",
           "kind": "hard"
+        },
+        {
+          "id": "A7",
+          "kind": "contract"
         }
       ],
       "produces": [
         "domain:ranking",
-        "path:feature_signal/domain/ranking.py"
+        "path:feature_signal/domain/ranking.py",
+        "data:tiers",
+        "contract:hypotheses"
       ],
       "consumes": [
         "data:offline-outcome",
-        "port:ValueStore.matrix"
+        "port:ValueStore.matrix",
+        "port:TierStore"
       ],
       "done_when": "ai_edits_first_day passes, photos_imported fails, with numbers"
     },
@@ -58,9 +67,10 @@
       "status": "todo",
       "brief": "B ch.3",
       "steps": [
-        "Combine passed features with subscription_state, country tier, platform",
+        "Combine passed tiers with subscription_state, country tier, platform",
         "<=5 segments with size and net ARPU +- CI",
-        "Stable segment_key slugs (become p_segment values)"
+        "Stable segment_key slugs (become p_segment values)",
+        "Our part -> condition, Adapty-known part -> adapty_filters"
       ],
       "depends_on": [
         {
@@ -115,7 +125,7 @@
       "brief": "B ch.5",
       "steps": [
         "POST /insights:run {source}, GET /insights/latest",
-        "Build ProposalDraft: p_segment condition, better arm flow, effect + CI, reason",
+        "Build ProposalDraft: p_segment condition + adapty_filters, published better-arm flow, highlight_feature, effect + CI, reason (hypothesis flagged)",
         "Hand drafts to ProposalSink (fake in tests)"
       ],
       "depends_on": [
@@ -157,6 +167,7 @@
       "steps": [
         "LLMProvider port + OpenAI adapter, model id verified via GET /v1/models",
         "Structured output JSON schema",
+        "Prompt: features + events + measure table; suggest composed rules (ratio, sum/last, where tokens_left<=0); never free text",
         "POST /rules:suggest returns schema-valid rules",
         "Invalid model output -> no suggestion, no crash (test)",
         "One manual real call recorded in docs/brain/",

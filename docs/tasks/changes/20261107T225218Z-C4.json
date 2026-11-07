@@ -1,0 +1,68 @@
+{
+  "at": "2026-11-07T22:52:18Z",
+  "by": "contract",
+  "task": "C4",
+  "reason": "Feature model contract change (docs/contracts/CHANGES.md 2026-11-08): features, typed props, new measures, tiers, p_segment + f_<feature>_tier, membership sync",
+  "affects": [
+    {
+      "id": "C5",
+      "role": "C",
+      "depth": 1,
+      "why": "hard dependency on C4"
+    },
+    {
+      "id": "C7",
+      "role": "C",
+      "depth": 1,
+      "why": "hard dependency on C4"
+    },
+    {
+      "id": "S2",
+      "role": "ALL",
+      "depth": 1,
+      "why": "hard dependency on C4"
+    },
+    {
+      "id": "D6",
+      "role": "D",
+      "depth": 2,
+      "why": "contract dependency on C5 (via C5)"
+    },
+    {
+      "id": "D7",
+      "role": "D",
+      "depth": 2,
+      "why": "hard dependency on C5 (via C5)"
+    },
+    {
+      "id": "X1",
+      "role": "ALL",
+      "depth": 2,
+      "why": "hard dependency on S2 (via S2)"
+    },
+    {
+      "id": "X2",
+      "role": "ALL",
+      "depth": 2,
+      "why": "hard dependency on S2 (via S2)"
+    },
+    {
+      "id": "X3",
+      "role": "ALL",
+      "depth": 2,
+      "why": "hard dependency on S2 (via S2)"
+    },
+    {
+      "id": "D8",
+      "role": "D",
+      "depth": 3,
+      "why": "hard dependency on D6 (via D6)"
+    },
+    {
+      "id": "S3",
+      "role": "ALL",
+      "depth": 3,
+      "why": "hard dependency on X1 (via X1)"
+    }
+  ]
+}
