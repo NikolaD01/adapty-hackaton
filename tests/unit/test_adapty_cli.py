@@ -160,6 +160,12 @@ async def test_segments_create_refuses_no_filters():
         await AdaptyCommands(RecordingCli(), APP).segments_create("[fs] x", [])
 
 
+async def test_products_list_pages_with_size_100():
+    cli = RecordingCli({"products list": {"data": [{"id": "p1", "access_level_id": "a1"}]}})
+    assert await AdaptyCommands(cli, APP).products_list() == [{"id": "p1", "access_level_id": "a1"}]
+    assert arg(cli.calls[0], "--page-size") == "100"
+
+
 async def test_segments_update_sends_the_segment_id_and_every_filter():
     cli = RecordingCli({"segments update": {"id": "seg1"}})
     await AdaptyCommands(cli, APP).segments_update("seg1", "[fs] x", ["a:IN:1", "b:IN:2"])

@@ -7,7 +7,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from feature_signal.api.v1.membership import get_attribute_writer
 from feature_signal.core.config import get_settings
-from feature_signal.core.errors import not_implemented
 from feature_signal.db.session import SessionFactory, get_session
 from feature_signal.domain.ports import AttributeWriter, MembershipSync
 from feature_signal.integrations.adapty.cli import AdaptyCommands, SubprocessAdaptyCli
@@ -23,6 +22,7 @@ from feature_signal.schemas.proposals import (
 from feature_signal.services.activation_service import ActivationService
 from feature_signal.services.autopilot_service import AutopilotService
 from feature_signal.services.membership_service import SqlMembershipSync
+from feature_signal.services.paywall_service import PaywallService
 from feature_signal.services.proposal_service import ProposalService
 
 router = APIRouter(tags=["proposals (C)"])
@@ -91,5 +91,10 @@ async def reject_proposal(proposal_id: str, body: RejectIn, session: Session) ->
 
 
 @router.post("/proposals/{proposal_id}/paywall-draft", response_model=PaywallDraftOut)
-async def paywall_draft(proposal_id: str, body: PaywallDraftIn) -> PaywallDraftOut:
-    raise not_implemented("paywall_draft")
+async def paywall_draft(
+    proposal_id: str,
+    body: PaywallDraftIn,
+    session: Session,
+    commands: Annotated[AdaptyCommands, Depends(get_adapty_commands)],
+) -> PaywallDraftOut:
+    return await PaywallService(session, commands).draft(proposal_id, body)

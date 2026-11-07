@@ -148,6 +148,10 @@ class AdaptyCommands:
                 return items
             page += 1
 
+    # products
+    async def products_list(self) -> list[dict[str, Any]]:
+        return await self._pages("products", "list")
+
     # segments
     async def segments_create(self, title: str, filters: Sequence[str]) -> dict[str, Any]:
         if not filters:
