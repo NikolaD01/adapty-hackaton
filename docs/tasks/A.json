@@ -165,7 +165,7 @@
     {
       "id": "A6",
       "title": "Rules engine and rules API",
-      "status": "todo",
+      "status": "done",
       "brief": "A ch.5",
       "steps": [
         "domain/rules.py apply(): count, distinct, exists, days_active, ratio, sum, last, max, min",
