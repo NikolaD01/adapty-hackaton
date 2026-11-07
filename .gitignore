@@ -20,6 +20,7 @@ htmlcov/
 data/*.db
 data/*.db-*
 data/offline/
+data/*.json.gz
 
 # node
 node_modules/

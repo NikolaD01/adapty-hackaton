@@ -234,11 +234,11 @@
     {
       "id": "A8",
       "title": "Demo event loader (synthetic)",
-      "status": "todo",
+      "status": "done",
       "brief": "A ch.7",
       "steps": [
         "Register Lumen features background, ai_enhance (edits_left prop), hd_export (plans premium) and event types incl. pt_track_hd_export_blocked",
-        "Generate events for ~200 seed users consistent with ai_edits_first_day",
+        "Generate events for the first 1000 seed users consistent with ai_edits_first_day (200 inverts the signal)",
         "props.synthetic=true",
         "Run recompute, check non-empty values"
       ],

@@ -67,7 +67,7 @@ gets default values automatically, the AI adds composed ones.
    `background` (bg_remove), `ai_enhance` (ai_enhance with `edits_left` prop), `hd_export`
    (export_hd_attempt, pt_track_hd_export_blocked; `plans: ["premium"]`) and event types
    (`photo_import`, `bg_remove`, `ai_enhance`, `export`, `export_hd_attempt`, `pt_track_hd_export_blocked`, `edit_abandoned`) and
-   generates synthetic events for the first 200 seed users consistent with their `ai_edits_first_day`
+   generates synthetic events for the first 1000 seed users (200 is too few: the first 200 invert the edits signal) consistent with their `ai_edits_first_day`
    (label them synthetic in `props.synthetic=true`). *Done when:* recompute produces non-empty values.
 
 ## Tests you must have
