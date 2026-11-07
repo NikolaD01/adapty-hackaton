@@ -1,8 +1,11 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { BehavioralLayout } from '../features/behavioral/BehavioralLayout'
-import { DemoPage } from '../features/behavioral/DemoPage'
+import { EventsPage } from '../features/behavioral/EventsPage'
+import { MetricsPage } from '../features/behavioral/MetricsPage'
+import { PendingPage } from '../features/behavioral/PendingPage'
 import { PlaceholderPage } from '../features/behavioral/PlaceholderPage'
 import { behavioralPages } from '../features/behavioral/pages'
+import { DemoPage } from '../features/demo/DemoPage'
 import { OverviewPage } from '../features/overview/OverviewPage'
 import { DashboardLayout } from './layout/DashboardLayout'
 
@@ -13,11 +16,13 @@ export function AppRoutes() {
         <Route index element={<OverviewPage />} />
         <Route path="dashboard" element={<BehavioralLayout />}>
           <Route index element={<Navigate to="events" replace />} />
-          {behavioralPages.map(({ path, title, description }) => (
+          <Route path="events" element={<EventsPage />} />
+          <Route path="metrics" element={<MetricsPage />} />
+          {behavioralPages.filter((page) => page.path !== 'events' && page.path !== 'metrics').map((page) => (
             <Route
-              key={path}
-              path={path}
-              element={<PlaceholderPage title={title} description={description} />}
+              key={page.path}
+              path={page.path}
+              element={<PendingPage {...page} />}
             />
           ))}
         </Route>

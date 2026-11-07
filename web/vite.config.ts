@@ -7,11 +7,11 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
-      'feature-signal-sdk': fileURLToPath(new URL('./src/sdk-stub.ts', import.meta.url)),
+      'feature-signal-sdk': fileURLToPath(new URL('../sdk/js/src/index.ts', import.meta.url)),
     },
   },
   server: {
-    fs: { allow: ['..'] },
+    fs: { allow: [fileURLToPath(new URL('..', import.meta.url))] },
   },
   test: {
     environment: 'jsdom',
