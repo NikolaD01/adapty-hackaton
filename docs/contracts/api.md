@@ -21,6 +21,8 @@ Conventions
 | Method | Path | Owner | Purpose |
 |---|---|---|---|
 | GET | `/v1/health` | A | `{"status":"ok"}` |
+| POST | `/v1/apps/{app_id}/features` | A | Define a feature (a group of events) + which plans include it; creates its default rules |
+| GET | `/v1/apps/{app_id}/features` | A | Feature list |
 | POST | `/v1/apps/{app_id}/event-types` | A | Register an event type (once per type) |
 | GET | `/v1/apps/{app_id}/event-types` | A | Event catalog |
 | POST | `/v1/apps/{app_id}/events` | A | Ingest a batch of events (idempotent) |
@@ -29,6 +31,7 @@ Conventions
 | GET | `/v1/apps/{app_id}/rules` | A | List rules |
 | POST | `/v1/apps/{app_id}/values:recompute` | A | Recompute all rule values for all users |
 | GET | `/v1/apps/{app_id}/values` | A | Computed values per user (paged) |
+| GET | `/v1/apps/{app_id}/users/{customer_user_id}/features` | A | Feature profile of one user (values grouped by feature + tier) |
 | POST | `/v1/apps/{app_id}/rules:suggest` | B | LLM suggests rules from the catalog (not saved) |
 | POST | `/v1/apps/{app_id}/insights:run` | B | Rank values, build segments, compute uplift |
 | GET | `/v1/apps/{app_id}/insights/latest` | B | Last insight run |
@@ -41,18 +44,34 @@ Conventions
 | GET | `/v1/apps/{app_id}/settings` | C | Mode and autopilot limits |
 | PUT | `/v1/apps/{app_id}/settings` | C | Change mode |
 | POST | `/v1/apps/{app_id}/lookup` | C | Which flow Adapty serves to given users (demo proof) |
+| POST | `/v1/apps/{app_id}/membership:sync` | C | Fast loop: re-check tiers and segments, write only changed Adapty attributes |
 | POST | `/v1/proposals/{proposal_id}/paywall-draft` | C | Copy of live flow config with changed title and plans |
 
 ## Schemas
 
+### Feature (a group of events)
+```json
+{ "key": "ai_generate", "name": "AI generation",
+  "description": "User generates an image from a prompt, optionally with an uploaded photo, and may regenerate",
+  "plans": ["premium"], "created_at": "2026-11-07T18:00:00Z" }
+```
+- `key` `^[a-z][a-z0-9_]{1,21}$` (≤22 chars, because it becomes the Adapty key `f_<key>_tier`, max 30).
+- How wide or narrow a feature is, is the developer's choice. `plans` = access levels / products that
+  include the feature; the paywall may highlight a feature only if an offered plan is in this list.
+- Creating a feature also creates its **default rules** (`source: "default"`, `feature: <key>`):
+  `<key>_uses_total` (count, all history), `<key>_uses_7d` (count, 7 d), `<key>_days_active_7d`
+  (days_active, 7 d), and `<key>_used_<event>` (exists) for each event in the feature. The AI suggests
+  extra, composed rules on top (ratio, sums, conditions).
+
 ### EventType
 ```json
-{ "action_id": 3, "key": "bg_remove", "name": "Background removed",
-  "description": "User removed the background of a photo with the AI tool",
-  "family": "background", "created_at": "2026-11-07T18:00:00Z" }
+{ "action_id": 3, "key": "regenerate_click", "name": "Regenerate clicked",
+  "description": "User asked for a new result after the first generation",
+  "features": ["ai_generate"], "created_at": "2026-11-07T18:00:00Z" }
 ```
 Create body: `key` (`^[a-z][a-z0-9_]{1,39}$`), `name`, `description` (required, 1–500 chars),
-`family` (optional). Re-registering an existing `key` updates name/description and returns `200`.
+`features` (0–5 feature keys; an event may belong to several features and is counted in each).
+Re-registering an existing `key` updates name/description/features and returns `200`.
 
 ### Event batch
 ```json
@@ -69,6 +88,13 @@ POST /v1/apps/{app_id}/events
 - `event_id` is a client-generated UUID and the primary key: a repeated id is a duplicate, never counted twice.
 - `received_at` is set by the server. Max 500 events per batch.
 - Unknown `key` → the event is rejected and listed in `unknown_keys` (register the type first).
+- `props` are small values: number, bool, string ≤100 chars, null; at most 20 per event. Numbers must be
+  JSON numbers (`40`, not `"40"`) so rules can add them up. **Never send free text** (e.g. the prompt):
+  send what is derived from it (`prompt_len: 62`). Quotas are the app's knowledge: send state such as
+  `tokens_left`, not only `tokens_used`.
+```json
+{ "key": "generate_click", "props": { "tokens_used": 40, "tokens_left": 0, "with_upload": true } }
+```
 
 ### Rule (how a value is derived from events)
 ```json
@@ -80,8 +106,22 @@ POST /v1/apps/{app_id}/events
                   "distinct_prop": "photo_id", "window_days": 7 },
   "value_type": "float", "created_at": "..." }
 ```
-`measure` ∈ `count` | `distinct` (needs `distinct_prop`) | `exists` (0/1) | `days_active`.
-`window_days` ∈ 1–90 or `null` (all history). `source` ∈ `human` | `ai`.
+| `measure` | Needs | Value |
+|---|---|---|
+| `count` | — | number of matching events |
+| `distinct` | `distinct_prop` | number of different values of a prop |
+| `exists` | — | 1 if any matching event, else 0 |
+| `days_active` | — | number of different days with a matching event |
+| `ratio` | `denominator_event_keys` | count(`event_keys`) / count(denominator), 0 if denominator is 0 |
+| `sum` / `max` / `min` | `value_prop` | over a numeric prop |
+| `last` | `value_prop` | the prop of the latest event (by `occurred_at`) |
+
+Optional `where: {"prop", "op": eq|lt|lte|gt|gte, "value"}` keeps only matching events first.
+`window_days` ∈ 1–90 or `null` (all history), always on `occurred_at`. `source` ∈ `human` | `ai` | `default`.
+`feature` (optional) puts the value into that feature's profile.
+Examples: regenerate rate = `{"event_keys":["regenerate_click"],"measure":"ratio","denominator_event_keys":["generate_click"],"window_days":7}`;
+ran out of tokens = `{"event_keys":["generate_click","regenerate_click"],"measure":"exists","where":{"prop":"tokens_left","op":"lte","value":0},"window_days":7}`;
+tokens left = `{"event_keys":["generate_click","regenerate_click"],"measure":"last","value_prop":"tokens_left"}`.
 
 ### Rule suggestion (B, not persisted)
 ```json
@@ -99,6 +139,18 @@ GET /v1/apps/{app_id}/values?rule_key=distinct_photos_edited_7d&limit=100&cursor
                "value": 4.0, "computed_at": "..." } ], "next_cursor": null }
 ```
 
+### Feature profile (A) — the "JSON per feature", kept by us, never sent to Adapty
+```json
+GET /v1/apps/{app_id}/users/u_42/features
+{ "customer_user_id": "u_42",
+  "features": [ { "feature": "ai_generate", "name": "AI generation",
+                  "values": { "ai_generate_uses_total": 14, "ai_generate_uses_7d": 9,
+                              "ai_generate_days_active_7d": 4, "ai_generate_used_image_upload": 1,
+                              "regenerate_rate_7d": 0.4, "tokens_used_7d": 360, "tokens_exhausted_7d": 1 },
+                  "tier": "high", "computed_at": "..." } ] }
+```
+`tier` is set only for features whose tier passed measurement (see `tiers` in InsightRun), else `null`.
+
 ### InsightRun (B)
 ```json
 POST /v1/apps/{app_id}/insights:run  { "source": "offline" }   // or "live"
@@ -115,6 +167,16 @@ POST /v1/apps/{app_id}/insights:run  { "source": "offline" }   // or "live"
                 "better_arm": "main_lifetime", "worse_arm": "main",
                 "diff_net_90d": 14.40, "ci_low": 9.1, "ci_high": 19.8, "n_a": 412, "n_b": 398 } ] }
 ```
+Also in the response:
+```json
+  "tiers": [ { "feature": "ai_generate", "rule_key": "ai_generate_uses_7d", "attribute": "f_ai_generate_tier",
+               "low_max": 2, "mid_max": 7, "passed": true } ],
+  "hypotheses": ["regenerate_rate_7d", "tokens_exhausted_7d"]
+```
+- `tiers`: measured cut points turning one value per feature into `low` / `mid` / `high`
+  (`value <= low_max` → low, `<= mid_max` → mid, else high). Only `passed: true` tiers are written to Adapty.
+- `hypotheses`: rules with no purchase outcome yet (new events). They are not ranked; they can only
+  enter an A/B test, labelled "hypothesis" in the dashboard.
 - `direction` ∈ `up` (offer) | `down` (reward instead of paywall).
 - `passed` is true only if the holdout check and the bootstrap interval both hold.
 
@@ -125,7 +187,9 @@ POST /v1/apps/{app_id}/insights:run  { "source": "offline" }   // or "live"
   "trigger_placement": "main",
   "segment_key": "power_editor",
   "condition": { "attribute": "p_segment", "op": "IN", "value": ["power_editor"] },
-  "action": { "type": "flow", "flow_id": "4d8837b5-23f0-4ba3-a09f-0ba6d704ed85", "flow_name": "main_lifetime" },
+  "adapty_filters": [ { "field": "<no-subscription field, verified by C>", "op": "IS NULL", "value": null } ],
+  "action": { "type": "flow", "flow_id": "4d8837b5-23f0-4ba3-a09f-0ba6d704ed85", "flow_name": "main_lifetime",
+              "highlight_feature": "ai_generate", "needs_publish": false },
   "holdout_pct": 20, "cooldown_days": 7,
   "expected_effect": { "metric": "net_revenue_90d", "diff": 14.40, "ci_low": 9.1, "ci_high": 19.8 },
   "reason": "Users with 5+ edits gain $14.40 net from the lifetime anchor in the randomized Main test",
@@ -135,6 +199,10 @@ POST /v1/apps/{app_id}/insights:run  { "source": "offline" }   // or "live"
   "created_at": "...", "updated_at": "..." }
 ```
 - `status` ∈ `draft` → `approved` → `executing` → `live` | `failed`; or `draft` → `rejected`.
+  With `action.needs_publish: true` (a new AI paywall, still a draft flow): `executing` → `awaiting_publish`
+  → (human publishes the flow) → `live`. This holds in autopilot too.
+- `adapty_filters`: fields Adapty already knows (e.g. no active subscription), ANDed with `condition` in the
+  same Adapty segment. We don't copy subscription state into our attributes.
 - `decided_by` ∈ `human` | `autopilot`. Every edit is appended to `edits` (a human correction is data).
 - PATCH body (flat, all optional, unknown fields → 422): `{"holdout_pct": 30, "cooldown_days": 14,
   "flow_id": "...", "condition_value": ["power_editor"], "trigger_placement": "ai_limit_reached"}`.
@@ -146,7 +214,8 @@ POST /v1/apps/{app_id}/insights:run  { "source": "offline" }   // or "live"
 { "mode": "human", "autopilot": { "max_live_proposals": 3, "min_holdout_pct": 10, "allow_publish_flow": false } }
 ```
 `mode` ∈ `human` (default) | `autopilot`. In autopilot the system may write attributes, create the
-segment, attach the audience and create + start the A/B test. Publishing a flow is always human.
+segment, attach the audience and create + start the A/B test. Publishing a flow is always human, so
+autopilot runs end to end only with already published flows; a new AI paywall waits in `awaiting_publish`.
 
 ### Decision log entry (C)
 ```json
@@ -163,19 +232,31 @@ POST /v1/apps/{app_id}/lookup { "placement": "main", "customer_user_ids": ["lume
                        "flow_id": "4d8837b5-...", "flow_name": "main_lifetime" } ] }
 ```
 
+### Membership sync (C) — the fast loop
+```json
+POST /v1/apps/{app_id}/membership:sync { "customer_user_ids": ["u_42"] }   // null = every user with values
+→ 200 { "checked": 1, "changed": 1, "attributes_written": 2 }
+```
+For each user: compute `f_<feature>_tier` from the passed tiers and `p_segment` from the live proposals'
+conditions; PATCH only keys whose value changed (`null` when the user left). A calls the same service
+after every ingest batch commits (`MembershipSync` port), so a click reaches the Adapty segment in seconds.
+
 ### Paywall draft (C, Phase 5)
 ```json
-POST /v1/proposals/{proposal_id}/paywall-draft { "title": "Unlimited background removal", "product_ids": ["..."] }
+POST /v1/proposals/{proposal_id}/paywall-draft { "title": "Unlimited AI generation", "product_ids": ["..."],
+                                                  "highlight_feature": "ai_generate" }
 → 200 { "base_flow_id": "...", "draft_flow_id": "...", "status": "draft", "changed_paths": ["screens[0].title"] }
 ```
 Publishing stays a human click in Adapty (or `flows publish` behind an explicit confirmation).
+`422 feature_not_in_plan` if `highlight_feature` is not in `plans` of any offered product: we never promise what the plan doesn't give.
 
 ## Adapty attributes we write (stable keys, never renamed)
 | Key | Type | Meaning |
 |---|---|---|
-| `p_segment` | string | Our segment key the user belongs to (`power_editor`) — segments target this |
-| `p_tier` | string | `power` / `casual` / `dormant` |
-| `p_top_feature` | string | Event key that matters most for this user |
-| `p_top_feature_count` | float | How many times |
-| `p_score` | float | Estimated probability to pay (0–1) |
-Segment filter form: `attributes__p_segment@string`, operator `IN`.
+| `p_segment` | string | The approved group the user belongs to now (`ai_power_free`), or deleted (`null`). One per user. Our segments target this. |
+| `f_<feature>_tier` | string | `low` / `mid` / `high` for each feature whose tier **passed measurement** (max 10 features). Marketers can build their own Adapty segments from these. |
+
+At most 11 of the 30 slots; an app with 50 features uses the same. Everything else (history, profiles,
+raw values) stays with us. Segment filters: `attributes__p_segment@string IN [...]`,
+`attributes__f_ai_generate_tier@string IN ["high"]`, ANDed with `adapty_filters`. Time of day is not
+collected (Adapty doesn't serve by hour).
