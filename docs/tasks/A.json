@@ -107,7 +107,7 @@
     {
       "id": "A4",
       "title": "User timeline API",
-      "status": "todo",
+      "status": "done",
       "brief": "A ch.3",
       "steps": [
         "EventReader.history",
