@@ -201,7 +201,7 @@
     {
       "id": "C6",
       "title": "Served-flow lookup",
-      "status": "todo",
+      "status": "done",
       "brief": "C ch.5",
       "steps": [
         "GET profile -> segment_hash",
