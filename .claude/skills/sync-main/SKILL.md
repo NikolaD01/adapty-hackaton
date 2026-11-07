@@ -1,6 +1,6 @@
 ---
 name: sync-main
-description: Use when the developer says "sync", "povuci main", "rebase", "update branch", at the start of a work session, before starting a new chapter, or when another area announces a merge. Rebases the current branch on origin/main, reinstalls dependencies if lockfiles changed, reruns the tests and pushes.
+description: Use when the developer asks to sync, pull main, rebase or update the branch (in any language), at the start of a work session, before starting a new chapter, or when another area announces a merge. Rebases the current branch on origin/main, reinstalls dependencies if lockfiles changed, reruns the tests and pushes.
 ---
 
 # sync-main

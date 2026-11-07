@@ -1,6 +1,6 @@
 ---
 name: chapter-done
-description: Use when a chapter (a feature from your role brief) is finished or the developer says "done", "gotovo", "završi poglavlje", "commit this", "push", "merge". Checks scope, adds missing tests, runs all tests, writes the chapter doc, updates STATUS and AI_LOG, commits in small conventional commits without any AI attribution, rebases on origin/main, pushes and squash-merges when green.
+description: Use when a chapter (a feature from your role brief) is finished or the developer says it is done or asks to commit, push or merge (in any language). Checks scope, adds missing tests, runs all tests, writes the chapter doc, updates STATUS and AI_LOG, commits in small conventional commits without any AI attribution, rebases on origin/main, pushes and squash-merges when green.
 ---
 
 # chapter-done
@@ -30,8 +30,10 @@ Run every step in order. Stop and tell the developer (in Serbian) if a step fail
 - Create or update `docs/<area>/<NN>-<slug>.md` from `docs/templates/chapter.md`. Fill every section;
   "How to test" must contain the exact command and the expected output. Numbers with units.
 - `docs/STATUS.md`: update only your area's row (chapter, state, next).
-- `AI_LOG.md`: if during this chapter the AI claimed something that a check proved wrong (or a test
-  caught an AI bug), append an entry: date · claim · how it was checked · correction. If nothing, skip.
+- `AI_LOG.md` (½–1 page, fixed sections — keep the structure): if this chapter added a tool, an agent/MCP
+  setup piece, a prompt that clearly worked better than the listed ones, or a caught AI mistake that is a
+  better example than the current one, update that section in place. Keep the whole file within one page.
+- Language: every text you added (code, comments, docs, UI strings) is English.
 - If behavior differs from `docs/contracts/api.md` → that is a contract change: stop, use `contract-change`.
 
 ## 5. Commit in pieces

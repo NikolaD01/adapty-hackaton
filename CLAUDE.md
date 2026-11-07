@@ -133,8 +133,10 @@ through A or via a contract-change PR.
   · Contract touched · How to test · Limits / not claimed · Status). English, short sentences, numbers
   with units, no marketing words.
 - `docs/STATUS.md`: one row per area — update your row at every chapter end.
-- `AI_LOG.md`: append an entry whenever AI got something wrong and a check caught it (claim → check →
-  correction). This is a jury criterion; write it as you go, not at the end.
+- `AI_LOG.md` (jury criterion, **½–1 page**, fixed sections): tools used and for what · setup (rules files,
+  agents, MCP, subagents) · 2–3 prompts that worked well · one thing AI got wrong and how it was caught ·
+  what we'd never delegate to AI. Edit the sections in place (replace a weaker example with a better one);
+  never turn it into a diary.
 - `README.md` is assembled in Phase 6 from the chapter docs; don't write prose there before that.
 
 ## 10. Skills in this repo
@@ -158,4 +160,6 @@ We never cut Phase 3.
 - Before saying "done": tests pass, `ruff check` clean, the chapter doc exists.
 - Do not invent Adapty behavior: check §5, the Adapty skills, or ask the developer.
 - Never print or commit secrets; `.env` is gitignored, `.env.example` lists names only.
-- Talk to the developer in Serbian; write code, commits and docs in English.
+- **Language rule:** everything written into the repo is English — code, comments, docstrings, docs,
+  READMEs, commit messages, PR titles and bodies, test names, UI text. Talk to the developer in Serbian.
+  If you find non-English text in a file you own, translate it in the same chapter.
