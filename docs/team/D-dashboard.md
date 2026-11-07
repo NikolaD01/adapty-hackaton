@@ -6,6 +6,10 @@ mocks from minute one and switch to the real backend per endpoint as it lands.
 
 ## You own
 `web/**` only. You consume `docs/contracts/api.md` and `sdk/js` (owned by A).
+Import the SDK from source through an alias, no npm link or build step: in `vite.config.ts`
+`resolve.alias: { 'feature-signal-sdk': path.resolve(__dirname, '../sdk/js/src/index.ts') }` plus
+`server.fs.allow: ['..']`, and the same path in `tsconfig.json` `compilerOptions.paths`. Until A5 lands,
+put a stub with the same exports in `web/src/sdk-stub.ts` and point the alias there. Node 20 (`web/.nvmrc`).
 
 ## Stack
 React 18 + Vite + TypeScript, Tailwind, TanStack Query, React Router, MSW for mocks (handlers written

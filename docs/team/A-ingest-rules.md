@@ -32,7 +32,8 @@ history → rules → per-user values. Everyone else reads what you produce.
 4. **SDK** — `sdk/js/src/index.ts`: `init({ baseUrl, appId, customerUserId })`, `registerEventType(...)`,
    `track(key, props?)` (generates `event_id` with `crypto.randomUUID()`, sets `occurred_at`, buffers,
    flushes every 2 s or 20 events, retries with the same ids). ~50 lines, no deps. Build with `tsc`.
-   Vitest unit test with a fake fetch. *Done when:* D can `import { track } from '../../sdk/js'` and events arrive.
+   Vitest unit test with a fake fetch. Keep `sdk/js/src/index.ts` the single entry, zero runtime dependencies, browser APIs only (`fetch`, `crypto.randomUUID`, `setTimeout`).
+   *Done when:* D can `import { init, track } from 'feature-signal-sdk'` (Vite alias, see D brief) and events arrive.
 5. **Rules engine** — `domain/rules.py`: `apply(rule: RuleDefinition, events: list[Event], now) -> float`
    for `count`, `distinct` (by `props[distinct_prop]`), `exists`, `days_active`, with `window_days`
    using `occurred_at` (never `received_at`). Pure function. `POST/GET /rules`.
