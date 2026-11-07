@@ -3,6 +3,7 @@
 Start with [plan.md](plan.md).
 
 ## Product and decisions
+- [diagrams/](diagrams/README.md) — Mermaid diagrams: system, flow, ingest sequence, proposal lifecycle, data model.
 - [plan.md](plan.md) — what we build, why, how we measure, what we don't claim, demo script.
 - [STATUS.md](STATUS.md) — one row per area, updated at every chapter end.
 

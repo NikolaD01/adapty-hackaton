@@ -7,9 +7,11 @@ measure which values really separate buyers, and write only the decision into Ad
 A/B tests then serve and measure the offer. Human mode by default; autopilot within limits; publishing a
 paywall is always a human click.
 
-**Plan:** [docs/plan.md](docs/plan.md) · **All docs:** [docs/README.md](docs/README.md)
+**Plan:** [docs/plan.md](docs/plan.md) · **Diagrams:** [docs/diagrams](docs/diagrams/README.md) · **All docs:** [docs/README.md](docs/README.md)
 
 ## How it works
+Full picture: [flow diagram](docs/diagrams/flow.md) · [system](docs/diagrams/system.md).
+
 1. **App** — `track("ai_enhance", { edits_left: 0 })` via `feature-signal-sdk` (buffered, retry-safe).
 2. **Catalog** — features (groups of events, with the plans that include them) and event types.
 3. **History** — one row per event (who, what, phone time, arrival time); a repeated `event_id` counts once.
