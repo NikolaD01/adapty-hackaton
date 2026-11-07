@@ -160,6 +160,14 @@ async def test_segments_create_refuses_no_filters():
         await AdaptyCommands(RecordingCli(), APP).segments_create("[fs] x", [])
 
 
+async def test_segments_update_sends_the_segment_id_and_every_filter():
+    cli = RecordingCli({"segments update": {"id": "seg1"}})
+    await AdaptyCommands(cli, APP).segments_update("seg1", "[fs] x", ["a:IN:1", "b:IN:2"])
+    (call,) = cli.calls
+    assert call[:3] == ("segments", "update", "seg1")
+    assert [call[i + 1] for i, a in enumerate(call) if a == "--filter"] == ["a:IN:1", "b:IN:2"]
+
+
 async def test_find_segment_by_title_pages_through_the_list():
     pages = {
         "1": {"data": [{"id": f"s{i}", "title": f"other {i}"} for i in range(100)]},

@@ -157,6 +157,15 @@ class AdaptyCommands:
             args += ["--filter", item]
         return await self._cli.run(*args)
 
+    async def segments_update(self, segment_id: str, title: str, filters: Sequence[str]) -> dict[str, Any]:
+        """Replaces the whole segment (the server takes every filter again)."""
+        if not filters:
+            raise ApiError(422, "invalid_filter", "A segment needs at least one filter")
+        args = ["segments", "update", segment_id, "--app", self._app, "--title", title]
+        for item in filters:
+            args += ["--filter", item]
+        return await self._cli.run(*args)
+
     async def find_segment_by_title(self, title: str) -> dict[str, Any] | None:
         for segment in await self._pages("segments", "list"):
             if segment.get("title") == title:

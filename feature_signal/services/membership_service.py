@@ -2,7 +2,7 @@
 
 For each user we compute what Adapty should hold:
 - `f_<feature>_tier` = low / mid / high for every feature whose tier passed measurement (at most 10);
-- `p_segment` = `segment_key` of the first live proposal whose segment conditions the user meets.
+- `p_segment` = `segment_key` of the first live (or executing) proposal whose segment conditions the user meets.
 Then we write only what differs from what we last wrote (`null` deletes a key the user no longer has).
 
 Segment conditions of a proposal are read from `evidence["segment_conditions"]`, a list of
@@ -23,6 +23,8 @@ from feature_signal.domain.ports import AttributeWriter, TierStore, ValueStore
 
 MAX_TIER_FEATURES = 10
 SEGMENT_ATTRIBUTE = "p_segment"
+# Activation (C4) writes the attributes before it marks a proposal live, so those states count too.
+COUNTING_STATUSES = frozenset({"live", "executing", "awaiting_publish"})
 Attributes = dict[str, str | float | None]
 
 
@@ -100,7 +102,7 @@ class MembershipService:
         passed = sorted((t for t in await self._tiers.list(app_id) if t.passed), key=lambda t: t.feature)[
             :MAX_TIER_FEATURES
         ]
-        live = list(await self._proposals.list(app_id, "live"))
+        live = [p for p in await self._proposals.list(app_id) if p.status in COUNTING_STATUSES]
         last = await self._state.get_many(app_id, ids)
 
         semaphore = asyncio.Semaphore(self._concurrency)

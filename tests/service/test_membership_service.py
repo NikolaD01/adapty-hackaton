@@ -124,6 +124,16 @@ async def test_the_first_matching_live_proposal_wins_and_other_statuses_are_igno
     assert writer.writes == [("u1", {"p_segment": "second"})]
 
 
+async def test_a_proposal_being_activated_already_counts():
+    always = [{"field": "edits_1d", "op": ">=", "value": 0}]
+    for status, expected in (("executing", "p"), ("awaiting_publish", "p"), ("approved", None), ("failed", None)):
+        service, writer, _ = await build(
+            {"edits_1d": {"u1": 3.0}}, tiers=(), proposals=[proposal("p", always, status=status)]
+        )
+        await service.sync_users(APP, ["u1"])
+        assert writer.writes == ([("u1", {"p_segment": "p"})] if expected else []), status
+
+
 async def test_none_means_every_user_with_values():
     service, writer, _ = await build(VALUES)
     result = await service.sync_users(APP, None)

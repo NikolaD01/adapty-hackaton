@@ -42,7 +42,8 @@ def test_every_contract_route_is_mounted(client):
     assert expected <= paths
 
 
-def test_approve_route_does_not_swallow_suffix(client):
-    r = client.post("/v1/proposals/pr_01:approve")
-    assert r.status_code == 501
-    assert "approve_proposal" in r.json()["error"]["message"]
+def test_approve_route_does_not_swallow_suffix(api):
+    # The route is built: it reaches the handler (unknown id -> 404 from our code), not the path-parameter route.
+    r = api.post("/v1/proposals/pr_01:approve")
+    assert r.status_code == 404
+    assert r.json()["error"]["code"] == "proposal_not_found"
