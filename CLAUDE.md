@@ -83,6 +83,12 @@ The LLM touches exactly two services: `rule_suggest_service` (B) and `paywall_se
   `flow`, `ab_test`). Key numbers: `ai_edits_first_day` ARPU $3.73→$16.57, `photos_imported` flat
   $8.73–$9.55; lifetime anchor +$14.40 for 5+ edits vs +$5.36 for 0 (randomized); weekly refund 6.9%.
 - Metric: **net revenue in 90 days** (refunds subtracted, same window for both arms). Never conversion alone.
+- Adapty CLI 0.18 has **no delete** for segments or placements (only create/get/list/update); deleting is
+  manual in the dashboard. So: create segments only on approve, idempotent by title `[fs] <segment_key>`
+  (look up with `segments list` first, then `update`); never create throwaway segments in tests or loops;
+  "undo" = remove the audience from the placement and null our `p_*` attributes. Tests use fakes only.
+- LLM: OpenAI (key in `.env`). The model id in `.env.example` is a placeholder until B verifies it with
+  `GET /v1/models`; never hard-code a model name outside `core/config.py`.
 
 ## 6. Ownership (who may edit what)
 | Path | Owner | Others |
@@ -166,6 +172,10 @@ mentors are here) · 4 demo client + dashboard (D) · 5 paywall draft (C) · 6 R
 **S2** first end-to-end: event → value → insight → proposal → approve → segment in Adapty; **S3** demo
 dry run. What we cut if late, in order: our MCP server, dashboard polish, generated paywall copy.
 We never cut Phase 3.
+
+Timeline (code freeze **8 Nov, morning**; exact hour from the organizers — update here when known):
+S1 by 23:30 on 7 Nov · S2 (end-to-end on Lumen) by 04:00 · demo video recorded by 07:30 · S3 rehearsal
+08:00 · submit right after. If S2 is not reached by 04:00, cut in the listed order and move C8 out.
 
 ## 12. Working style for agents
 - Deliver fast in small verified steps. Prefer the simplest thing that satisfies the contract.
