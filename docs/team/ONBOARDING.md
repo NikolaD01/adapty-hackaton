@@ -1,5 +1,7 @@
 # Onboarding (for people) — 10 minutes
 
+First look at the flow in 8 steps (5 minutes): https://claude.ai/artifact/X9YbYnKEExYeSZjmAC733h
+
 1. **Get the code** (while setup lives on `chore/project-setup`):
    ```bash
    git clone https://github.com/NikolaD01/adapty-hackaton.git && cd adapty-hackaton
