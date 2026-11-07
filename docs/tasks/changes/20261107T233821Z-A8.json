@@ -1,0 +1,44 @@
+{
+  "at": "2026-11-07T23:38:21Z",
+  "by": "A",
+  "task": "A8",
+  "reason": "make demo-events loads 1000 synthetic seed users (25k events). B8: outcomes for these users are in data/lumen_dataset.json.gz users[i].tx (see docs/ingest/README.md 'For B'). 200 users invert the signal; use 1000.",
+  "affects": [
+    {
+      "id": "B8",
+      "role": "B",
+      "depth": 1,
+      "why": "hard dependency on A8"
+    },
+    {
+      "id": "S2",
+      "role": "ALL",
+      "depth": 1,
+      "why": "hard dependency on A8"
+    },
+    {
+      "id": "X1",
+      "role": "ALL",
+      "depth": 2,
+      "why": "hard dependency on S2 (via S2)"
+    },
+    {
+      "id": "X2",
+      "role": "ALL",
+      "depth": 2,
+      "why": "hard dependency on S2 (via S2)"
+    },
+    {
+      "id": "X3",
+      "role": "ALL",
+      "depth": 2,
+      "why": "hard dependency on S2 (via S2)"
+    },
+    {
+      "id": "S3",
+      "role": "ALL",
+      "depth": 3,
+      "why": "hard dependency on X1 (via X1)"
+    }
+  ]
+}
