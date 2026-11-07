@@ -8,7 +8,7 @@ def test_health_ok(client):
 
 
 def test_unbuilt_route_returns_501_with_error_shape(client):
-    r = client.get(f"/v1/apps/{LUMEN_APP_ID}/decisions")
+    r = client.get(f"/v1/apps/{LUMEN_APP_ID}/insights/latest")
     assert r.status_code == 501
     body = r.json()["error"]
     assert body["code"] == "not_implemented"

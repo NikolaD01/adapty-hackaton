@@ -1,9 +1,7 @@
 """C9 on a real SQLite database: stores, proposals and the written-state table work together."""
 
 import pytest
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from feature_signal.db.session import make_engine
 from feature_signal.db.tables import ProposalRow
 from feature_signal.domain.models import FeatureTier
 from feature_signal.repositories.tiers import TierRepository
@@ -12,6 +10,7 @@ from feature_signal.schemas.proposals import ProposalIn
 from feature_signal.services.membership_service import SqlMembershipSync
 from feature_signal.services.proposal_service import ProposalService
 from tests.fakes import FakeAttributeWriter
+from tests.integration.adapty_helpers import make_factory
 
 APP = "c6c7bdd1-1010-4343-8b29-837a77793cab"
 BASE = f"/v1/apps/{APP}"
@@ -31,8 +30,7 @@ PROPOSAL = ProposalIn.model_validate(
 
 @pytest.fixture
 def factory(db_url):
-    engine = make_engine(db_url.replace("sqlite://", "sqlite+aiosqlite://"))
-    return async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+    return make_factory(db_url)
 
 
 async def seed(factory):

@@ -32,8 +32,8 @@ class DecisionRepository:
         await self.session.flush()
         return row
 
-    async def list(self, app_id: str) -> list[DecisionRow]:
-        result = await self.session.scalars(
-            select(DecisionRow).where(DecisionRow.app_id == app_id).order_by(DecisionRow.at.desc())
-        )
-        return list(result)
+    async def list(self, app_id: str, proposal_id: str | None = None) -> list[DecisionRow]:
+        query = select(DecisionRow).where(DecisionRow.app_id == app_id)
+        if proposal_id:
+            query = query.where(DecisionRow.proposal_id == proposal_id)
+        return list(await self.session.scalars(query.order_by(DecisionRow.at.desc(), DecisionRow.decision_id.desc())))
