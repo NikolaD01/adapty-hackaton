@@ -98,7 +98,7 @@ The LLM touches exactly two services: `rule_suggest_service` (B) and `paywall_se
 ## 6. Ownership (who may edit what)
 | Path | Owner | Others |
 |---|---|---|
-| `sdk/js/**`, `api/v1/{events,catalog,rules,values}.py`, `repositories/{features,event_types,events,rules,values,tiers}.py`, `services/{ingest,rule,value}_service.py`, `domain/rules.py`, `db/**` (tables + migrations), `alembic.ini` | A | read only |
+| `sdk/js/**`, `api/v1/{events,catalog,rules,values}.py`, `repositories/{features,event_types,events,rules,values,tiers}.py`, `services/{catalog,ingest,rule,value}_service.py`, `domain/rules.py`, `db/**` (tables + migrations), `alembic.ini` | A | read only |
 | `domain/{ranking,uplift}.py`, `services/{rule_suggest,insight}_service.py`, `api/v1/insights.py`, `integrations/llm/**`, `scripts/train_from_offline.py` | B | read only |
 | `integrations/adapty/**`, `services/{proposal,activation,paywall,lookup,membership}_service.py`, `api/v1/{proposals,settings,decisions,lookup,membership}.py`, `repositories/{proposals,decisions}.py` | C | read only |
 | `web/**` | D | read only |
