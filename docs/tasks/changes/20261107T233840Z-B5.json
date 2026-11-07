@@ -1,0 +1,62 @@
+{
+  "at": "2026-11-07T23:38:40Z",
+  "by": "C",
+  "task": "B5",
+  "reason": "Membership sync (C9) reads a proposal's segment rule from evidence.segment_conditions = [{field, op, value}] (field = rule key or f_<feature>_tier). B5 must put the segment's conditions (our part) there in every ProposalDraft.evidence, otherwise p_segment is never written. See docs/adapty/05-membership-sync.md",
+  "affects": [
+    {
+      "id": "B7",
+      "role": "B",
+      "depth": 1,
+      "why": "hard dependency on B5"
+    },
+    {
+      "id": "B8",
+      "role": "B",
+      "depth": 1,
+      "why": "hard dependency on B5"
+    },
+    {
+      "id": "D3",
+      "role": "D",
+      "depth": 1,
+      "why": "contract dependency on B5"
+    },
+    {
+      "id": "D7",
+      "role": "D",
+      "depth": 1,
+      "why": "hard dependency on B5"
+    },
+    {
+      "id": "S2",
+      "role": "ALL",
+      "depth": 1,
+      "why": "hard dependency on B5"
+    },
+    {
+      "id": "X1",
+      "role": "ALL",
+      "depth": 2,
+      "why": "hard dependency on S2 (via S2)"
+    },
+    {
+      "id": "X2",
+      "role": "ALL",
+      "depth": 2,
+      "why": "hard dependency on S2 (via S2)"
+    },
+    {
+      "id": "X3",
+      "role": "ALL",
+      "depth": 2,
+      "why": "hard dependency on S2 (via S2)"
+    },
+    {
+      "id": "S3",
+      "role": "ALL",
+      "depth": 3,
+      "why": "hard dependency on X1 (via X1)"
+    }
+  ]
+}

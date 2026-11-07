@@ -133,7 +133,7 @@
     {
       "id": "C9",
       "title": "Membership sync (fast loop)",
-      "status": "todo",
+      "status": "done",
       "brief": "C ch.7",
       "steps": [
         "MembershipService.sync_users: passed tiers -> f_<feature>_tier, first matching live proposal -> p_segment else null",
