@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import datetime, timezone
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from feature_signal.db.tables import AppSettingsRow, ProposalRow
+from feature_signal.db.tables import AdaptyAttributeStateRow, AppSettingsRow, ProposalRow
 from feature_signal.schemas.proposals import AppSettings
 
 
@@ -51,3 +52,37 @@ class SettingsRepository:
         row.updated_at = now
         await self.session.flush()
         return settings
+
+
+class AttributeStateRepository:
+    """Implements `AttributeState`: the attributes C last wrote per user (table `adapty_attribute_state`)."""
+
+    CHUNK = 500
+
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+
+    async def get_many(self, app_id: str, customer_user_ids: Sequence[str]) -> dict[str, dict]:
+        found: dict[str, dict] = {}
+        ids = list(customer_user_ids)
+        for start in range(0, len(ids), self.CHUNK):
+            rows = await self.session.scalars(
+                select(AdaptyAttributeStateRow).where(
+                    AdaptyAttributeStateRow.app_id == app_id,
+                    AdaptyAttributeStateRow.customer_user_id.in_(ids[start : start + self.CHUNK]),
+                )
+            )
+            found.update({r.customer_user_id: dict(r.attributes or {}) for r in rows})
+        return found
+
+    async def put(self, app_id: str, customer_user_id: str, attributes: dict) -> None:
+        row = await self.session.get(AdaptyAttributeStateRow, (app_id, customer_user_id))
+        now = datetime.now(timezone.utc)
+        if row is None:
+            row = AdaptyAttributeStateRow(
+                app_id=app_id, customer_user_id=customer_user_id, attributes={}, updated_at=now
+            )
+            self.session.add(row)
+        row.attributes = dict(attributes)
+        row.updated_at = now
+        await self.session.flush()
