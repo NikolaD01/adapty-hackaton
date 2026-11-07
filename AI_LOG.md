@@ -1,14 +1,50 @@
 # AI log
 
-How we used AI, and where it was wrong. Every entry: what the AI claimed → how we checked → what
-was true. Newest first. Append only.
+How we used AI on this project. Keep it to **½–1 page**: update the sections below, don't append a diary.
+Owner: everyone (the `chapter-done` skill reminds you); final edit in Phase 6.
 
-| Date | Area | AI claimed | How we checked | Correction |
-|---|---|---|---|---|
-| 2026-11-07 | brain | Ranking could choose both the group and the offer from one measurement | Human review of the plan | Split into two steps: ranking finds the group, randomized A/B arms choose the offer (otherwise discount leakage) |
-| 2026-11-07 | adapty | Attribute write is a POST with an object body | Real call on a test profile | PATCH with a list body; an object returns 400 "value is not a valid list" |
-| 2026-11-07 | adapty | A placement can serve "nothing" to an audience | Four placement variants tried on a test placement | Refused: a placement needs ≥1 audience and a default audience; control arm = default flow |
-| 2026-11-07 | brain | Annual trial beats weekly once revenue matures | Re-computed with a fixed 90-day window (12,452 users) | Weekly still wins net in 90 days (+$4.33, 90% CI [+3.56, +5.05]) but with 2.7× refunds |
-| 2026-11-07 | brain | Contextual paywall earns 4× more | Compared first-day edits by placement | Partly selection: 5.4 edits vs 2.8–3.3; effect survives control but the raw number was inflated |
-| 2026-11-07 | research | Adapty has no benchmark data | Read the CSV files in the skills repo | It has `market-grid.csv` with medians and percentiles |
-| 2026-11-07 | research | "Revenue audit" is a new idea | Read Adapty's skills | `growth-advisor` already does it |
+## Tools and what we used them for
+- **Claude Code** (CLI, one session per developer) — research, dataset analysis, the plan, repo scaffold,
+  and the code of each area under the rules in `CLAUDE.md`.
+- **Adapty CLI 0.18 + Adapty skills plugin** (`adaptyteam/adapty-skills`: audiences, ab-tests,
+  flow-generator) — reading the Lumen app, creating segments/placements/A-B tests, learning exact CLI
+  syntax (e.g. `attributes__<key>@string`) from the skills instead of guessing.
+- **Web-fetch subagents** — parallel reading of Adapty docs, Meta/TikTok/YouTube/Duolingo ranking
+  papers and competitor docs (Helium), so research didn't block the main session.
+- **REA (static reverse engineering, MCP + CLI)** — looked at how 16 popular apps structure monetization
+  signals (event names, decision logs, holdouts). Static only; nothing from it is in our code.
+- **Claude Docs** — the team decision document. **LLM inside the product** (OpenAI, behind a port):
+  suggests rules and writes explanations only; statistics decides.
+
+## Setup
+- `CLAUDE.md` (shared rules: stack, layers, ownership, git, tests, verified Adapty facts) +
+  `CLAUDE.local.md` per developer with their role, which points the agent to `docs/team/<role>.md`.
+- Repo skills: `chapter-done` (tests → docs → small commits → rebase → PR), `sync-main`, `contract-change`.
+- Frozen contract `docs/contracts/api.md` + fakes in `tests/fakes.py`, so four agents work in parallel
+  without waiting. `tests/unit/test_architecture.py` enforces that `domain/` can't call the network or the LLM.
+- Project settings: commit/PR attribution disabled; Adapty skills marketplace enabled. Dev container with
+  the Adapty CLI logged in.
+
+## Prompts that worked well
+1. *"Check whether a placement can serve 'show nothing'. Test only on the `pulse_test` placement, try
+   these four audience shapes, record what the API accepts, then restore the placement and delete the
+   test profiles."* — a bounded, reversible experiment with explicit cleanup; it answered a design
+   question in minutes and left the account clean.
+2. *"Recompute the uplift with a fixed 90-day window for both arms, only users with a full window,
+   bootstrap 90% interval."* — forcing the same window on both sides exposed a horizon bias in our
+   earlier conclusion.
+3. *"Before you say done: tests pass, ruff is clean, the chapter doc exists — then run chapter-done."*
+   (in `CLAUDE.md`) — made every agent finish work the same way.
+
+## One thing AI got wrong, and how we caught it
+The agent wrote the Adapty attribute update as a `POST` with a JSON object. A real call on a single test
+profile returned `400 "value is not a valid list"`; the correct form is `PATCH` with
+`{"custom_attributes":[{"key":…,"value":…}]}`. We caught it because we test every Adapty call by hand on
+one profile before writing code against it. (Also caught by review: the first plan let one measurement
+choose both the group and the offer — split into ranking (who) and randomized arms (what to show).)
+
+## What we would never delegate to AI
+- Publishing a paywall or starting/stopping an A/B test on real users — always a human click.
+- Deciding the success metric and the claims we make to the jury; every number is re-checked by a person.
+- Handling secrets and production credentials.
+- Prices and discounts.
