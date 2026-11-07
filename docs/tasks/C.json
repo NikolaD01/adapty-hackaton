@@ -177,7 +177,7 @@
     {
       "id": "C5",
       "title": "Decision log API",
-      "status": "todo",
+      "status": "done",
       "brief": "C ch.4",
       "steps": [
         "GET /decisions with steps and decided_by",
