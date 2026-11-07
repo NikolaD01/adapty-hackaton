@@ -8,7 +8,7 @@ gets default values automatically, the AI adds composed ones.
 ## You own
 `sdk/js/**` · `feature_signal/api/v1/{events,catalog,rules,values}.py` ·
 `feature_signal/repositories/{event_types,events,rules,values}.py` ·
-`feature_signal/services/{ingest,rule,value}_service.py` · `feature_signal/domain/rules.py` ·
+`feature_signal/services/{catalog,ingest,rule,value}_service.py` · `feature_signal/domain/rules.py` ·
 `feature_signal/db/**` (all tables and Alembic migrations, including tables others need) ·
 `tests/**/test_{ingest,events,catalog,rules,values}*.py` · `docs/ingest/**`.
 

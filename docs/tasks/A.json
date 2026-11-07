@@ -35,7 +35,7 @@
     {
       "id": "A2",
       "title": "Features + event catalog API (default rules per feature)",
-      "status": "todo",
+      "status": "done",
       "brief": "A ch.2",
       "steps": [
         "FeatureRepo.upsert/list; POST/GET /features (plans list)",

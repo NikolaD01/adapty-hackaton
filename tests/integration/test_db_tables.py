@@ -18,15 +18,11 @@ APP = "c6c7bdd1-1010-4343-8b29-837a77793cab"
 NOW = datetime(2026, 11, 7, 18, 0, tzinfo=timezone.utc)
 
 
-@pytest.fixture
-def db_url(tmp_path) -> str:
-    url = f"sqlite:///{tmp_path / 'app.db'}"
+def test_models_match_migrations(db_url):
     cfg = Config(str(ROOT / "alembic.ini"))
     cfg.attributes["configure_logger"] = False
-    cfg.set_main_option("sqlalchemy.url", url)
-    command.upgrade(cfg, "head")
+    cfg.set_main_option("sqlalchemy.url", db_url)
     command.check(cfg)  # raises if the models and the migrations disagree
-    return url
 
 
 @pytest.fixture
