@@ -6,7 +6,7 @@
     {
       "id": "C1",
       "title": "Profile client (AttributeWriter)",
-      "status": "todo",
+      "status": "done",
       "brief": "C ch.1",
       "steps": [
         "httpx PATCH with list body",
