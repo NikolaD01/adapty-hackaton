@@ -7,6 +7,7 @@ import { RequestError } from '../../shared/ui/QueryFeedback'
 import type { LookupResult } from '../../types/targeting'
 import { demoUsers } from '../demo/demoActions'
 import { PlaceholderPage } from './PlaceholderPage'
+import { TargetingTable } from './TargetingTable'
 
 interface LookupInput {
   placement: string
@@ -74,15 +75,18 @@ export function LookupPage() {
                         </>}
                       </dl>
                       {!!result.arms?.length && (
-                        <ul className="lookup-arms" aria-label="A/B arms">
+                        <TargetingTable label="A/B arms" headers={['Arm', 'Flow', 'Weight']}>
                           {result.arms.map((arm, index) => (
-                            <li key={index}>
-                              <strong>{arm.name ?? 'Arm'} · {arm.weight}%</strong>
-                              <div>{arm.flow_name ?? arm.flow_id ?? '—'}</div>
-                              {arm.flow_name && arm.flow_id && <code>{arm.flow_id}</code>}
-                            </li>
+                            <tr key={index}>
+                              <th scope="row">{arm.name ?? 'Arm'}</th>
+                              <td>
+                                <span>{arm.flow_name ?? arm.flow_id ?? '—'}</span>
+                                {arm.flow_name && arm.flow_id && <code className="data-key">{arm.flow_id}</code>}
+                              </td>
+                              <td className="table-number">{arm.weight}%</td>
+                            </tr>
                           ))}
-                        </ul>
+                        </TargetingTable>
                       )}
                     </>
                   ) : <p>No lookup result returned for this user.</p>}

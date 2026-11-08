@@ -4,6 +4,7 @@ import { ApiError, appWrite, useAppQuery } from '../../shared/api'
 import { QueryFeedback, RequestError } from '../../shared/ui/QueryFeedback'
 import type { InsightRun, InsightSource, Proposal } from '../../types/targeting'
 import { PlaceholderPage } from './PlaceholderPage'
+import { TargetingTable } from './TargetingTable'
 import { ConditionList, NetEffect, outcomeWindow } from './TargetingDetails'
 
 const number = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 })
@@ -39,21 +40,18 @@ function Results({ insight }: { insight: InsightRun }) {
         <h2>Ranked signals</h2>
         <p className="targeting-muted">Net revenue ratio with training confidence interval and separate holdout check.</p>
         {!insight.rankings.length ? <p>No measured rankings.</p> : (
-          <div className="table-scroll">
-            <table className="targeting-table">
-              <thead><tr><th>Feature</th><th>Threshold</th><th>Direction</th><th>Lift (CI)</th><th>Holdout</th><th>Passed</th></tr></thead>
-              <tbody>{insight.rankings.map((row) => (
-                <tr key={row.feature}>
-                  <th scope="row">{row.feature}</th>
-                  <td>{number.format(row.threshold)}</td>
-                  <td>{row.direction}</td>
-                  <td><LiftInterval lift={row.lift} low={row.ci_low} high={row.ci_high} /></td>
-                  <td>{number.format(row.holdout_lift)}×</td>
-                  <td><span className={`status-chip ${row.passed ? 'status-live' : 'status-failed'}`}>{row.passed ? 'Yes' : 'No'}</span></td>
-                </tr>
-              ))}</tbody>
-            </table>
-          </div>
+          <TargetingTable label="Ranked signals" headers={['Feature', 'Threshold', 'Direction', 'Lift (CI)', 'Holdout', 'Passed']}>
+            {insight.rankings.map((row) => (
+              <tr key={row.feature}>
+                <th scope="row">{row.feature}</th>
+                <td className="table-number">{number.format(row.threshold)}</td>
+                <td>{row.direction}</td>
+                <td><LiftInterval lift={row.lift} low={row.ci_low} high={row.ci_high} /></td>
+                <td className="table-number">{number.format(row.holdout_lift)}×</td>
+                <td><span className={`status-chip ${row.passed ? 'status-live' : 'status-failed'}`}>{row.passed ? 'Yes' : 'No'}</span></td>
+              </tr>
+            ))}
+          </TargetingTable>
         )}
       </section>
       <div className="targeting-grid">
@@ -91,13 +89,19 @@ function Results({ insight }: { insight: InsightRun }) {
         <h2>Historical randomized uplift</h2>
         <p className="targeting-muted">Prior A/B arms · difference in {days ? `${days}-day ` : ''}net revenue per user, after refunds.</p>
         {!insight.uplift.length && <p>No randomized comparisons in this run.</p>}
-        {insight.uplift.map((row) => (
-          <article key={`${row.segment_key}/${row.test}`} className="insight-detail">
-            <h3>{row.test}</h3>
-            <p>{row.segment_key} · {row.better_arm} vs {row.worse_arm}</p>
-            <p><NetEffect value={row.diff_net_90d} interval={row} /> per user · {row.n_a} and {row.n_b} users</p>
-          </article>
-        ))}
+        {!!insight.uplift.length && (
+          <TargetingTable label="Historical randomized uplift" headers={['Test', 'Segment', 'Compared arms', 'Net lift per user (CI)', 'Sample sizes']}>
+            {insight.uplift.map((row) => (
+              <tr key={`${row.segment_key}/${row.test}`}>
+                <th scope="row">{row.test}</th>
+                <td><code>{row.segment_key}</code></td>
+                <td>{row.better_arm} vs {row.worse_arm}</td>
+                <td><NetEffect value={row.diff_net_90d} interval={row} /></td>
+                <td className="table-number">{number.format(row.n_a)} / {number.format(row.n_b)}</td>
+              </tr>
+            ))}
+          </TargetingTable>
+        )}
       </section>
     </>
   )

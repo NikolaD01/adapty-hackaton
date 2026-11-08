@@ -29,7 +29,7 @@ it('saves the feature and event payloads and links the event to its features', a
   )
   render(<AppProviders><EventsPage /></AppProviders>)
   const user = userEvent.setup()
-  await user.click(screen.getByText('Add feature'))
+  await user.click(screen.getByRole('button', { name: 'Add feature' }))
   const feature = within(screen.getByRole('group', { name: 'Feature details' }))
   fireEvent.change(feature.getByRole('textbox', { name: 'Key' }), { target: { value: 'retouch' } })
   fireEvent.change(feature.getByRole('textbox', { name: 'Name' }), { target: { value: 'Retouch' } })
@@ -39,7 +39,7 @@ it('saves the feature and event payloads and links the event to its features', a
   expect(await screen.findByText('Retouch saved.')).toBeVisible()
   expect(featureBody).toEqual({ key: 'retouch', name: 'Retouch', description: 'Retouch a photo.', plans: ['premium', 'pro'] })
 
-  await user.click(screen.getByText('Add event'))
+  await user.click(screen.getByRole('button', { name: 'Add event' }))
   const event = within(screen.getByRole('group', { name: 'Event details' }))
   fireEvent.change(event.getByRole('textbox', { name: 'Key' }), { target: { value: 'photo_retouch' } })
   fireEvent.change(event.getByRole('textbox', { name: 'Name' }), { target: { value: 'Photo retouched' } })
@@ -51,7 +51,10 @@ it('saves the feature and event payloads and links the event to its features', a
     key: 'photo_retouch', name: 'Photo retouched', description: 'The photo was retouched.',
     features: expect.arrayContaining(['retouch', 'photo_import']),
   })
-  expect(screen.getAllByText(/Events · .*Photo retouched/)).toHaveLength(2)
+  const features = within(screen.getByRole('table', { name: 'Features' }))
+  expect(features.getAllByRole('cell', { name: /Photo retouched/ })).toHaveLength(2)
+  const savedEvent = within(screen.getByRole('table', { name: 'Event catalog' })).getByRole('row', { name: /photo_retouch/ })
+  expect(within(savedEvent).getByText('Retouch')).toBeVisible()
 })
 
 it('shows the selected user’s seven-day feature counter', async () => {
@@ -59,8 +62,19 @@ it('shows the selected user’s seven-day feature counter', async () => {
     { event_id: 'demo-event', customer_user_id: freeUser, key: 'photo_import', occurred_at: new Date().toISOString(), props: {} },
   ] })
   render(<AppProviders><EventsPage /></AppProviders>)
-  const counter = await screen.findByText('Uses in the last 7 days · 1')
-  expect(counter).toBeVisible()
+  const table = within(await screen.findByRole('table', { name: 'Features' }))
+  expect(await table.findByRole('cell', { name: '1' })).toBeVisible()
   await userEvent.setup().selectOptions(screen.getByRole('combobox', { name: 'Activity for' }), 'lumen_282506_00000')
-  expect(await screen.findAllByText('Uses in the last 7 days · 0')).toHaveLength(4)
+  expect(await table.findAllByRole('cell', { name: '0' })).toHaveLength(4)
+})
+
+it('opens the catalog form with a button and restores focus on cancel', async () => {
+  render(<AppProviders><EventsPage /></AppProviders>)
+  const user = userEvent.setup()
+  const add = screen.getByRole('button', { name: 'Add event' })
+  await user.click(add)
+  expect(screen.getByRole('textbox', { name: 'Key' })).toHaveFocus()
+  await user.click(screen.getByRole('button', { name: 'Cancel' }))
+  expect(screen.queryByRole('group', { name: 'Event details' })).toBeNull()
+  expect(add).toHaveFocus()
 })
