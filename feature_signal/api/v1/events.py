@@ -5,6 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, BackgroundTasks, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from feature_signal.api.v1.ingest_auth import require_ingest_key
 from feature_signal.api.v1.values import value_service
 from feature_signal.db.session import get_session
 from feature_signal.domain.models import Event
@@ -22,7 +23,7 @@ def ingest_service(session: Annotated[AsyncSession, Depends(get_session)]) -> In
 Ingest = Annotated[IngestService, Depends(ingest_service)]
 
 
-@router.post("/apps/{app_id}/events", response_model=EventBatchOut)
+@router.post("/apps/{app_id}/events", response_model=EventBatchOut, dependencies=[Depends(require_ingest_key)])
 async def ingest_events(
     app_id: str, body: EventBatchIn, svc: Ingest, request: Request, background: BackgroundTasks
 ) -> EventBatchOut:

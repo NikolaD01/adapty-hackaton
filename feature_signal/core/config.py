@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     # Value Adapty sends as the Authorization header on webhooks (set the same in the Adapty dashboard).
     # Empty = accept any caller (local development only).
     adapty_webhook_auth: SecretStr = SecretStr("")
+    # Key the SDK sends as `X-Api-Key` on writes (events, features, event types). Empty = no check.
+    ingest_api_key: SecretStr = SecretStr("")
     offline_data_dir: str = "./data/offline"
     llm_provider: str = "openai"
     llm_model: str = "gpt-6-luna"
