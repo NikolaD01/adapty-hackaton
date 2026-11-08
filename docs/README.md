@@ -22,7 +22,7 @@ Start with [plan.md](plan.md).
 ## Chapter docs by area
 | Area | Index | Chapters |
 |---|---|---|
-| A — Ingest & Rules | [ingest/README.md](ingest/README.md) (what is ready for B, C, D) | [01 tables](ingest/01-tables-migration.md) · [02 features + catalog](ingest/02-features-catalog.md) · [03 ingest](ingest/03-idempotent-ingest.md) · [04 timeline](ingest/04-user-timeline.md) · [05 rules engine](ingest/05-rules-engine.md) · [06 values + profile](ingest/06-values-profile.md) · [07 SDK](ingest/07-sdk.md) · [08 demo events](ingest/08-demo-events.md) |
+| A — Ingest & Rules | [ingest/README.md](ingest/README.md) (what is ready for B, C, D) | [01 tables](ingest/01-tables-migration.md) · [02 features + catalog](ingest/02-features-catalog.md) · [03 ingest](ingest/03-idempotent-ingest.md) · [04 timeline](ingest/04-user-timeline.md) · [05 rules engine](ingest/05-rules-engine.md) · [06 values + profile](ingest/06-values-profile.md) · [07 SDK](ingest/07-sdk.md) · [08 demo events](ingest/08-demo-events.md) · [09 Adapty webhook](ingest/09-adapty-webhook.md) |
 | B — Brain | [brain/README.md](brain/README.md) | [01 outcomes](brain/01-offline-outcomes.md) · [02 ranking](brain/02-ranking-and-tiers.md) · [03 segments](brain/03-segments.md) · [04 uplift](brain/04-uplift.md) · [05 API](brain/05-insights-api.md) · [06 suggestions](brain/06-rule-suggestions.md) · [07 explanations](brain/07-explanations.md) · [08 live](brain/08-live-insights.md) · [09 seed JSON](brain/09-seed-outcomes.md) |
 | C — Adapty & Proposals | [adapty/README.md](adapty/README.md) | — |
 | D — Dashboard & Demo | [web/README.md](web/README.md) | [01 web scaffold](web/01-web-scaffold.md) |

@@ -24,6 +24,7 @@ Conventions
 | POST | `/v1/apps/{app_id}/features` | A | Define a feature (a group of events) + which plans include it; creates its default rules |
 | GET | `/v1/apps/{app_id}/features` | A | Feature list |
 | POST | `/v1/apps/{app_id}/event-types` | A | Register an event type (once per type) |
+| POST | `/v1/apps/{app_id}/adapty-webhook` | A | Adapty webhook receiver: purchases, renewals, refunds, trials → events |
 | GET | `/v1/apps/{app_id}/event-types` | A | Event catalog |
 | POST | `/v1/apps/{app_id}/events` | A | Ingest a batch of events (idempotent) |
 | GET | `/v1/apps/{app_id}/users/{customer_user_id}/timeline` | A | Last events of one user |
@@ -95,6 +96,20 @@ POST /v1/apps/{app_id}/events
 ```json
 { "key": "generate_click", "props": { "tokens_used": 40, "tokens_left": 0, "with_upload": true } }
 ```
+
+### Adapty webhook (A)
+Configure in Adapty → Integrations → Webhook: URL `https://<host>/v1/apps/{app_id}/adapty-webhook`, Authorization
+header value = `ADAPTY_WEBHOOK_AUTH` (checked when set; `401` otherwise). The verification request `{}` gets `{}`.
+Every other authenticated call gets `200` (Adapty pauses delivery after repeated failures), body
+`{"accepted": 1, "duplicates": 0}` or `{}` when the body is unusable.
+- Event key = `adapty_<event_type>` (renamed types are slugged), registered on first sight, no feature.
+- `customer_user_id` from the payload (fallback `adapty_profile:<profile_id>` for anonymous profiles).
+- `event_id` = uuid5 of `profile_id` + `event_properties.profile_event_id` → Adapty's retries are duplicates.
+- `occurred_at` = `event_datetime`. Props: scalar `event_properties` only (`price_usd`, `net_revenue_usd`,
+  `vendor_product_id`, `store`, `environment`, `transaction_id`, placement/flow/A/B names …) plus
+  `net_revenue_signed_usd` (+ for started/renewed/trial_converted/one-time purchase, − for refunds).
+- The first webhook also creates the default rule `adapty_net_revenue_90d` (sum of `net_revenue_signed_usd`,
+  90 days): the plan's metric measured on real Adapty purchases.
 
 ### Rule (how a value is derived from events)
 ```json

@@ -13,6 +13,7 @@ Everything below is on `main`, tested, and follows `docs/contracts/api.md`. Chap
 | `POST /v1/apps/{app_id}/values:recompute`, `GET …/values` | 06 |
 | `GET /v1/apps/{app_id}/users/{id}/features` (feature profile) | 06 |
 | `make demo-events` (1000 synthetic seed users) | 08 |
+| `POST /v1/apps/{app_id}/adapty-webhook` (real Adapty purchases → events, `adapty_net_revenue_90d`) | 09 |
 
 ## For B (Brain)
 - `ValueStore`: `feature_signal.repositories.values.ValueRepository(session).matrix(app_id)` → `FeatureMatrix`
@@ -26,6 +27,8 @@ Everything below is on `main`, tested, and follows `docs/contracts/api.md`. Chap
   purchases are in `data/lumen_dataset.json.gz` → `users[i].tx` (`usd`, `refunded`, `t` = seconds relative
   to the dataset's "now"), user `i` = `lumen_282506_{i:05d}`. That is the outcome to join for `source: live`.
   The events are synthetic (`props.synthetic = true`): say so in the dashboard.
+- Real outcomes: once the Adapty webhook points at us, `adapty_net_revenue_90d` per user is the live
+  version of the offline `net_revenue_90d` (see chapter 09).
 - Rule evaluation is `feature_signal.domain.rules.apply(definition, events, now)` (pure) if you need it offline.
 
 ## For C (Adapty & Proposals)

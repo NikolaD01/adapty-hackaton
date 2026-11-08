@@ -1,0 +1,14 @@
+{
+  "at": "2026-11-08T00:17:39Z",
+  "by": "A",
+  "task": "A9",
+  "reason": "New: Adapty webhook stores real purchases/refunds as adapty_* events and keeps adapty_net_revenue_90d per user. B8 can use it as the live outcome.",
+  "affects": [
+    {
+      "id": "B8",
+      "role": "B",
+      "depth": 1,
+      "why": "consumes data:adapty-outcomes"
+    }
+  ]
+}

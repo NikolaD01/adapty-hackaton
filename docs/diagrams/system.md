@@ -37,6 +37,7 @@ flowchart TB
     BRAIN --> OFF
     PROP -- "p_segment, f_*_tier,<br/>segment, A/B" --> ADAPI
     SEG -- "flow for the user's segment" --> ADSDK
+    SEG -- "webhook: purchases, refunds" --> ING
 ```
 
 ## Code layers

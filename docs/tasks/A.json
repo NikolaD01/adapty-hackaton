@@ -264,6 +264,38 @@
         "api:events"
       ],
       "done_when": "recompute returns values for the seeded demo users"
+    },
+    {
+      "id": "A9",
+      "title": "Adapty webhook receiver (real outcomes)",
+      "status": "done",
+      "brief": "docs/ingest/09",
+      "steps": [
+        "POST /adapty-webhook: verification {} -> {}, Authorization check, always 2xx",
+        "event_type -> adapty_<type> event, uuid5 of profile_event_id",
+        "net_revenue_signed_usd + default rule adapty_net_revenue_90d",
+        "Tests: mapping, retries, refunds, auth, anonymous profile"
+      ],
+      "depends_on": [
+        {
+          "id": "A3",
+          "kind": "hard"
+        },
+        {
+          "id": "A6",
+          "kind": "hard"
+        }
+      ],
+      "produces": [
+        "api:adapty-webhook",
+        "data:adapty-outcomes",
+        "path:feature_signal/api/v1/adapty_webhook.py",
+        "path:feature_signal/services/adapty_webhook_service.py"
+      ],
+      "consumes": [
+        "api:events"
+      ],
+      "done_when": "a webhook purchase shows in the timeline and in adapty_net_revenue_90d"
     }
   ]
 }
