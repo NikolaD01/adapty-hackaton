@@ -100,7 +100,7 @@
     {
       "id": "D4",
       "title": "Demo app with the real SDK",
-      "status": "todo",
+      "status": "done",
       "brief": "D ch.4",
       "steps": [
         "Buttons: import, remove background, AI enhance, export, export full-res (Pro only)",

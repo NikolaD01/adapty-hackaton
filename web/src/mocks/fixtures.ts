@@ -1,12 +1,13 @@
 import type { EventType, Feature } from 'feature-signal-sdk'
+import { blockedExport, demoUsers } from '../features/demo/demoActions'
 import { webEnv } from '../shared/env'
 import type { RuleSuggestions } from '../types/ingest'
 import type { AppSettings, InsightRun, Proposal } from '../types/targeting'
 
 export const seededAt = '2026-11-07T18:00:00Z'
-export const freeUser = 'lumen_282506_00007'
-export const paidUser = 'lumen_282506_00000'
-export const blockedExport = 'pt_track_hd_export_blocked'
+export const freeUser = demoUsers[0].id
+export const paidUser = demoUsers[1].id
+export { blockedExport }
 
 export const mockFeatures: Feature[] = [
   { key: 'background', name: 'Background removal', plans: [], description: 'Remove a photo background.', created_at: seededAt },
