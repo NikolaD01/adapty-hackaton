@@ -243,7 +243,10 @@ class InsightService:
                 )
             # SQL-backed adapters share the request transaction; commit only after both succeed.
             # Other port implementations must supply their own transactional guarantees.
-            await self.tier_store.put_many(app_id, tiers)
+            # Tiers drive f_<feature>_tier in Adapty and are cut on live rule keys. Only a live run may replace them:
+            # an offline run has no live tiers, and writing its empty list would make the next sync clear every tier.
+            if effective_source == "live":
+                await self.tier_store.put_many(app_id, tiers)
             if drafts:
                 await self.proposal_sink.create_many(app_id, drafts)
             if self.commit:
