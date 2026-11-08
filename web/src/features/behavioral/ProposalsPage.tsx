@@ -3,6 +3,7 @@ import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { apiUrl, appWrite, request, useAppQuery } from '../../shared/api'
 import { QueryFeedback, RequestError } from '../../shared/ui/QueryFeedback'
+import { Select } from '../../shared/ui/Select'
 import type { AppSettings, Mode, Proposal, ProposalPatch, ProposalStatus } from '../../types/targeting'
 import { PlaceholderPage } from './PlaceholderPage'
 import { ReviewList } from './ReviewList'
@@ -44,14 +45,11 @@ function ModeSettings() {
           <p className="targeting-muted">Human: you approve, edit or reject every proposal. Autopilot: proposals start on their own, within limits.</p>
         </div>
         {query.data && (
-          <label className="inline-control">
-            <span className="sr-only">Mode</span>
-            <select value={query.data.mode} disabled={save.isPending}
-              onChange={(event) => save.mutate({ ...query.data!, mode: event.target.value as Mode })}>
-              <option value="human">Human</option>
-              <option value="autopilot">Autopilot</option>
-            </select>
-          </label>
+          <div className="inline-control">
+            <Select<Mode> label="Mode" value={query.data.mode} disabled={save.isPending}
+              onChange={(mode) => save.mutate({ ...query.data!, mode })}
+              options={[{ value: 'human', label: 'Human' }, { value: 'autopilot', label: 'Autopilot' }]} />
+          </div>
         )}
       </div>
       <QueryFeedback {...query} />

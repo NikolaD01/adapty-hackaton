@@ -44,9 +44,13 @@ it('saves the feature and event payloads and links the event to its features', a
   fireEvent.change(event.getByRole('textbox', { name: 'Key' }), { target: { value: 'photo_retouch' } })
   fireEvent.change(event.getByRole('textbox', { name: 'Name' }), { target: { value: 'Photo retouched' } })
   fireEvent.change(event.getByRole('textbox', { name: 'Description' }), { target: { value: 'The photo was retouched.' } })
-  await user.selectOptions(event.getByRole('listbox', { name: 'Features (up to five)' }), ['retouch', 'photo_import'])
+  const featurePicker = event.getByRole('combobox', { name: 'Features (up to five)' })
+  await user.click(featurePicker)
+  await user.click(event.getByRole('option', { name: 'Retouch' }))
+  await user.click(event.getByRole('option', { name: 'Photo import' }))
   await user.click(event.getByRole('button', { name: 'Save event' }))
   expect(await screen.findByText('Photo retouched saved.')).toBeVisible()
+  expect(featurePicker).toHaveTextContent('Select features…')
   expect(eventBody).toEqual({
     key: 'photo_retouch', name: 'Photo retouched', description: 'The photo was retouched.',
     features: expect.arrayContaining(['retouch', 'photo_import']),
@@ -64,7 +68,9 @@ it('shows the selected user’s seven-day feature counter', async () => {
   render(<AppProviders><EventsPage /></AppProviders>)
   const table = within(await screen.findByRole('table', { name: 'Features' }))
   expect(await table.findByRole('cell', { name: '1' })).toBeVisible()
-  await userEvent.setup().selectOptions(screen.getByRole('combobox', { name: 'Activity for' }), 'lumen_282506_00000')
+  const user = userEvent.setup()
+  await user.click(screen.getByRole('combobox', { name: 'Activity for' }))
+  await user.click(screen.getByRole('option', { name: /Premium user/ }))
   expect(await table.findAllByRole('cell', { name: '0' })).toHaveLength(4)
 })
 

@@ -93,7 +93,9 @@ it('preserves autopilot limits when switching modes and shows the warning', asyn
     return undefined
   }))
   renderProposals()
-  await userEvent.setup().selectOptions(await screen.findByRole('combobox', { name: 'Mode' }), 'autopilot')
+  const user = userEvent.setup()
+  await user.click(await screen.findByRole('combobox', { name: 'Mode' }))
+  await user.click(screen.getByRole('option', { name: 'Autopilot' }))
   expect(await screen.findByText(/autopilot starts tests by itself/i)).toBeVisible()
   expect(payload).toEqual({ ...mockSettings, mode: 'autopilot' })
 })

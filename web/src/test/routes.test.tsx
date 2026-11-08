@@ -142,7 +142,8 @@ describe('dashboard scaffold', () => {
     renderRoute('/demo')
     const user = userEvent.setup()
     await screen.findByText('Full-resolution export requires Premium.')
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Demo user' }), '1')
+    await user.click(screen.getByRole('combobox', { name: 'Demo user' }))
+    await user.click(screen.getByRole('option', { name: 'Premium user' }))
     await user.click(screen.getByRole('button', { name: 'Export in full resolution' }))
     expect(await screen.findByText('Activity refreshed.')).toBeVisible()
     expect(history.map((event) => [event.customer_user_id, event.key])).toEqual([

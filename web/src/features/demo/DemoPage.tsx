@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { useAppQuery } from '../../shared/api'
 import { PreviewNotice } from '../../shared/ui/PreviewNotice'
 import { RequestError } from '../../shared/ui/QueryFeedback'
+import { Select } from '../../shared/ui/Select'
 import { PlaceholderPage } from '../behavioral/PlaceholderPage'
 import { demoActions, demoUsers } from './demoActions'
 import { DemoUserPanel } from './DemoUserPanel'
@@ -24,18 +25,13 @@ export function DemoPage() {
       <div className="demo-grid">
         <section className="behavioral-panel">
           <h2>Photo editor</h2>
-          <label className="demo-user">
+          <div className="demo-user">
             Demo user
-            <select
-              value={userIndex}
+            <Select label="Demo user" value={userIndex}
               disabled={tracking.isPending || tracking.isError}
-              onChange={(event) => { tracking.reset(); setUserIndex(Number(event.target.value)) }}
-            >
-              {demoUsers.map((demoUser, index) => (
-                <option key={demoUser.id} value={index}>{demoUser.label}</option>
-              ))}
-            </select>
-          </label>
+              onChange={(index) => { tracking.reset(); setUserIndex(index) }}
+              options={demoUsers.map(({ label }, index) => ({ value: index, label }))} />
+          </div>
           <p><code>{user.id}</code></p>
           {tracking.editsLeft !== null && <p>Free AI edits left <strong>{tracking.editsLeft}</strong></p>}
           <div className="demo-actions">

@@ -42,8 +42,7 @@
   margin: 12px 0;
 }
 
-.demo-page button,
-.demo-page select {
+.demo-page button {
   padding: 5px 10px;
   border: 1px solid var(--line);
   border-radius: 6px;

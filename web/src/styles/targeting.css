@@ -107,14 +107,13 @@
 }
 
 .targeting-form legend { padding: 0 6px; font-weight: 650; }
-.targeting-form label { display: grid; align-content: start; gap: 5px; min-width: 0; font-weight: 550; }
+.targeting-form label,
+.catalog-select-field { display: grid; align-content: start; gap: 5px; min-width: 0; font-weight: 550; }
 .targeting-form .wide-field { grid-column: 1 / -1; }
 .targeting-form textarea { resize: vertical; }
 
 .targeting-form input,
 .targeting-form textarea,
-.targeting-form select,
-.inline-control select,
 .targeting-actions button {
   min-width: 0;
   max-width: 100%;
@@ -125,10 +124,6 @@
   background: #fff;
   transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
 }
-
-.targeting-form select:not([multiple]),
-.inline-control select { appearance: none; }
-.targeting-form select:enabled, .inline-control select:enabled { cursor: pointer; }
 
 .targeting-actions button { font-weight: 600; }
 .targeting-actions button:enabled { cursor: pointer; }
@@ -142,8 +137,7 @@
 .targeting-actions .primary-action:enabled:hover,
 .targeting-actions .primary-action[aria-expanded="true"] { color: #fff; background: #4814b7; border-color: #4814b7; }
 
-.targeting-form :is(input, textarea, select):focus-visible,
-.inline-control select:focus-visible,
+.targeting-form :is(input, textarea):focus-visible,
 .targeting-actions button:focus-visible,
 .table-scroll:focus-visible {
   outline: 2px solid var(--accent);
@@ -327,7 +321,7 @@
 .insight-toolbar > p { margin-top: 8px; }
 .insight-summary { display: grid; gap: 6px; margin: 8px 0 12px; padding: 12px; border: 1px solid var(--targeting-border); border-radius: 8px; background: var(--targeting-wash); }
 .insight-summary p { margin: 0; }
-.review-mode select { min-width: min(105px, 100%); }
+.review-mode .custom-select { min-width: min(112px, 100%); }
 .review-mode > p { margin: 8px 0 0; }
 .decision-step-details { display: grid; gap: 5px; }
 .decision-step-details dt { font-size: 12px; color: var(--muted); }

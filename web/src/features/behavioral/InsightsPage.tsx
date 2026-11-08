@@ -4,6 +4,7 @@ import { ApiError, appWrite, useAppQuery } from '../../shared/api'
 import { QueryFeedback, RequestError } from '../../shared/ui/QueryFeedback'
 import type { InsightRun, InsightSource, Proposal } from '../../types/targeting'
 import { PlaceholderPage } from './PlaceholderPage'
+import { Select } from '../../shared/ui/Select'
 import { TargetingTable } from './TargetingTable'
 import { ConditionList, NetEffect, outcomeWindow } from './TargetingDetails'
 import { aboveThreshold, fieldLabel, times } from './plainLanguage'
@@ -155,12 +156,10 @@ export function InsightsPage() {
       <PlaceholderPage title="Insights" description="Review which behavioral signals hold on unseen users and which offers have randomized evidence." />
       <section className="behavioral-panel insight-toolbar">
         <div className="targeting-actions">
-          <label className="inline-control">Requested source
-            <select value={source} disabled={run.isPending} onChange={(event) => setSource(event.target.value as InsightSource)}>
-              <option value="offline">Offline</option>
-              <option value="live">Live</option>
-            </select>
-          </label>
+          <div className="inline-control">Requested source
+            <Select<InsightSource> label="Requested source" value={source} disabled={run.isPending} onChange={setSource}
+              options={[{ value: 'offline', label: 'Offline' }, { value: 'live', label: 'Live' }]} />
+          </div>
           <button className="primary-action" disabled={run.isPending} onClick={() => run.mutate()}>
             {run.isPending ? 'Running…' : 'Run insights'}
           </button>

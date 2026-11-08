@@ -3,6 +3,7 @@ import type { EventType, EventTypeInput, Feature, FeatureInput } from 'feature-s
 import { useRef, useState, type FormEvent } from 'react'
 import { appWrite, useAppQuery } from '../../shared/api'
 import { QueryFeedback, RequestError } from '../../shared/ui/QueryFeedback'
+import { Select } from '../../shared/ui/Select'
 import { demoUsers } from '../demo/demoActions'
 import { useDemoProfile } from '../demo/DemoUserPanel'
 import { PlaceholderPage } from './PlaceholderPage'
@@ -32,6 +33,7 @@ function catalogFields(data: FormData) {
 function CatalogForm({ type, features = [], onCancel }: { type: CatalogType; features?: Feature[]; onCancel: () => void }) {
   const client = useQueryClient()
   const [validation, setValidation] = useState('')
+  const [featureKeys, setFeatureKeys] = useState<string[]>([])
   const save = useMutation({
     mutationFn: (input: FeatureInput | EventTypeInput) => appWrite<Feature | EventType>(
       type === 'feature' ? '/features' : '/event-types', 'POST', input,
@@ -53,15 +55,13 @@ function CatalogForm({ type, features = [], onCancel }: { type: CatalogType; fea
       setValidation('Enter a name and description.')
       return
     }
-    const featureKeys = data.getAll('features').map(String)
-    if (featureKeys.length > 5) {
-      setValidation('Select up to five features.')
-      return
-    }
     const plans = [...new Set(String(data.get('plans') ?? '').split(',').map((plan) => plan.trim()).filter(Boolean))]
     setValidation('')
     const payload = type === 'feature' ? { ...fields, plans } : { ...fields, features: featureKeys }
-    save.mutate(payload, { onSuccess: () => form.reset() })
+    save.mutate(payload, { onSuccess: () => {
+      form.reset()
+      setFeatureKeys([])
+    } })
   }
 
   return (
@@ -73,11 +73,12 @@ function CatalogForm({ type, features = [], onCancel }: { type: CatalogType; fea
           {type === 'feature' ? (
             <label className="wide-field">Plans (comma-separated)<input name="plans" placeholder="premium, pro" /></label>
           ) : (
-            <label className="wide-field">Features (up to five)
-              <select name="features" multiple size={Math.min(5, Math.max(2, features.length))}>
-                {features.map((feature) => <option key={feature.key} value={feature.key}>{feature.name}</option>)}
-              </select>
-            </label>
+            <div className="wide-field catalog-select-field">
+              <span>Features (up to five)</span>
+              <Select multiple label="Features (up to five)" maxSelections={5}
+                options={features.map(({ key, name }) => ({ value: key, label: name }))}
+                value={featureKeys} onChange={setFeatureKeys} disabled={save.isPending} />
+            </div>
           )}
           {validation && <p role="alert" className="wide-field">{validation}</p>}
           <div className="targeting-actions wide-field">
@@ -122,12 +123,11 @@ export function EventsPage() {
       <section className="behavioral-panel">
         <header className="panel-heading">
           <div><h2>Features</h2><p className="targeting-muted">Usage is scoped to the selected profile.</p></div>
-          <label className="inline-control">
+          <div className="inline-control">
             Activity for
-            <select value={userId} onChange={(event) => setUserId(event.target.value)}>
-              {demoUsers.map((user) => <option key={user.id} value={user.id}>{user.label} · {user.id}</option>)}
-            </select>
-          </label>
+            <Select label="Activity for" value={userId} onChange={setUserId}
+              options={demoUsers.map(({ id, label }) => ({ value: id, label: `${label} · ${id}` }))} />
+          </div>
         </header>
         <QueryFeedback {...features} />
         {profile.error && <RequestError error={profile.error} />}
