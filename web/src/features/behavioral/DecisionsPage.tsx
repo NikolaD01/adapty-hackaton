@@ -3,6 +3,7 @@ import { useAppQuery } from '../../shared/api'
 import { QueryFeedback } from '../../shared/ui/QueryFeedback'
 import type { Decision } from '../../types/targeting'
 import { PlaceholderPage } from './PlaceholderPage'
+import { TargetingTable } from './TargetingTable'
 import { showValue } from './TargetingDetails'
 
 const actions: Record<Decision['action'], string> = { approve: 'Approved', reject: 'Rejected', autopilot_start: 'Started by Autopilot' }
@@ -30,17 +31,22 @@ export function DecisionsPage() {
             <span className="status-chip">{decision.decided_by === 'human' ? 'Human' : 'Autopilot'}</span>
           </header>
           <p className="targeting-muted"><time dateTime={decision.at}>{new Date(decision.at).toLocaleString()}</time></p>
-          <ol className="decision-steps">
-            {decision.steps.map((step, index) => (
-              <li key={`${step.step}-${index}`}>
-                <span className={`status-chip ${step.ok ? 'status-live' : 'status-failed'}`}>{step.ok ? 'OK' : 'Failed'}</span>{' '}
-                <code>{step.step}</code>
-                {Object.entries(step.detail).map(([name, value]) => (
-                  <p key={name} className="step-detail"><strong>{name}</strong> · {showValue(value)}</p>
-                ))}
-              </li>
-            ))}
-          </ol>
+          {decision.steps.length > 0 && (
+            <TargetingTable label="Decision steps" headers={['Step', 'Result', 'Details']}>
+              {decision.steps.map((step, index) => (
+                <tr key={`${step.step}-${index}`}>
+                  <th scope="row"><code>{step.step}</code></th>
+                  <td><span className={`status-chip ${step.ok ? 'status-live' : 'status-failed'}`}>{step.ok ? 'OK' : 'Failed'}</span></td>
+                  <td>
+                    {!Object.keys(step.detail).length && '—'}
+                    {Object.entries(step.detail).map(([name, value]) => (
+                      <div key={name} className="step-detail"><strong>{name}</strong> · {showValue(value)}</div>
+                    ))}
+                  </td>
+                </tr>
+              ))}
+            </TargetingTable>
+          )}
         </article>
       ))}
     </>

@@ -5,6 +5,7 @@ import { apiUrl, appWrite, request, useAppQuery } from '../../shared/api'
 import { QueryFeedback, RequestError } from '../../shared/ui/QueryFeedback'
 import type { AppSettings, Mode, Proposal, ProposalPatch, ProposalStatus } from '../../types/targeting'
 import { PlaceholderPage } from './PlaceholderPage'
+import { TargetingTable } from './TargetingTable'
 import { ConditionList, NetEffect, outcomeWindow, showValue } from './TargetingDetails'
 
 const statusLabels: Record<ProposalStatus, string> = {
@@ -176,13 +177,22 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
           </dl>
         </section>
       </div>
-      <p><strong>Expected {days ? `${days}-day ` : ''}net revenue effect per user</strong> <NetEffect value={proposal.expected_effect.diff} interval={proposal.expected_effect} /></p>
-      {proposal.evidence.uplift_test && <p>Evidence from {proposal.evidence.uplift_test}</p>}
+      <p className="proposal-outcome"><strong>Expected {days ? `${days}-day ` : ''}net revenue effect per user</strong> <NetEffect value={proposal.expected_effect.diff} interval={proposal.expected_effect} /></p>
+      {proposal.evidence.uplift_test && <p className="targeting-muted">Evidence from {proposal.evidence.uplift_test}</p>}
       {proposal.edits.length > 0 && (
-        <details>
-          <summary>Edit history</summary>
-          <ul>{proposal.edits.map((edit, index) => <li key={`${edit.at}-${index}`}>{edit.field} · {showValue(edit.from)} → {showValue(edit.to)}</li>)}</ul>
-        </details>
+        <section className="proposal-history">
+          <h3>Edit history</h3>
+          <TargetingTable label="Edit history" headers={['Field', 'Previous value', 'New value', 'Changed at']}>
+            {proposal.edits.map((edit, index) => (
+              <tr key={`${edit.at}-${index}`}>
+                <th scope="row"><code>{edit.field}</code></th>
+                <td>{showValue(edit.from)}</td>
+                <td>{showValue(edit.to)}</td>
+                <td><time dateTime={edit.at}>{new Date(edit.at).toLocaleString()}</time></td>
+              </tr>
+            ))}
+          </TargetingTable>
+        </section>
       )}
       {awaitingPublish && <p className="preview-notice">Publish the new paywall in Adapty, then continue approval to start the test.</p>}
       {form === 'edit' && draft && (

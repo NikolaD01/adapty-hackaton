@@ -18,6 +18,12 @@ The walkthrough needs a stage-ready fallback when the real Brain or Adapty accou
 4. In Proposals, keep Human mode, adjust the holdout, and approve the preview proposal. Open its decision log.
 5. Compare the two returned flows at the same placement. In the preview, the names and segment hashes come from fixtures.
 
+## Dashboard layout
+
+Behavioral Targeting tabs use the same typography, borders and purple selection as the dashboard shell. Add feature and Add event open an inline form. Cancel returns keyboard focus to its button. Edit history, catalog entries, rules, decision steps and A/B arms use tables with labeled scroll regions on narrow screens.
+
+Tab content and catalog forms enter with a short transition. The reduced-motion preference disables movement. Verify tab navigation and table scrolling at 1280 × 800 and 390 × 844.
+
 ## Contract touched
 
 None. The preview exercises the same request shapes and leaves the live API unchanged.
@@ -34,7 +40,7 @@ npm run build
 VITE_USE_MOCKS=true npm run dev
 ```
 
-Expected: 42 tests pass and the build succeeds. Open `http://localhost:5173/dashboard/events` at 1280 × 800 and follow the steps above in the same tab. The **Mock preview** banner stays visible when switching routes.
+Expected: 43 tests pass and the build succeeds. Open `http://localhost:5173/dashboard/events` at 1280 × 800 and follow the steps above in the same tab. The **Mock preview** banner stays visible when switching routes.
 
 ## Limits
 

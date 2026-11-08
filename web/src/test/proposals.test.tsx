@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { MemoryRouter } from 'react-router-dom'
@@ -46,7 +46,10 @@ it('edits only changed whitelisted fields and renders the saved state', async ()
   await user.click(screen.getByRole('button', { name: 'Save changes' }))
   expect(await screen.findByText('30%')).toBeVisible()
   expect(payload).toEqual({ holdout_pct: 30 })
-  expect(screen.getByText('Edit history')).toBeVisible()
+  const history = within(screen.getByRole('table', { name: 'Edit history' }))
+  expect(history.getByRole('rowheader', { name: 'holdout_pct' })).toBeVisible()
+  expect(history.getByRole('cell', { name: '20' })).toBeVisible()
+  expect(history.getByRole('cell', { name: '30' })).toBeVisible()
 })
 
 it('disables approval while the request runs and shows the actual result', async () => {

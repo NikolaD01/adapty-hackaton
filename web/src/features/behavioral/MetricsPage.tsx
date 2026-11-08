@@ -4,6 +4,7 @@ import { appWrite, useAppQuery } from '../../shared/api'
 import { QueryFeedback, RequestError } from '../../shared/ui/QueryFeedback'
 import type { MetricRule, MetricValues, RuleInput, RuleSuggestions } from '../../types/ingest'
 import { PlaceholderPage } from './PlaceholderPage'
+import { TargetingTable } from './TargetingTable'
 
 function Suggestions() {
   const client = useQueryClient()
@@ -66,30 +67,33 @@ export function MetricsPage() {
         <h2>Rules</h2>
         <QueryFeedback {...rules} />
         {rules.data?.length === 0 && <p>No rules configured.</p>}
-        {rules.data && (
-          <ul>
+        {!!rules.data?.length && (
+          <TargetingTable label="Rules" headers={['Rule', 'Measure', 'Window', 'Source']}>
             {rules.data.map((rule) => (
-              <li key={rule.key}>
-                <strong>{rule.name}</strong> <code>{rule.key}</code>
-                <div>{rule.definition.measure}{rule.definition.window_days && ` · ${rule.definition.window_days} days`}</div>
-              </li>
+              <tr key={rule.key}>
+                <th scope="row"><span>{rule.name}</span><code className="data-key">{rule.key}</code></th>
+                <td>{rule.definition.measure}</td>
+                <td>{rule.definition.window_days ? `${rule.definition.window_days} days` : 'All history'}</td>
+                <td><span className="data-tag">{rule.source === 'ai' ? 'AI' : rule.source}</span></td>
+              </tr>
             ))}
-          </ul>
+          </TargetingTable>
         )}
       </section>
       <section className="behavioral-panel">
         <h2>Sample values</h2>
         <QueryFeedback {...values} />
         {values.data?.items.length === 0 && <p>No values computed.</p>}
-        {values.data && (
-          <ul>
+        {!!values.data?.items.length && (
+          <TargetingTable label="Sample values" headers={['Rule', 'Customer user ID', 'Value']}>
             {values.data.items.map((item) => (
-              <li key={`${item.customer_user_id}/${item.rule_key}`}>
-                <strong>{item.value}</strong> <code>{item.rule_key}</code>
-                <div>{item.customer_user_id}</div>
-              </li>
+              <tr key={`${item.customer_user_id}/${item.rule_key}`}>
+                <th scope="row"><code>{item.rule_key}</code></th>
+                <td><code>{item.customer_user_id}</code></td>
+                <td className="table-number">{item.value}</td>
+              </tr>
             ))}
-          </ul>
+          </TargetingTable>
         )}
       </section>
     </>

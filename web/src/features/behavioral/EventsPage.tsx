@@ -1,19 +1,22 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { EventType, EventTypeInput, Feature, FeatureInput } from 'feature-signal-sdk'
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { appWrite, useAppQuery } from '../../shared/api'
 import { QueryFeedback, RequestError } from '../../shared/ui/QueryFeedback'
 import { demoUsers } from '../demo/demoActions'
 import { useDemoProfile } from '../demo/DemoUserPanel'
 import { PlaceholderPage } from './PlaceholderPage'
+import { TargetingTable } from './TargetingTable'
 
-function CatalogFields({ type }: { type: 'feature' | 'event' }) {
+type CatalogType = 'feature' | 'event'
+
+function CatalogFields({ type }: { type: CatalogType }) {
   const maxKey = type === 'feature' ? 22 : 40
   return (
     <>
-      <label>Key<input name="key" required minLength={2} maxLength={maxKey} pattern={`[a-z][a-z0-9_]{1,${maxKey - 1}}`} /></label>
+      <label>Key<input name="key" required minLength={2} maxLength={maxKey} pattern={`[a-z][a-z0-9_]{1,${maxKey - 1}}`} autoFocus /></label>
       <label>Name<input name="name" required maxLength={100} /></label>
-      <label className="wide-field">Description<textarea name="description" required maxLength={500} /></label>
+      <label className="wide-field">Description<textarea name="description" required maxLength={500} rows={2} /></label>
     </>
   )
 }
@@ -26,7 +29,7 @@ function catalogFields(data: FormData) {
   }
 }
 
-function CatalogForm({ type, features = [] }: { type: 'feature' | 'event'; features?: Feature[] }) {
+function CatalogForm({ type, features = [], onCancel }: { type: CatalogType; features?: Feature[]; onCancel: () => void }) {
   const client = useQueryClient()
   const [validation, setValidation] = useState('')
   const save = useMutation({
@@ -62,8 +65,7 @@ function CatalogForm({ type, features = [] }: { type: 'feature' | 'event'; featu
   }
 
   return (
-    <details className="behavioral-panel">
-      <summary>Add {type}</summary>
+    <section className="behavioral-panel catalog-editor" id="catalog-editor">
       <form onSubmit={submit} className="targeting-form">
         <fieldset disabled={save.isPending}>
           <legend>{type === 'feature' ? 'Feature details' : 'Event details'}</legend>
@@ -80,12 +82,13 @@ function CatalogForm({ type, features = [] }: { type: 'feature' | 'event'; featu
           {validation && <p role="alert" className="wide-field">{validation}</p>}
           <div className="targeting-actions wide-field">
             <button type="submit" className="primary-action">Save {type}</button>
+            <button type="button" onClick={onCancel}>Cancel</button>
           </div>
         </fieldset>
       </form>
       <RequestError error={save.error} />
-      {save.isSuccess && <p role="status">{save.data.name} saved.</p>}
-    </details>
+      {save.isSuccess && <p className="save-feedback" role="status">{save.data.name} saved.</p>}
+    </section>
   )
 }
 
@@ -93,18 +96,32 @@ export function EventsPage() {
   const features = useAppQuery<Feature[]>(['features'], '/features')
   const events = useAppQuery<EventType[]>(['event-types'], '/event-types')
   const [userId, setUserId] = useState<string>(demoUsers[0].id)
+  const [form, setForm] = useState<CatalogType | null>(null)
+  const opener = useRef<HTMLButtonElement | null>(null)
   const profile = useDemoProfile(userId)
+  const featureNames = new Map(features.data?.map(({ key, name }) => [key, name]))
 
   return (
     <>
-      <PlaceholderPage title="Events" description="Features and actions registered by your app." />
-      <div className="targeting-grid">
-        <CatalogForm type="feature" />
-        <CatalogForm type="event" features={features.data} />
-      </div>
+      <PlaceholderPage title="Events" description="Manage the events and features used by behavioral targeting." actions={
+        <>
+          <button type="button" aria-expanded={form === 'feature'} aria-controls={form === 'feature' ? 'catalog-editor' : undefined} onClick={(event) => {
+            opener.current = event.currentTarget
+            setForm('feature')
+          }}>Add feature</button>
+          <button type="button" className="primary-action" aria-expanded={form === 'event'} aria-controls={form === 'event' ? 'catalog-editor' : undefined} onClick={(event) => {
+            opener.current = event.currentTarget
+            setForm('event')
+          }}>Add event</button>
+        </>
+      } />
+      {form && <CatalogForm key={form} type={form} features={features.data} onCancel={() => {
+        setForm(null)
+        opener.current?.focus()
+      }} />}
       <section className="behavioral-panel">
         <header className="panel-heading">
-          <h2>Features</h2>
+          <div><h2>Features</h2><p className="targeting-muted">Usage is scoped to the selected profile.</p></div>
           <label className="inline-control">
             Activity for
             <select value={userId} onChange={(event) => setUserId(event.target.value)}>
@@ -115,35 +132,40 @@ export function EventsPage() {
         <QueryFeedback {...features} />
         {profile.error && <RequestError error={profile.error} />}
         {features.data?.length === 0 && <p>No features registered.</p>}
-        <ul>
-          {features.data?.map((feature) => {
-            const related = events.data?.filter((event) => event.features.includes(feature.key))
-            const uses = profile.data?.features.find((item) => item.feature === feature.key)?.values[`${feature.key}_uses_7d`]
-            return (
-              <li key={feature.key} className="insight-detail">
-                <strong>{feature.name}</strong> <code>{feature.key}</code>
-                <div>{feature.description}</div>
-                {!!feature.plans.length && <div>Plans · {feature.plans.join(', ')}</div>}
-                <div>Uses in the last 7 days · {uses ?? '—'}</div>
-                {related && <div>Events · {related.length ? related.map((event) => event.name).join(', ') : 'None registered'}</div>}
-              </li>
-            )
-          })}
-        </ul>
+        {!!features.data?.length && (
+          <TargetingTable label="Features" headers={['Feature', 'Events', 'Plans', '7-day uses']}>
+            {features.data.map((feature) => {
+              const related = events.data?.filter((event) => event.features.includes(feature.key))
+              const uses = profile.data?.features.find((item) => item.feature === feature.key)?.values[`${feature.key}_uses_7d`]
+              return (
+                <tr key={feature.key}>
+                  <th scope="row"><span>{feature.name}</span><code className="data-key">{feature.key}</code><span className="table-note">{feature.description}</span></th>
+                  <td>{related?.length ? related.map((event) => event.name).join(', ') : '—'}</td>
+                  <td><div className="data-tags">{feature.plans.length ? feature.plans.map((plan) => <span className="data-tag" key={plan}>{plan}</span>) : '—'}</div></td>
+                  <td className="table-number">{uses ?? '—'}</td>
+                </tr>
+              )
+            })}
+          </TargetingTable>
+        )}
       </section>
       <section className="behavioral-panel">
-        <h2>Event catalog</h2>
+        <header className="panel-heading"><h2>Event catalog</h2></header>
         <QueryFeedback {...events} />
         {events.data?.length === 0 && <p>No events registered.</p>}
-        <ul>
-          {events.data?.map((event) => (
-            <li key={event.key}>
-              <strong>{event.name}</strong> <code>{event.key}</code>
-              <div>{event.description}</div>
-              {event.features.length > 0 && <small>Features {event.features.join(', ')}</small>}
-            </li>
-          ))}
-        </ul>
+        {!!events.data?.length && (
+          <TargetingTable label="Event catalog" headers={['Event', 'Description', 'Linked features']}>
+            {events.data.map((event) => (
+              <tr key={event.key}>
+                <th scope="row"><span>{event.name}</span><code className="data-key">{event.key}</code></th>
+                <td>{event.description}</td>
+                <td><div className="data-tags">{event.features.length ? event.features.map((key) => (
+                  <span className="data-tag" key={key}>{featureNames.get(key) ?? key}</span>
+                )) : '—'}</div></td>
+              </tr>
+            ))}
+          </TargetingTable>
+        )}
       </section>
     </>
   )
