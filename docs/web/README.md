@@ -1,1 +1,3 @@
-# docs/web — chapter docs for this area (see docs/templates/chapter.md)
+# Dashboard and Lumen demo
+
+- [01 — Web scaffold and Adapty Overview](01-web-scaffold.md)

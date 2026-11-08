@@ -30,8 +30,7 @@ review the dashboard before connecting API calls.
 
 Events and Metrics read the live catalog, rules and values. The Lumen demo sends events through
 the SDK and refreshes the selected user's timeline and feature profile after `flush()`.
-Insights, Proposals and Decisions keep development mocks and show **Coming soon** for HTTP 501.
-Lookup is a route placeholder. Overview uses data from the design reference.
+The preview covers the dashboard's catalog, events, rules, insights, proposals, settings, decisions and lookup calls. It keeps state in memory and labels the data as synthetic. The live mode passes HTTP 501 to the dashboard's **Coming soon** state. Overview uses data from the design reference.
 
 ## How to test
 
@@ -61,7 +60,7 @@ The narrow preview uses the icon rail to keep the charts in view. [Adapty Overvi
 The local defaults in `web/.env.example` target the Lumen app and `http://localhost:8000`.
 Open `http://localhost:5173/demo` and try full-resolution export as the free user. The event
 `pt_track_hd_export_blocked` appears in the timeline and HD export values refresh in the profile.
-Set `VITE_USE_MOCKS=false` to disable the development service worker integration.
+The default calls the backend. Set `VITE_USE_MOCKS=true` before starting Vite to run the preview without a backend.
 
 ## Overview style measurements
 
@@ -86,5 +85,4 @@ The screenshot guides visual review. The app renders the interface from componen
 
 ## Status
 
-Chapter 1 is in progress. Add the remaining API examples and connect each page to its mock before
-marking D1 complete.
+D1 complete. The routes render in the shared shell and contract tests exercise preview ingest, rule acceptance, approvals, settings and lookup. Next: proposal review and controls.

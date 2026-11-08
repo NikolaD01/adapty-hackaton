@@ -1,27 +1,35 @@
 import { useQuery } from '@tanstack/react-query'
 import { webEnv } from './env'
 
-export const appApiUrl = `${webEnv.apiBase}/v1/apps/${encodeURIComponent(webEnv.appId)}`
+export const apiUrl = `${webEnv.apiBase}/v1`
+export const appApiUrl = `${apiUrl}/apps/${encodeURIComponent(webEnv.appId)}`
 
 export class ApiError extends Error {
-  constructor(readonly status: number) {
-    super(`Request failed with HTTP ${status}`)
+  constructor(readonly status: number, message = `Request failed with HTTP ${status}`, readonly code?: string) {
+    super(message)
   }
 }
 
-async function get<T>(path: string, signal: AbortSignal): Promise<T> {
-  const response = await fetch(`${appApiUrl}${path}`, { signal })
-  if (!response.ok) throw new ApiError(response.status)
+export async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
+  const headers = new Headers(options.headers)
+  if (options.body !== undefined) headers.set('Content-Type', 'application/json')
+  const response = await fetch(url, { ...options, headers })
+  if (!response.ok) {
+    const body = await response.json().catch(() => null)
+    const error = body?.error
+    throw new ApiError(response.status, typeof error?.message === 'string' ? error.message : undefined, error?.code)
+  }
   return response.json()
+}
+
+export function appWrite<T>(path: string, method: 'POST' | 'PUT', body?: unknown) {
+  return request<T>(`${appApiUrl}${path}`, { method, body: JSON.stringify(body) })
 }
 
 export function useAppQuery<T>(queryKey: readonly string[], path: string) {
   return useQuery({
     queryKey,
-    queryFn: ({ signal }) => get<T>(path, signal),
-    retry: (failures, error) => {
-      if (error instanceof ApiError && (error.status < 500 || error.status === 501)) return false
-      return failures < 2
-    },
+    queryFn: ({ signal }) => request<T>(`${appApiUrl}${path}`, { signal }),
+    retry: (failures, error) => !(error instanceof ApiError) && failures < 2,
   })
 }

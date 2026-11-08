@@ -69,3 +69,11 @@
     gap: 0;
   }
 }
+
+.preview-notice {
+  margin: 12px 0;
+  padding: 8px 12px;
+  color: #573900;
+  background: #fff4d9;
+  border-radius: 6px;
+}

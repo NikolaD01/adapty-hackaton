@@ -1,4 +1,5 @@
 import { Link, NavLink, Outlet } from 'react-router-dom'
+import { PreviewNotice } from '../../shared/ui/PreviewNotice'
 import { behavioralPages } from './pages'
 
 export function BehavioralLayout() {
@@ -11,6 +12,7 @@ export function BehavioralLayout() {
         ))}
         <Link className="demo-link" to="/demo">Lumen demo</Link>
       </nav>
+      <PreviewNotice />
       <Outlet />
     </section>
   )

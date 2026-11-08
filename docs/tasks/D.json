@@ -6,7 +6,7 @@
     {
       "id": "D1",
       "title": "Web scaffold and MSW mocks from the contract",
-      "status": "doing",
+      "status": "done",
       "brief": "D ch.1",
       "steps": [
         "Vite + React + TS + Tailwind + Router + TanStack Query",

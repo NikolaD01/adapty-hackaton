@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { PreviewNotice } from '../../shared/ui/PreviewNotice'
 import { PlaceholderPage } from '../behavioral/PlaceholderPage'
 import { demoActions, demoUsers } from './demoActions'
 import { DemoUserPanel } from './DemoUserPanel'
@@ -13,6 +14,7 @@ export function DemoPage() {
   return (
     <main className="demo-page">
       <PlaceholderPage title="Lumen demo" description="Simulate a photo-editing session for a seeded user." />
+      <PreviewNotice />
       <div className="demo-grid">
         <section className="behavioral-panel">
           <h2>Photo editor</h2>
