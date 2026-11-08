@@ -15,6 +15,8 @@ export interface InitOptions {
   flushIntervalMs?: number
   /** Send as soon as this many events are buffered (default 20). */
   maxBatch?: number
+  /** Sent as `X-Api-Key` when the backend sets INGEST_API_KEY. */
+  apiKey?: string
   /** Injected in tests; defaults to globalThis.fetch. */
   fetch?: typeof fetch
 }
@@ -64,7 +66,7 @@ export const MAX_PROP_STRING = 100
 const MAX_REQUEST = 500
 
 interface State {
-  opts: Required<Omit<InitOptions, 'fetch'>> & { fetch: typeof fetch }
+  opts: Required<Omit<InitOptions, 'fetch' | 'apiKey'>> & { fetch: typeof fetch; apiKey?: string }
   queue: QueuedEvent[]
   timer: ReturnType<typeof setInterval> | null
   inFlight: Promise<FlushResult> | null
@@ -85,7 +87,10 @@ function url(path: string): string {
 async function postJson<T>(path: string, body: unknown): Promise<T> {
   const res = await need().opts.fetch(url(path), {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: {
+      'content-type': 'application/json',
+      ...(need().opts.apiKey ? { 'x-api-key': need().opts.apiKey as string } : {}),
+    },
     body: JSON.stringify(body),
   })
   if (!res.ok) throw new Error(`feature-signal-sdk: ${path} failed with ${res.status}`)
@@ -122,6 +127,7 @@ export function init(options: InitOptions): void {
       flushIntervalMs: options.flushIntervalMs ?? 2000,
       maxBatch: options.maxBatch ?? 20,
       fetch: fetchImpl,
+      apiKey: options.apiKey,
     },
     queue: [],
     timer: null,

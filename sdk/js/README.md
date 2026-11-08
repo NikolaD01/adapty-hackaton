@@ -17,6 +17,7 @@ await flush()                                                   // optional: sen
   same ids; the next flush retries and the backend counts them once.
 - Props: numbers, booleans, null, strings ≤100 chars, at most 20. Anything else (a prompt, an object) is
   dropped with a console warning — send `prompt_len`, not the prompt.
+- `init({ apiKey })` sends `X-Api-Key` when the backend sets `INGEST_API_KEY` (off by default).
 - Also: `setUser(id)`, `pending()`, `shutdown()`.
 
 `npm test -- --run` · `npm run typecheck` · `npm run build` (Node 20).
