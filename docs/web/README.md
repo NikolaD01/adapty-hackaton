@@ -6,3 +6,4 @@
 - [04 — Lumen demo access and tracking](04-lumen-tracking.md)
 - [05 — Event catalog and activity](05-event-catalog.md)
 - [06 — Decisions and flow lookup](06-decisions-lookup.md)
+- [07 — Live API verification](07-live-verification.md)
