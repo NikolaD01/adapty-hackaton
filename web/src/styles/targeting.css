@@ -78,6 +78,7 @@
 }
 
 .panel-heading { justify-content: space-between; }
+.inline-control { min-width: 0; max-width: 100%; }
 .panel-heading h2 { margin: 0; }
 .targeting-actions { margin-top: 12px; }
 .panel-heading > .targeting-actions { margin-top: 0; }
