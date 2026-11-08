@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Request
 from feature_signal.core.config import get_settings
 from feature_signal.domain.ports import FlowLookup
 from feature_signal.integrations.adapty.lookup import AdaptyFlowLookup
-from feature_signal.schemas.proposals import LookupIn, LookupOut, LookupResult
+from feature_signal.schemas.proposals import LookupArm, LookupIn, LookupOut, LookupResult
 from feature_signal.services.lookup_service import LookupService
 
 router = APIRouter(tags=["lookup (C)"])
@@ -34,6 +34,11 @@ async def lookup(
                 segment_hash=s.segment_hash,
                 flow_id=s.flow_id,
                 flow_name=s.flow_name,
+                audience_name=s.audience_name,
+                ab_test_name=s.ab_test_name,
+                arms=[
+                    LookupArm(flow_id=a.flow_id, flow_name=a.flow_name, weight=a.weight, name=a.name) for a in s.arms
+                ],
             )
             for s in served
         ]

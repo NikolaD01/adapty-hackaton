@@ -185,8 +185,22 @@ class Explanation:
 
 
 @dataclass(frozen=True)
+class FlowArm:
+    flow_id: str | None
+    flow_name: str | None
+    weight: int
+    name: str | None = None
+
+
+@dataclass(frozen=True)
 class ServedFlow:
+    """What Adapty serves at a placement. In an A/B test the device's SDK picks the arm, so `arms` lists them all and
+    `flow_*` is the largest arm, not a claim about the arm this user sees."""
+
     customer_user_id: str
     segment_hash: str
     flow_id: str | None
     flow_name: str | None
+    audience_name: str | None = None
+    ab_test_name: str | None = None
+    arms: tuple[FlowArm, ...] = ()

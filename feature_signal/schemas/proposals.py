@@ -131,11 +131,21 @@ class LookupIn(BaseModel):
     customer_user_ids: list[str] = Field(min_length=1, max_length=10)
 
 
+class LookupArm(BaseModel):
+    flow_id: str | None
+    flow_name: str | None
+    weight: int
+    name: str | None = None
+
+
 class LookupResult(BaseModel):
     customer_user_id: str
     segment_hash: str
-    flow_id: str | None
+    flow_id: str | None  # the only flow, or the largest arm of an A/B test (the SDK picks the arm on the device)
     flow_name: str | None
+    audience_name: str | None = None  # e.g. "[fs] <segment_key>" for our segment, "All Users" for the default
+    ab_test_name: str | None = None  # set only when the user is in an A/B test
+    arms: list[LookupArm] = Field(default_factory=list)
 
 
 class LookupOut(BaseModel):

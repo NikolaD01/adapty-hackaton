@@ -99,3 +99,109 @@ async def test_service_returns_one_result_per_user_in_order():
     results = await LookupService(Fake()).lookup("main", ["b", "a", "c"])
     assert [r.customer_user_id for r in results] == ["b", "a", "c"]
     assert results[1].flow_id == "flow-a"
+
+
+HASH_ERROR = {"errors": [{"detail": "Incorrect segment hash", "status": "400", "code": "INCORRECT_SEGMENT_HASH_ERROR"}]}
+
+
+def platform_router(good_platform: str, seen: list):
+    def handler(request: httpx.Request) -> httpx.Response:
+        if "server-side-api/profile" in request.url.path:
+            return httpx.Response(200, json=PROFILE)
+        platform = request.headers["adapty-sdk-platform"]
+        seen.append(platform)
+        return (
+            httpx.Response(200, json=VARIATION) if platform == good_platform else httpx.Response(400, json=HASH_ERROR)
+        )
+
+    return handler
+
+
+async def test_an_android_user_is_found_by_retrying_with_the_android_platform():
+    seen: list[str] = []
+    served = await make_lookup(platform_router("Android", seen)).served("u1", "main")
+    assert seen == ["iOS", "Android"]  # the platform is part of what Adapty validates the hash against
+    assert served.flow_id == "f-main"
+
+
+async def test_an_ios_user_needs_only_one_call():
+    seen: list[str] = []
+    await make_lookup(platform_router("iOS", seen)).served("u1", "main")
+    assert seen == ["iOS"]
+
+
+async def test_a_hash_that_no_platform_accepts_is_a_502_not_an_empty_answer():
+    seen: list[str] = []
+    with pytest.raises(ApiError) as caught:
+        await make_lookup(platform_router("tvOS", seen)).served("u1", "main")
+    assert (caught.value.status, caught.value.code) == (502, "adapty_lookup_failed")
+    assert seen == ["iOS", "Android"]
+
+
+async def test_other_400_errors_are_not_retried_with_another_platform():
+    seen: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if "server-side-api/profile" in request.url.path:
+            return httpx.Response(200, json=PROFILE)
+        seen.append(request.headers["adapty-sdk-platform"])
+        return httpx.Response(400, json={"errors": [{"code": "SOMETHING_ELSE"}]})
+
+    with pytest.raises(ApiError):
+        await make_lookup(handler).served("u1", "main")
+    assert seen == ["iOS"]
+
+
+AB_TEST = {
+    "data": [
+        {
+            "flow_id": "f-control",
+            "flow_name": "Main - 3 plans",
+            "weight": 20,
+            "variation_name": "control",
+            "ab_test_name": "[fs] seg pr_1",
+            "audience_name": "[fs] seg",
+        },
+        {
+            "flow_id": "f-offer",
+            "flow_name": "Main - Lifetime anchor",
+            "weight": 80,
+            "variation_name": "offer",
+            "ab_test_name": "[fs] seg pr_1",
+            "audience_name": "[fs] seg",
+        },
+    ]
+}
+DEFAULT = {
+    "data": [
+        {
+            "flow_id": "f-main",
+            "flow_name": "Main - 3 plans",
+            "weight": 100,
+            "variation_name": "Main - 3 plans",
+            "ab_test_name": "Main - 3 plans",
+            "audience_name": "All Users",
+        }
+    ]
+}
+
+
+async def test_a_user_in_an_ab_test_gets_both_arms_and_the_audience_not_a_guessed_arm():
+    served = await make_lookup(router(variations=httpx.Response(200, json=AB_TEST))).served("u1", "main")
+    assert served.audience_name == "[fs] seg"
+    assert served.ab_test_name == "[fs] seg pr_1"
+    assert [(a.flow_name, a.weight, a.name) for a in served.arms] == [
+        ("Main - 3 plans", 20, "control"),
+        ("Main - Lifetime anchor", 80, "offer"),
+    ]
+    assert served.flow_id == "f-offer"  # the largest arm; which arm the user sees is chosen by the SDK on the device
+
+
+async def test_a_user_outside_any_test_has_one_flow_and_no_arms():
+    served = await make_lookup(router(variations=httpx.Response(200, json=DEFAULT))).served("u1", "main")
+    assert (served.flow_name, served.audience_name, served.ab_test_name, served.arms) == (
+        "Main - 3 plans",
+        "All Users",
+        None,
+        (),
+    )
