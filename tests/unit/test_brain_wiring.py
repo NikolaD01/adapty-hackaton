@@ -6,13 +6,18 @@ from fastapi import FastAPI
 from pydantic import SecretStr
 
 from feature_signal.core.config import Settings
+from feature_signal.domain.models import EventType, Rule, RuleDefinition, Where
 from feature_signal.integrations.adapty.brain_wiring import (
     DEMO_APP_ID,
+    DEMO_PROPERTY_ALLOWLIST,
     LIVE_OUTCOME_RULES,
     OUTCOME_WINDOW_DAYS,
     configure_demo_brain,
     published_flows_from_listing,
 )
+from feature_signal.integrations.llm.schemas import FeatureContext, SuggestionContext, validate_suggestions
+
+ADAPTY_APP = "9ccde368-e282-4385-a260-18b428560ba5"
 
 LISTING = [
     {"id": "f-life", "name": "Main - Lifetime anchor", "status": "published"},
@@ -97,3 +102,38 @@ def test_the_demo_app_id_is_not_registered_twice_when_it_equals_the_adapty_app(t
     app = FastAPI()
     configure_demo_brain(app, settings(tmp_path, adapty_app=DEMO_APP_ID), listing=LISTING)
     assert list(app.state.brain_runtimes) == [DEMO_APP_ID]
+
+
+def test_the_demo_event_properties_are_declared_for_both_app_ids(tmp_path):
+    app = FastAPI()
+    configure_demo_brain(app, settings(tmp_path), listing=LISTING)
+    allowlists = app.state.brain_property_allowlists
+    assert set(allowlists) == {DEMO_APP_ID, ADAPTY_APP}
+    assert allowlists[DEMO_APP_ID]["ai_enhance"] == {"edits_left": "number", "photo_id": "label"}
+    assert all("synthetic" not in props for props in allowlists[DEMO_APP_ID].values())  # a generator flag, not behavior
+
+
+def test_the_properties_are_declared_even_when_the_flows_are_missing(tmp_path):
+    app = FastAPI()
+    assert configure_demo_brain(app, settings(tmp_path), listing=None) is False
+    assert app.state.brain_property_allowlists[DEMO_APP_ID]["ai_enhance"]["edits_left"] == "number"
+
+
+def test_a_quota_rule_on_edits_left_passes_b_validation_only_with_the_declaration():
+    catalog = [EventType(1, "ai_enhance", "AI enhance", "User enhanced a photo with AI", ["ai_enhance"])]
+    features = [FeatureContext("ai_enhance", "AI enhance", "Enhance a photo with AI", ())]
+    quota_rule = Rule(
+        key="ai_enhance_at_quota_7d",
+        name="AI enhance at quota",
+        description="AI edits tried with no free edits left, last 7 days",
+        definition=RuleDefinition(
+            event_keys=["ai_enhance"], measure="count", window_days=7, where=Where("edits_left", "lte", 0)
+        ),
+        source="ai",
+        feature="ai_enhance",
+    )
+    declared = SuggestionContext(features=features, property_allowlist=DEMO_PROPERTY_ALLOWLIST)
+    undeclared = SuggestionContext(features=features)
+    accepted = validate_suggestions([(quota_rule, "quota")], catalog, declared)
+    assert [rule.key for rule, _ in accepted] == ["ai_enhance_at_quota_7d"]
+    assert validate_suggestions([(quota_rule, "quota")], catalog, undeclared) == []

@@ -4,9 +4,11 @@ B needs three app-specific facts it must not guess: an explicit cutoff, the prop
 published flows.
 - Flows come from Adapty itself (`flows list`, matched by name), with their real published state, never from a
   hard-coded id.
-- The cutoff, the 30-day outcome window and the identity/rule assertions below are DEMO settings for the synthetic
+- The cutoff, the 60-day outcome window and the identity/rule assertions below are DEMO settings for the synthetic
   seed data (`lumen_282506_NNNNN`, 5000 users): the live rules named here are asserted to be comparable with the
   seed outcomes. They must not be reused for another dataset.
+- The typed event properties the demo app really sends are declared for B's rule suggestions. Without them B may
+  only suggest event-only rules, so it could never use the quota (`edits_left`) the app reports.
 Nothing here runs inside `create_app()`; `main.py` calls `wire_brain` for the running app only.
 """
 
@@ -39,6 +41,14 @@ FLOW_NAMES = {
     "onb_trial": "Onboarding - Annual trial",
     "onb_weekly": "Onboarding - Weekly first",
     "settings": "Settings - Upgrade",
+}
+# Event key -> property -> kind, exactly what the Lumen demo sends (web demo app and A's demo event loader).
+# `synthetic` marks generated data and is left out on purpose: a rule on it would measure the generator, not users.
+DEMO_PROPERTY_ALLOWLIST: dict[str, dict[str, str]] = {
+    "ai_enhance": {"edits_left": "number", "photo_id": "label"},
+    "bg_remove": {"photo_id": "label"},
+    "export": {"photo_id": "label"},
+    "photo_import": {"photo_id": "label"},
 }
 
 
@@ -81,10 +91,19 @@ def list_flows(settings: Settings, timeout: float = 30.0) -> list[dict[str, Any]
 
 
 def configure_demo_brain(app: Any, settings: Settings, *, listing: list[dict[str, Any]] | None) -> bool:
-    """Register B's runtime for the demo app id (and the Adapty app id if it differs). False = not configured."""
+    """Register B's runtime for the demo app id (and the Adapty app id if it differs). False = not configured.
+
+    The property allowlist is registered first and in any case: rule suggestions do not need the published flows.
+    """
     from feature_signal.api.v1.insights import BrainRuntime, configure_brain
     from feature_signal.integrations.offline import SeedJsonDataset
     from feature_signal.services.proposal_service import ProposalService
+
+    app_ids = list(dict.fromkeys([DEMO_APP_ID, settings.adapty_app_id]))
+    allowlists = getattr(app.state, "brain_property_allowlists", None) or {}
+    for app_id in app_ids:
+        allowlists[app_id] = {event: dict(props) for event, props in DEMO_PROPERTY_ALLOWLIST.items()}
+    app.state.brain_property_allowlists = allowlists
 
     flows = published_flows_from_listing(listing) if listing else {}
     if not flows:
@@ -104,6 +123,6 @@ def configure_demo_brain(app: Any, settings: Settings, *, listing: list[dict[str
         explain=bool(settings.openai_api_key.get_secret_value()),
         outcome_window_days=OUTCOME_WINDOW_DAYS,
     )
-    for app_id in dict.fromkeys([DEMO_APP_ID, settings.adapty_app_id]):
+    for app_id in app_ids:
         configure_brain(app, app_id, runtime)
     return True
