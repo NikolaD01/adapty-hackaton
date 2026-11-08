@@ -26,7 +26,7 @@ log = logging.getLogger(__name__)
 
 DEMO_APP_ID = "c6c7bdd1-1010-4343-8b29-837a77793cab"  # the id the demo data, scripts and web use
 AS_OF = "2026-11-08T00:00:00Z"  # arithmetic anchor of the seed dataset's relative clock (B, chapter 09)
-OUTCOME_WINDOW_DAYS = 30  # decided by the developer on 2026-11-08, see docs/brain/10-outcome-window.md
+OUTCOME_WINDOW_DAYS = 60  # decided by the team on 2026-11-08, see docs/brain/10-outcome-window.md
 SEED_RUN = "282506"
 SEED_USERS = 5000
 LIVE_OUTCOME_RULES = frozenset(

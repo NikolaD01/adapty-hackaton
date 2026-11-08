@@ -58,7 +58,7 @@ def test_the_runtime_is_registered_for_the_demo_app_and_for_the_adapty_app(tmp_p
     runtimes = app.state.brain_runtimes
     assert set(runtimes) == {DEMO_APP_ID, "9ccde368-e282-4385-a260-18b428560ba5"}
     runtime = runtimes[DEMO_APP_ID]
-    assert runtime.outcome_window_days == OUTCOME_WINDOW_DAYS == 30
+    assert runtime.outcome_window_days == OUTCOME_WINDOW_DAYS == 60
     assert "main_lifetime" in runtime.published_flows
     assert len(runtime.user_id_map) == 5000
     assert runtime.explain is False  # no OpenAI key in this settings object
