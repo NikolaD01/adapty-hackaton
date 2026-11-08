@@ -57,6 +57,12 @@ The check worked because we tested against the service itself. Tests written aro
 
 ## What we would never delegate to AI
 
-We would not give a development agent open-ended permission to publish paywalls, change prices, or modify live experiments. A person needs to agree on the action and its scope. We allowed bounded automation where we had explicitly defined those limits; publishing new flows remained human-controlled.
+Our product automates the routine part of experimentation, so we draw the line at what cannot be undone. Autopilot
+may compute values, write attributes, create segments and start an A/B test, but only on placements we allow-list,
+at most three at a time and always with a control group of at least 10%. AI may draft paywall copy; publishing a
+paywall to real users is always a human click.
 
-We also kept responsibility for choosing the success metric and deciding what the evidence justified saying to the jury. AI helped calculate, investigate, and challenge those claims. Deciding that a result was convincing enough to present was still our job.
+Three things stay with people: publishing paywalls and changing prices, setting the limits Autopilot works inside,
+and choosing the success metric and what our evidence lets us claim. We learned this during a live run: drafts
+approved by hand pointed at the app's real onboarding placement. We stopped them before anything was created, and
+the placement allow-list exists because of that.
