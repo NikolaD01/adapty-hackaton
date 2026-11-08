@@ -91,3 +91,20 @@ it('compares the targeted audience and available arms with the default audience'
   expect(screen.getByText('Default flow')).toBeVisible()
   expect(screen.queryByText('Largest arm placeholder')).not.toBeInTheDocument()
 })
+
+it('shows execution details for the selected decision', async () => {
+  const first = {
+    decision_id: 'dc_1', proposal_id: 'pr_1', decided_by: 'human', action: 'approve',
+    at: '2026-11-08T08:00:00Z', steps: [{ step: 'ab_tests_start', ok: true, detail: {} }],
+  }
+  server.use(http.get(`${appApiUrl}/decisions`, () => HttpResponse.json([
+    first, { ...first, decision_id: 'dc_2', proposal_id: 'pr_2', action: 'reject', steps: [] },
+  ])))
+  render(<AppProviders><MemoryRouter><DecisionsPage /></MemoryRouter></AppProviders>)
+  expect(await screen.findByRole('table', { name: 'Decision steps' })).toBeVisible()
+  const second = screen.getByRole('button', { name: /Rejected pr_2/ })
+  await userEvent.setup().click(second)
+  expect(second).toHaveAttribute('aria-pressed', 'true')
+  expect(screen.getByText('No execution steps recorded.')).toBeVisible()
+  expect(screen.queryByRole('table', { name: 'Decision steps' })).not.toBeInTheDocument()
+})

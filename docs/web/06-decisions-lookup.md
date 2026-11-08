@@ -26,7 +26,7 @@ npm test -- --run src/test/decisions-lookup.test.tsx
 npm run build
 ```
 
-Expected four tests pass. A failed decision shows its error, reverse-ordered results match the correct user, duplicate IDs are rejected, and an A/B result shows both arms.
+Expected five tests pass. Selecting an entry in decision history shows its execution steps. A failed decision shows its error, reverse-ordered results match the correct user, duplicate IDs are rejected, and an A/B result shows both arms.
 
 ## Limits
 

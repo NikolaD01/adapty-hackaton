@@ -26,7 +26,7 @@ npm test -- --run src/test/proposals.test.tsx
 npm run build
 ```
 
-Expected 12 tests pass. A pending approval disables its action, an edited holdout is saved, and switching mode preserves the existing limits.
+Expected 13 tests pass. The queue opens one proposal at a time and preserves an in-progress edit when the operator switches records. A pending approval disables its action, an edited holdout is saved, and switching mode preserves the existing limits.
 
 ## Limits
 

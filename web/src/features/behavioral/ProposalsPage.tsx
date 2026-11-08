@@ -5,6 +5,7 @@ import { apiUrl, appWrite, request, useAppQuery } from '../../shared/api'
 import { QueryFeedback, RequestError } from '../../shared/ui/QueryFeedback'
 import type { AppSettings, Mode, Proposal, ProposalPatch, ProposalStatus } from '../../types/targeting'
 import { PlaceholderPage } from './PlaceholderPage'
+import { ReviewList } from './ReviewList'
 import { TargetingTable } from './TargetingTable'
 import { ConditionList, NetEffect, outcomeWindow, showValue } from './TargetingDetails'
 
@@ -23,25 +24,30 @@ function ModeSettings() {
   })
 
   return (
-    <section className="behavioral-panel">
-      <h2>Decision mode</h2>
-      <QueryFeedback {...query} />
-      {query.data && <>
-        <label className="inline-control">
-          Mode
-          <select value={query.data.mode} disabled={save.isPending}
-            onChange={(event) => save.mutate({ ...query.data!, mode: event.target.value as Mode })}>
-            <option value="human">Human</option>
-            <option value="autopilot">Autopilot</option>
-          </select>
-        </label>
-        {query.data.mode === 'autopilot' && (
-          <p className="preview-notice" role="status">
-            Autopilot can start eligible tests with published flows. Limit {query.data.autopilot.max_live_proposals} live proposals,
-            minimum {query.data.autopilot.min_holdout_pct}% holdout. Publish new flows in Adapty.
-          </p>
+    <section className="behavioral-panel review-mode">
+      <div className="panel-heading">
+        <div>
+          <h2>Decision mode</h2>
+          <p className="targeting-muted">Choose how eligible proposals are approved.</p>
+        </div>
+        {query.data && (
+          <label className="inline-control">
+            <span className="sr-only">Mode</span>
+            <select value={query.data.mode} disabled={save.isPending}
+              onChange={(event) => save.mutate({ ...query.data!, mode: event.target.value as Mode })}>
+              <option value="human">Human</option>
+              <option value="autopilot">Autopilot</option>
+            </select>
+          </label>
         )}
-      </>}
+      </div>
+      <QueryFeedback {...query} />
+      {query.data?.mode === 'autopilot' && (
+        <p className="preview-notice" role="status">
+          Autopilot can start eligible tests with published flows. Limit {query.data.autopilot.max_live_proposals} live proposals,
+          minimum {query.data.autopilot.min_holdout_pct}% holdout. Publish new flows in Adapty.
+        </p>
+      )}
       <RequestError error={save.error} />
     </section>
   )
@@ -149,38 +155,82 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
   const awaitingPublish = proposal.status === 'awaiting_publish'
   const flowName = proposal.edits.some((edit) => edit.field === 'flow_id') ? null : proposal.action.flow_name
   return (
-    <article className="behavioral-panel proposal-card" aria-label={proposal.segment_key}>
-      <header className="panel-heading">
-        <h2>{proposal.segment_key}</h2>
+    <article className="behavioral-panel review-card" aria-label={proposal.segment_key}>
+      <header className="review-card-heading">
+        <div>
+          <h2>{proposal.segment_key}</h2>
+          <p>{proposal.reason}</p>
+        </div>
         <span className={`status-chip status-${approving ? 'executing' : proposal.status}`}>
           {approving ? 'Executing' : statusLabels[proposal.status]}
         </span>
       </header>
-      <p>{proposal.reason}</p>
-      <div className="targeting-grid">
-        <section>
-          <h3>Behavioral conditions</h3>
-          <ConditionList conditions={proposal.evidence.segment_conditions ?? []} />
-          <h3>Adapty filters</h3>
-          <ConditionList conditions={[{ ...proposal.condition, field: proposal.condition.attribute }, ...proposal.adapty_filters]} />
-        </section>
-        <section>
-          <h3>Paywall and test</h3>
-          <dl className="targeting-facts">
-            <dt>Placement</dt><dd>{proposal.trigger_placement}</dd>
-            <dt>Offer flow</dt><dd>{flowName ? `${flowName} · ${proposal.action.flow_id}` : proposal.action.flow_id}</dd>
-            {proposal.action.highlight_feature && <><dt>Highlights</dt><dd>{proposal.action.highlight_feature}</dd></>}
-            <dt>Holdout</dt><dd>{proposal.holdout_pct}%</dd>
-            <dt>Cooldown</dt><dd>{proposal.cooldown_days} days</dd>
-            {proposal.decided_by && <><dt>Decided by</dt><dd>{proposal.decided_by === 'human' ? 'Human' : 'Autopilot'}</dd></>}
-            {proposal.adapty.ab_test_id && <><dt>A/B test</dt><dd>{proposal.adapty.ab_test_id}</dd></>}
-          </dl>
-        </section>
+      <div className="review-body">
+        <div className="review-outcome">
+          <strong>Expected {days ? `${days}-day ` : ''}net revenue effect per user</strong>
+          <NetEffect value={proposal.expected_effect.diff} interval={proposal.expected_effect} />
+          {proposal.evidence.uplift_test && <p className="targeting-muted">Evidence from {proposal.evidence.uplift_test}</p>}
+        </div>
+        {awaitingPublish && <p className="preview-notice">Publish the new paywall in Adapty, then continue approval to start the test.</p>}
+        {form === 'edit' && draft && (
+          <ProposalEdit proposal={proposal} onSave={(patch) => mutation.mutate({ action: 'edit', patch })}
+            onCancel={() => showForm(null)} pending={mutation.isPending} />
+        )}
+        {form === 'reject' && draft && (
+          <form className="targeting-form" onSubmit={reject}>
+            <fieldset disabled={mutation.isPending}>
+              <legend>Reject proposal</legend>
+              <label className="wide-field">Reason<textarea name="reason" required maxLength={500} /></label>
+              <div className="targeting-actions wide-field">
+                <button type="submit">Confirm rejection</button>
+                <button type="button" onClick={() => showForm(null)}>Cancel</button>
+              </div>
+            </fieldset>
+          </form>
+        )}
+        {(draft || awaitingPublish || proposal.status === 'executing' || proposal.status === 'approved') && !form && (
+          <div className="targeting-actions review-actions">
+            <button type="button" className="primary-action"
+              disabled={mutation.isPending || (!draft && !awaitingPublish)}
+              onClick={() => mutation.mutate({ action: 'approve' })}>
+              {awaitingPublish ? 'Continue after publishing' : 'Approve'}
+            </button>
+            {draft && <>
+              <button type="button" disabled={mutation.isPending} onClick={() => showForm('edit')}>Edit</button>
+              <button type="button" disabled={mutation.isPending} onClick={() => showForm('reject')}>Reject</button>
+            </>}
+          </div>
+        )}
+        {proposal.decided_by && (
+          <div className="targeting-actions review-actions">
+            <Link to={`/dashboard/decisions?proposal_id=${encodeURIComponent(proposal.proposal_id)}`}>View decision log</Link>
+            {proposal.status === 'live' && <Link to={`/dashboard/lookup?placement=${encodeURIComponent(proposal.trigger_placement)}`}>View audience and flows</Link>}
+          </div>
+        )}
+        <RequestError error={mutation.error} />
+        <div className="review-facts">
+          <section>
+            <h3>Behavioral conditions</h3>
+            <ConditionList conditions={proposal.evidence.segment_conditions ?? []} />
+            <h3>Adapty filters</h3>
+            <ConditionList conditions={[{ ...proposal.condition, field: proposal.condition.attribute }, ...proposal.adapty_filters]} />
+          </section>
+          <section>
+            <h3>Paywall and test</h3>
+            <dl className="targeting-facts">
+              <dt>Placement</dt><dd>{proposal.trigger_placement}</dd>
+              <dt>Offer flow</dt><dd>{flowName ? <>{flowName}<code className="data-key">{proposal.action.flow_id}</code></> : <code>{proposal.action.flow_id}</code>}</dd>
+              {proposal.action.highlight_feature && <><dt>Highlights</dt><dd>{proposal.action.highlight_feature}</dd></>}
+              <dt>Holdout</dt><dd>{proposal.holdout_pct}%</dd>
+              <dt>Cooldown</dt><dd>{proposal.cooldown_days} days</dd>
+              {proposal.decided_by && <><dt>Decided by</dt><dd>{proposal.decided_by === 'human' ? 'Human' : 'Autopilot'}</dd></>}
+              {proposal.adapty.ab_test_id && <><dt>A/B test</dt><dd>{proposal.adapty.ab_test_id}</dd></>}
+            </dl>
+          </section>
+        </div>
       </div>
-      <p className="proposal-outcome"><strong>Expected {days ? `${days}-day ` : ''}net revenue effect per user</strong> <NetEffect value={proposal.expected_effect.diff} interval={proposal.expected_effect} /></p>
-      {proposal.evidence.uplift_test && <p className="targeting-muted">Evidence from {proposal.evidence.uplift_test}</p>}
       {proposal.edits.length > 0 && (
-        <section className="proposal-history">
+        <section className="review-body review-history">
           <h3>Edit history</h3>
           <TargetingTable label="Edit history" headers={['Field', 'Previous value', 'New value', 'Changed at']}>
             {proposal.edits.map((edit, index) => (
@@ -194,56 +244,39 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
           </TargetingTable>
         </section>
       )}
-      {awaitingPublish && <p className="preview-notice">Publish the new paywall in Adapty, then continue approval to start the test.</p>}
-      {form === 'edit' && draft && (
-        <ProposalEdit proposal={proposal} onSave={(patch) => mutation.mutate({ action: 'edit', patch })}
-          onCancel={() => showForm(null)} pending={mutation.isPending} />
-      )}
-      {form === 'reject' && draft && (
-        <form className="targeting-form" onSubmit={reject}>
-          <fieldset disabled={mutation.isPending}>
-            <legend>Reject proposal</legend>
-            <label className="wide-field">Reason<textarea name="reason" required maxLength={500} /></label>
-            <div className="targeting-actions wide-field">
-              <button type="submit">Confirm rejection</button>
-              <button type="button" onClick={() => showForm(null)}>Cancel</button>
-            </div>
-          </fieldset>
-        </form>
-      )}
-      {(draft || awaitingPublish || proposal.status === 'executing' || proposal.status === 'approved') && !form && (
-        <div className="targeting-actions">
-          <button type="button" className="primary-action"
-            disabled={mutation.isPending || (!draft && !awaitingPublish)}
-            onClick={() => mutation.mutate({ action: 'approve' })}>
-            {awaitingPublish ? 'Continue after publishing' : 'Approve'}
-          </button>
-          {draft && <>
-            <button type="button" disabled={mutation.isPending} onClick={() => showForm('edit')}>Edit</button>
-            <button type="button" disabled={mutation.isPending} onClick={() => showForm('reject')}>Reject</button>
-          </>}
-        </div>
-      )}
-      {proposal.decided_by && (
-        <div className="targeting-actions">
-          <Link to={`/dashboard/decisions?proposal_id=${encodeURIComponent(proposal.proposal_id)}`}>View decision log</Link>
-          {proposal.status === 'live' && <Link to={`/dashboard/lookup?placement=${encodeURIComponent(proposal.trigger_placement)}`}>View audience and flows</Link>}
-        </div>
-      )}
-      <RequestError error={mutation.error} />
     </article>
   )
 }
 
 export function ProposalsPage() {
   const query = useAppQuery<Proposal[]>(['proposals'], '/proposals')
+  const [selectedId, setSelectedId] = useState<string>()
+  const items = query.data ?? []
+  const selected = items.find((proposal) => proposal.proposal_id === selectedId) ?? items[0]
+
   return (
     <>
       <PlaceholderPage title="Proposals" description="Review the audience, offer and test before they go live in Adapty." />
       <ModeSettings />
       <QueryFeedback {...query} />
       {query.data?.length === 0 && <p className="behavioral-panel">No proposals yet. Run Insights to look for eligible offers.</p>}
-      {query.data?.map((proposal) => <ProposalCard key={proposal.proposal_id} proposal={proposal} />)}
+      {selected && (
+        <div className="review-layout">
+          <ReviewList label="Proposal queue" selectedId={selected.proposal_id} onSelect={setSelectedId}
+            items={items.map((proposal) => ({
+              id: proposal.proposal_id,
+              title: proposal.segment_key,
+              description: `${proposal.trigger_placement} · ${statusLabels[proposal.status]}`,
+            }))} />
+          <div className="review-records">
+            {items.map((proposal) => (
+              <div key={proposal.proposal_id} hidden={proposal.proposal_id !== selected.proposal_id}>
+                <ProposalCard proposal={proposal} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </>
   )
 }

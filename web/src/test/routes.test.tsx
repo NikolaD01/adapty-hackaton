@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitForElementToBeRemoved, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { QueuedEvent } from 'feature-signal-sdk'
 import { http, HttpResponse } from 'msw'
@@ -83,10 +83,16 @@ describe('dashboard scaffold', () => {
     expect(screen.getByRole('heading', { level: 1, name: heading })).toBeInTheDocument()
   })
 
-  it('shows Coming soon for an HTTP 501 response', async () => {
-    server.use(http.get(`${appApiUrl}/insights/latest`, () => new HttpResponse(null, { status: 501 })))
+  it('omits unavailable read placeholders and reports unavailable run actions', async () => {
+    server.use(
+      http.get(`${appApiUrl}/insights/latest`, () => new HttpResponse(null, { status: 501 })),
+      http.post(`${appApiUrl}/insights:run`, () => new HttpResponse(null, { status: 501 })),
+    )
     renderRoute('/dashboard/insights')
-    expect(await screen.findByText('Coming soon')).toBeInTheDocument()
+    await waitForElementToBeRemoved(() => screen.queryByText('Loading…'))
+    expect(screen.queryByText('Coming soon')).not.toBeInTheDocument()
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Run insights' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('This action is unavailable.')
   })
 
   it('flushes a blocked HD export before refreshing both demo panels', async () => {

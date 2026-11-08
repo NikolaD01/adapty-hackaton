@@ -128,7 +128,7 @@ export function InsightsPage() {
   return (
     <>
       <PlaceholderPage title="Insights" description="Review which behavioral signals hold on unseen users and which offers have randomized evidence." />
-      <section className="behavioral-panel">
+      <section className="behavioral-panel insight-toolbar">
         <div className="targeting-actions">
           <label className="inline-control">Requested source
             <select value={source} disabled={run.isPending} onChange={(event) => setSource(event.target.value as InsightSource)}>

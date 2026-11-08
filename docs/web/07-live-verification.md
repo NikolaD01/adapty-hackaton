@@ -18,7 +18,7 @@ The demo needs to distinguish a real request from a preview and show where serve
 
 ## Contract touched
 
-The existing contract is used as written. HTTP 501 displays **Coming soon**. HTTP 503 displays a configuration message when the API identifies the missing service.
+The existing contract is used as written. HTTP 501 reads omit placeholder text. A user-initiated action that returns 501 shows an unavailable message. HTTP 503 displays a configuration message when the API identifies the missing service.
 
 ## How to test
 

@@ -22,6 +22,8 @@ The walkthrough needs a stage-ready fallback when the real Brain or Adapty accou
 
 Behavioral Targeting tabs use the same typography, borders and purple selection as the dashboard shell. Add feature and Add event open an inline form. Cancel returns keyboard focus to its button. Edit history, catalog entries, rules, decision steps and A/B arms use tables with labeled scroll regions on narrow screens.
 
+Proposals and Decisions share a record list and one visible detail panel. The proposal panel puts the expected effect and review actions above its edit history. The decision panel shows the actor and execution result near the step table.
+
 Tab content and catalog forms enter with a short transition. The reduced-motion preference disables movement. Verify tab navigation and table scrolling at 1280 × 800 and 390 × 844.
 
 ## Contract touched
@@ -40,7 +42,7 @@ npm run build
 VITE_USE_MOCKS=true npm run dev
 ```
 
-Expected: 43 tests pass and the build succeeds. Open `http://localhost:5173/dashboard/events` at 1280 × 800 and follow the steps above in the same tab. The **Mock preview** banner stays visible when switching routes.
+Expected: 45 tests pass and the build succeeds. Open `http://localhost:5173/dashboard/events` at 1280 × 800 and follow the steps above in the same tab. The **Mock preview** banner stays visible when switching routes.
 
 ## Limits
 

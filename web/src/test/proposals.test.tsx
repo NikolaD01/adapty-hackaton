@@ -103,3 +103,22 @@ it('shows the net revenue window returned by the API', async () => {
   renderProposals()
   expect(await screen.findByText('Expected 30-day net revenue effect per user')).toBeVisible()
 })
+
+it('keeps the edit draft while switching between proposals', async () => {
+  server.use(http.get(`${appApiUrl}/proposals`, () => HttpResponse.json([
+    mockProposal, { ...mockProposal, proposal_id: 'pr_second', segment_key: 'other_editors', status: 'live' },
+  ])))
+  renderProposals()
+  const user = userEvent.setup()
+  await user.click(await screen.findByRole('button', { name: 'Edit' }))
+  const input = screen.getByRole('spinbutton', { name: 'Holdout (%)' })
+  await user.clear(input)
+  await user.type(input, '25')
+
+  await user.click(screen.getByRole('button', { name: /other_editors/ }))
+  expect(screen.getByRole('article', { name: 'other_editors' })).toBeVisible()
+  expect(screen.queryByRole('spinbutton', { name: 'Holdout (%)' })).not.toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: new RegExp(mockProposal.segment_key) }))
+  expect(screen.getByRole('spinbutton', { name: 'Holdout (%)' })).toHaveValue(25)
+})
