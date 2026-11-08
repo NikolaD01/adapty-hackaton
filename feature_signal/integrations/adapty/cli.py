@@ -204,6 +204,9 @@ class AdaptyCommands:
         )
 
     # A/B tests
+    async def ab_tests_get(self, test_id: str) -> dict[str, Any]:
+        return await self._cli.run("ab-tests", "get", test_id, "--app", self._app)
+
     async def ab_tests_create(
         self, title: str, *, placement_id: str, segment_id: str, arms: Sequence[tuple[str, int, str]]
     ) -> dict[str, Any]:

@@ -51,6 +51,12 @@ class World:
         self.flow_status = flow_status
         self.fail = fail  # command words that raise
         self.sync_result = SyncResult(checked=3, changed=2, attributes_written=4)
+        self.ab_test = {
+            "flows": [
+                {"flow_id": "f-default", "title": "A", "weight": 50},
+                {"flow_id": "f-lifetime", "title": "B", "weight": 50},
+            ]
+        }
 
     async def run(self, *args):
         self.cli_calls.append(args)
@@ -70,12 +76,16 @@ class World:
             return PLACEMENT
         if command == "ab-tests create":
             return {"ab_test_id": "t1", "state": "draft"}
+        if command == "ab-tests get":
+            return self.ab_test
         if command == "flows get":
             return {"id": args[2], "status": self.flow_status}
         return {}
 
     async def sync_users(self, app_id, ids):
         self.log.append("sync")
+        if self.fail == "sync":
+            raise ApiError(502, "membership_sync_partial", "Could not sync all profiles")
         self.sync_ids = ids
         return self.sync_result
 
@@ -290,6 +300,29 @@ async def test_a_failing_step_marks_failed_logs_the_error_and_stops(factory):
     assert [s["ok"] for s in decision.steps] == [True, False]
 
 
+@pytest.mark.parametrize(
+    ("command", "step"),
+    [
+        ("sync", "write_attributes"),
+        ("segments list", "segments_create"),
+        ("segments create", "segments_create"),
+        ("placements list", "placement_read"),
+        ("placements get", "placement_read"),
+        ("ab-tests create", "ab_tests_create"),
+        ("ab-tests start", "ab_tests_start"),
+    ],
+)
+async def test_each_upstream_failure_is_logged_and_stops_activation(factory, command, step):
+    world = World(fail=command)
+    out, _ = await run_approve(factory, world)
+    assert out.status == "failed"
+    (decision,) = await decisions(factory)
+    assert decision.steps[-1]["step"] == step
+    assert decision.steps[-1]["ok"] is False
+    assert decision.steps[-1]["detail"]["message"]
+    assert world.log[-1] == command
+
+
 async def test_the_secret_free_error_text_is_what_gets_logged(factory):
     world = World(fail="ab-tests start")
     out, _ = await run_approve(factory, world)
@@ -309,15 +342,185 @@ async def test_an_offer_equal_to_the_control_fails_clearly(factory):
     assert "ab-tests create" not in world.log
 
 
-async def test_a_placement_whose_default_is_not_a_plain_flow_fails(factory, monkeypatch):
-    monkeypatch.setitem(
-        PLACEMENT, "audiences", [{"content_type": "flow_ab_test", "segment_ids": [], "ab_test_id": "x"}]
-    )
+async def test_a_placement_whose_default_is_not_a_flow_or_flow_test_fails(factory, monkeypatch):
+    monkeypatch.setitem(PLACEMENT, "audiences", [{"content_type": "paywall", "segment_ids": [], "paywall_id": "x"}])
     world = World()
     out, _ = await run_approve(factory, world)
     assert out.status == "failed"
     (decision,) = await decisions(factory)
     assert decision.steps[-1]["detail"]["code"] == "placement_default_not_a_flow"
+
+
+async def test_default_ab_test_uses_the_other_arm_without_replacing_the_default(factory, monkeypatch):
+    monkeypatch.setitem(
+        PLACEMENT, "audiences", [{"content_type": "flow_ab_test", "segment_ids": [], "ab_test_id": "existing"}]
+    )
+    world = World()
+    out, _ = await run_approve(factory, world)
+    assert out.status == "live"
+    (decision,) = await decisions(factory)
+    assert decision.steps[2]["detail"]["control_flow_id"] == "f-default"
+    assert ("ab-tests", "get", "existing", "--app", ADAPTY) in world.cli_calls
+    assert "placements update" not in world.log
+    assert "ab-tests stop" not in world.log
+
+
+async def test_default_ab_test_refuses_an_ambiguous_control(factory, monkeypatch):
+    monkeypatch.setitem(
+        PLACEMENT, "audiences", [{"content_type": "flow_ab_test", "segment_ids": [], "ab_test_id": "existing"}]
+    )
+    world = World()
+    world.ab_test["flows"].append({"flow_id": "f-third", "weight": 10})
+    out, _ = await run_approve(factory, world)
+    assert out.status == "failed"
+    (decision,) = await decisions(factory)
+    assert decision.steps[-1]["detail"]["code"] == "placement_control_ambiguous"
+    assert "ab-tests create" not in world.log
+
+
+@pytest.mark.parametrize("base_source", ["evidence", "edit"])
+async def test_published_ai_copy_uses_its_existing_base_arm_as_control(factory, monkeypatch, base_source):
+    monkeypatch.setitem(
+        PLACEMENT, "audiences", [{"content_type": "flow_ab_test", "segment_ids": [], "ab_test_id": "existing"}]
+    )
+    world = World()
+    item = proposal_input(
+        action={"flow_id": "f-copy", "needs_publish": True},
+        evidence={"ai_copy": {"base_flow_id": "f-lifetime"}} if base_source == "evidence" else {},
+    )
+    out, pid = await run_approve(factory, world, item)
+    assert out.status == "awaiting_publish"
+    async with factory() as s:
+        if base_source == "edit":
+            row = await ProposalService(s)._get(pid)
+            row.edits = [{"field": "flow_id", "from": "f-lifetime", "to": "f-copy", "at": row.created_at.isoformat()}]
+            await s.commit()
+        out = await ActivationService(s, AdaptyCommands(world, ADAPTY), world).approve(pid)
+    assert out.status == "live"
+    latest = (await decisions(factory))[0]
+    assert latest.steps[0]["detail"]["control_flow_id"] == "f-lifetime"
+
+
+async def test_retry_before_test_creation_reuses_the_segment_and_preserves_history(factory):
+    world = World(fail="placements get")
+    out, pid = await run_approve(factory, world)
+    assert out.status == "failed"
+    world.fail = None
+    world.segments = [{"id": "seg1", "title": "[fs] power_editor"}]
+    async with factory() as s:
+        out = await ActivationService(s, AdaptyCommands(world, ADAPTY), world).approve(pid)
+    assert out.status == "live"
+    assert world.log.count("segments create") == 1
+    assert world.log.count("ab-tests create") == 1
+    assert len(await decisions(factory)) == 2
+
+
+async def test_retry_does_not_replace_an_equivalent_live_proposal(factory):
+    world = World(fail="placements get")
+    _, failed_id = await run_approve(factory, world)
+    world.fail = None
+    live, _ = await run_approve(factory, world)
+    world.log.clear()
+    async with factory() as s:
+        with pytest.raises(ApiError) as caught:
+            await ActivationService(s, AdaptyCommands(world, ADAPTY), world).approve(failed_id)
+    assert caught.value.code == "proposal_already_active"
+    assert live.proposal_id in caught.value.message
+    assert world.log == []
+
+
+@pytest.mark.parametrize("failed_command", ["ab-tests create", "ab-tests start"])
+async def test_retry_after_test_creation_was_attempted_does_not_duplicate_a_test(factory, failed_command):
+    world = World(fail=failed_command)
+    out, pid = await run_approve(factory, world)
+    assert out.status == "failed"
+    world.fail = None
+    world.log.clear()
+    async with factory() as s:
+        with pytest.raises(ApiError) as caught:
+            await ActivationService(s, AdaptyCommands(world, ADAPTY), world).approve(pid)
+    assert (caught.value.status, caught.value.code) == (409, "activation_retry_unsafe")
+    assert world.log == []
+
+
+@pytest.mark.parametrize("initial_status", ["draft", "failed", "awaiting_publish", "failed_again"])
+async def test_a_concurrent_approval_cannot_create_a_second_test(factory, initial_status):
+    world = World()
+    async with factory() as s:
+        (created,) = await ProposalService(s).create(APP, [proposal_input()])
+        row = await ProposalService(s)._get(created.proposal_id)
+        row.status = "failed" if initial_status == "failed_again" else initial_status
+        if initial_status == "awaiting_publish":
+            row.adapty = {"segment_id": "seg1"}
+        await s.commit()
+    async with factory() as s:
+        activation = ActivationService(s, AdaptyCommands(world, ADAPTY), world)
+        # Simulate another request claiming the proposal after this request read it.
+        stale = await activation._proposals._get(created.proposal_id)
+        async with factory() as other:
+            fresh = await ProposalService(other)._get(created.proposal_id)
+            if initial_status == "failed_again":
+                from datetime import timedelta
+
+                fresh.updated_at = fresh.updated_at + timedelta(seconds=1)
+            else:
+                fresh.status = "executing"
+            await other.commit()
+
+        async def stale_get(_):
+            return stale
+
+        activation._proposals._get = stale_get
+        with pytest.raises(ApiError) as caught:
+            await activation.approve(created.proposal_id)
+        assert caught.value.code == "approval_in_progress"
+    assert "ab-tests create" not in world.log
+
+
+@pytest.mark.parametrize(
+    ("arms", "offer", "expected"),
+    [
+        (
+            [{"flow_id": "f-control", "title": "Control", "weight": 20}, {"flow_id": "f-other", "weight": 80}],
+            "f-new",
+            "f-control",
+        ),
+        (
+            [
+                {"flow_id": "f-control", "weight": 50},
+                {"flow_id": "f-offer", "weight": 50},
+                {"flow_id": "f-disabled", "weight": 0},
+            ],
+            "f-offer",
+            "f-control",
+        ),
+        ([{"flow_id": "f-a", "weight": 50}, {"flow_id": "f-b", "weight": 50}], "f-new", None),
+        (
+            [
+                {"flow_id": "f-a", "title": "control", "weight": 50},
+                {"flow_id": "f-b", "title": "control", "weight": 50},
+            ],
+            "f-new",
+            None,
+        ),
+        ([], "f-new", None),
+    ],
+)
+async def test_default_test_control_selection_handles_all_arm_shapes(factory, monkeypatch, arms, offer, expected):
+    monkeypatch.setitem(
+        PLACEMENT, "audiences", [{"content_type": "flow_ab_test", "segment_ids": [], "ab_test_id": "existing"}]
+    )
+    world = World()
+    world.ab_test = {"flows": arms}
+    out, _ = await run_approve(factory, world, proposal_input(action={"flow_id": offer}))
+    (decision,) = await decisions(factory)
+    if expected:
+        assert out.status == "live"
+        assert decision.steps[2]["detail"]["control_flow_id"] == expected
+    else:
+        assert out.status == "failed"
+        assert decision.steps[-1]["detail"]["code"] == "placement_control_ambiguous"
+        assert "ab-tests create" not in world.log
 
 
 async def test_only_a_draft_can_be_approved(factory):

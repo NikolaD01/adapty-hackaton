@@ -57,3 +57,32 @@ def test_approve_route_does_not_swallow_suffix(api):
     r = api.post("/v1/proposals/pr_01:approve")
     assert r.status_code == 404
     assert r.json()["error"]["code"] == "proposal_not_found"
+
+
+def test_unhandled_approval_error_is_readable_from_the_dashboard():
+    from fastapi.testclient import TestClient
+
+    from feature_signal.api.v1.proposals import get_adapty_commands
+    from feature_signal.main import create_app
+
+    app = create_app()
+
+    def broken_commands():
+        raise RuntimeError("private diagnostic details")
+
+    app.dependency_overrides[get_adapty_commands] = broken_commands
+    with TestClient(app, raise_server_exceptions=False) as client:
+        response = client.post("/v1/proposals/pr_example:approve", headers={"Origin": "http://localhost:5173"})
+    assert response.status_code == 500
+    assert response.headers.get("access-control-allow-origin") == "http://localhost:5173"
+    assert response.json()["error"]["code"] == "internal_error"
+    assert "private diagnostic details" not in response.text
+
+
+def test_cors_does_not_allow_an_unconfigured_origin(client):
+    response = client.options(
+        "/v1/proposals/pr_example:approve",
+        headers={"Origin": "https://unconfigured.example", "Access-Control-Request-Method": "POST"},
+    )
+    assert response.status_code == 400
+    assert "access-control-allow-origin" not in response.headers

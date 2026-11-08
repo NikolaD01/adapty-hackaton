@@ -7,22 +7,30 @@ from contextlib import AbstractAsyncContextManager, asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.types import ASGIApp
 
 from feature_signal.api.v1.router import api_router
 from feature_signal.core.config import Settings, get_settings
-from feature_signal.core.errors import ApiError, api_error_handler
+from feature_signal.core.errors import ApiError, api_error_handler, unexpected_error_handler
+
+
+class CorsFastAPI(FastAPI):
+    """Keep CORS outside ServerErrorMiddleware, including unhandled 500 responses."""
+
+    def build_middleware_stack(self) -> ASGIApp:
+        settings = get_settings()
+        return CORSMiddleware(
+            super().build_middleware_stack(),
+            allow_origins=[o.strip() for o in settings.cors_origins.split(",") if o.strip()],
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
 
 
 def create_app(*, lifespan: Callable[[FastAPI], AbstractAsyncContextManager[None]] | None = None) -> FastAPI:
-    settings = get_settings()
-    app = FastAPI(title="Feature Signal for Adapty", version="0.1.0", lifespan=lifespan)
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=[o.strip() for o in settings.cors_origins.split(",") if o.strip()],
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+    app = CorsFastAPI(title="Feature Signal for Adapty", version="0.1.0", lifespan=lifespan)
     app.add_exception_handler(ApiError, api_error_handler)
+    app.add_exception_handler(Exception, unexpected_error_handler)
     app.include_router(api_router)
     return app
 

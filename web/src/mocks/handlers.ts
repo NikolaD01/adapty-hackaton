@@ -203,7 +203,8 @@ export function createHandlers() {
       if (action === 'approve' && proposal.status === 'awaiting_publish') {
         return error(409, 'flow_not_published', 'Publish the flow in Adapty before continuing.')
       }
-      if (proposal.status !== 'draft') return error(409, 'invalid_transition', 'Only a draft can be approved or rejected.')
+      const retryable = action === 'approve' && proposal.status === 'failed' && !proposal.adapty.ab_test_id
+      if (proposal.status !== 'draft' && !retryable) return error(409, 'invalid_transition', 'This proposal cannot be approved or rejected.')
       if (action === 'approve') return HttpResponse.json(decide(proposal, proposal.action.needs_publish ? 'awaiting_publish' : 'live', action))
       const { reason } = await request.json() as { reason: string }
       return HttpResponse.json(decide(proposal, 'rejected', action, reason))

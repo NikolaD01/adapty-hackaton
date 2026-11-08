@@ -19,7 +19,8 @@ place where we write, so the limits and the payload shape are checked once.
    `adapty-customer-user-id`. The body is a **list**: `{"custom_attributes":[{"key":…,"value":…}]}`.
 4. `None` is sent as JSON `null`, which deletes that key. PATCH merges with the other attributes.
 5. 429, 500, 502, 503, 504 and network errors are retried (4 attempts, exponential delay, `Retry-After`
-   honoured up to 30 s). Any other 4xx fails at once as `ApiError(502, "adapty_rejected")` with Adapty's answer.
+   honoured up to 30 s). A `404 profile_does_not_exist` becomes `adapty_profile_missing` with setup guidance.
+   Any other 4xx fails at once as `ApiError(502, "adapty_rejected")` with Adapty's answer.
    When retries run out: `ApiError(502, "adapty_unavailable")`. The secret never appears in an error.
 6. `AdaptyProfileClient.from_settings(settings)` builds it from `core/config.py`.
 

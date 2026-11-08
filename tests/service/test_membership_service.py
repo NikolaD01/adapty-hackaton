@@ -247,6 +247,26 @@ def test_segment_matches_numbers_tiers_and_missing_fields():
     assert not segment_matches([{"field": "edits", "op": "!=", "value": 6}], values, tiers)
 
 
+async def test_failed_sync_keeps_the_actionable_cause_without_exposing_raw_details():
+    class MissingProfiles:
+        async def write(self, user, attributes):
+            raise ApiError(
+                502,
+                "adapty_profile_missing",
+                "The profile does not exist in the configured Adapty app. Seed demo profiles first.",
+                {"body": "private upstream details"},
+            )
+
+    service, _, _ = await build(VALUES, writer=MissingProfiles())
+    with pytest.raises(ApiError) as caught:
+        await service.sync_users(APP, None)
+    assert caught.value.code == "membership_sync_partial"
+    assert "configured Adapty app" in caught.value.message
+    assert "the rest were" not in caught.value.message
+    assert caught.value.details["causes"] == {"adapty_profile_missing": 2}
+    assert "private upstream details" not in repr(caught.value.details)
+
+
 def activated(key, conditions, value, status="live"):
     return SimpleNamespace(
         status=status,

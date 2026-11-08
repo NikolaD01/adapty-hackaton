@@ -1,10 +1,10 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { apiUrl, appWrite, request, useAppQuery } from '../../shared/api'
+import { apiUrl, appApiUrl, appWrite, request, useAppQuery } from '../../shared/api'
 import { QueryFeedback, RequestError } from '../../shared/ui/QueryFeedback'
 import { Select } from '../../shared/ui/Select'
-import type { AppSettings, Mode, Proposal, ProposalPatch, ProposalStatus } from '../../types/targeting'
+import type { AppSettings, Decision, Mode, Proposal, ProposalPatch, ProposalStatus } from '../../types/targeting'
 import { PlaceholderPage } from './PlaceholderPage'
 import { ReviewList } from './ReviewList'
 import { TargetingTable } from './TargetingTable'
@@ -129,8 +129,16 @@ function ProposalEdit({ proposal, onSave, onCancel, pending }: {
 
 type ProposalChange = { action: 'edit'; patch: ProposalPatch } | { action: 'approve' } | { action: 'reject'; reason: string }
 
-function ProposalCard({ proposal }: { proposal: Proposal }) {
+function ProposalCard({ proposal, activeEquivalent }: { proposal: Proposal; activeEquivalent?: Proposal }) {
   const client = useQueryClient()
+  const history = useQuery({
+    queryKey: ['decisions', proposal.proposal_id],
+    queryFn: ({ signal }) => request<Decision[]>(`${appApiUrl}/decisions?proposal_id=${encodeURIComponent(proposal.proposal_id)}`, { signal }),
+    enabled: proposal.status === 'failed',
+  })
+  const failure = history.data?.[0]?.steps.find((step) => !step.ok)
+  const testAttempted = history.data?.some((decision) => decision.steps.some((step) =>
+    step.step === 'ab_tests_create' || step.step === 'ab_tests_start'))
   const [form, setForm] = useState<'edit' | 'reject' | null>(null)
   const mutation = useMutation({
     mutationFn: (change: ProposalChange) => {
@@ -165,6 +173,7 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
   const days = outcomeWindow(proposal)
   const draft = proposal.status === 'draft'
   const awaitingPublish = proposal.status === 'awaiting_publish'
+  const retryable = proposal.status === 'failed' && !proposal.adapty.ab_test_id && !testAttempted && !activeEquivalent
   const flowName = proposal.edits.some((edit) => edit.field === 'flow_id') ? null : proposal.action.flow_name
   const audience = audienceLabel(proposal)
   const { diff, ci_low: low, ci_high: high } = proposal.expected_effect
@@ -198,6 +207,14 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
           difference in revenue can be measured.
         </p>
         {awaitingPublish && <p className="preview-notice">Publish the new paywall in Adapty, then continue approval to start the test.</p>}
+        {proposal.status === 'failed' && typeof failure?.detail.message === 'string' && (
+          <p role="alert">Approval failed: {failure.detail.message}</p>
+        )}
+        {activeEquivalent && (
+          <p>This audience already has this offer running.{' '}
+            <Link to={`/dashboard/decisions?proposal_id=${encodeURIComponent(activeEquivalent.proposal_id)}`}>View active test</Link>
+          </p>
+        )}
         {form === 'edit' && draft && (
           <ProposalEdit proposal={proposal} onSave={(patch) => mutation.mutate({ action: 'edit', patch })}
             onCancel={() => showForm(null)} pending={mutation.isPending} />
@@ -214,12 +231,12 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
             </fieldset>
           </form>
         )}
-        {(draft || awaitingPublish || proposal.status === 'executing' || proposal.status === 'approved') && !form && (
+        {(draft || retryable || awaitingPublish || proposal.status === 'executing' || proposal.status === 'approved') && !form && (
           <div className="targeting-actions review-actions">
             <button type="button" className="primary-action"
-              disabled={mutation.isPending || (!draft && !awaitingPublish)}
+              disabled={mutation.isPending || (!draft && !retryable && !awaitingPublish)}
               onClick={() => mutation.mutate({ action: 'approve' })}>
-              {awaitingPublish ? 'Continue after publishing' : 'Approve'}
+              {awaitingPublish ? 'Continue after publishing' : retryable ? 'Retry approval' : 'Approve'}
             </button>
             {draft && <>
               <button type="button" disabled={mutation.isPending} onClick={() => showForm('edit')}>Edit</button>
@@ -303,7 +320,10 @@ export function ProposalsPage() {
           <div className="review-records">
             {items.map((proposal) => (
               <div key={proposal.proposal_id} hidden={proposal.proposal_id !== selected.proposal_id}>
-                <ProposalCard proposal={proposal} />
+                <ProposalCard proposal={proposal} activeEquivalent={proposal.status === 'failed' ? items.find((other) =>
+                  other.proposal_id !== proposal.proposal_id && ['live', 'executing', 'approved'].includes(other.status)
+                  && other.trigger_placement === proposal.trigger_placement && other.segment_key === proposal.segment_key
+                  && other.action.flow_id === proposal.action.flow_id) : undefined} />
               </div>
             ))}
           </div>

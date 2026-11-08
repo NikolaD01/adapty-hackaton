@@ -15,8 +15,10 @@ This is the loop the project is graded on: a proposal ends as a segment and an A
 2. `write_attributes`: membership sync for every user with values (an `executing` proposal already counts for `p_segment`).
 3. `segments_create`: title `[fs] <segment_key>`, filters `attributes__p_segment@string:IN:<condition.value>` AND each
    `adapty_filters` entry. If a segment with that title exists it is **updated, not duplicated**.
-4. `placement_read`: the trigger placement; its default audience's flow is the control. The default must be a plain flow
-   (`409 placement_default_not_a_flow` otherwise); offer == control fails with `offer_equals_control`.
+4. `placement_read`: the trigger placement's default flow is the control. Flow A/B defaults are also supported:
+   use a copied flow's original active arm, an explicit `control` arm, or the unique other active arm.
+   Ambiguous controls fail with `placement_control_ambiguous`; offer == control fails with `offer_equals_control`.
+   The default audience and its existing test remain intact.
 5. `ab_tests_create` (control `holdout_pct` %, offer the rest, for that segment) and `ab_tests_start` (starting also puts the
    audience on the placement; no separate placement update is needed).
 6. `live`. Any `ApiError` or unexpected error: status `failed`, the failing step is logged as `ok: false` with `code` and
@@ -25,11 +27,13 @@ This is the loop the project is graded on: a proposal ends as a segment and an A
    **approve again** on the same proposal: it checks `flows get` is `published` (`409 flow_not_published` otherwise, nothing
    changes), then runs steps 4–6. Publishing is never called by the service.
 8. The decision (`approve`, or `autopilot_start` when `decided_by=autopilot`) is stored with all steps.
+9. Failed approvals can retry before A/B creation was attempted, retaining their decision history and reusing segments.
+   A previously attempted test or an equivalent active proposal blocks retry. Atomic status/timestamp checks prevent
+   concurrent approval or publish continuation from starting duplicate tests.
 Providers for the route: `app.state.adapty_commands` / `app.state.membership_sync` (tests) or the real CLI and `SqlMembershipSync`.
 
 ## Contract touched
-`POST /proposals/{id}:approve`. No contract change. The resume-by-approving-again behaviour is not spelled out in
-`api.md` (it only says a human publishes, then it continues).
+`POST /proposals/{id}:approve`: failed approvals can retry with the guards documented in `docs/contracts/api.md`.
 
 ## How to test
 ```bash

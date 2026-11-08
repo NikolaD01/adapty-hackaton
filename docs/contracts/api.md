@@ -12,6 +12,8 @@ Conventions
 - `customer_user_id` is the join key with Adapty (the same id the app passes to the Adapty SDK).
   Seed users look like `lumen_282506_00007`.
 - Errors: `{"error": {"code": "snake_case", "message": "human text", "details": {...}}}` with a 4xx/5xx status.
+  Unhandled exceptions return `500 internal_error` with a generic message; details remain in server logs.
+  Configured CORS origins receive the allow-origin header on these responses as well.
 - Not implemented yet: the route exists and returns `501` with code `not_implemented`. The dashboard
   shows "coming soon" for 501 and never crashes.
 - Owner column: **A** ingest & rules, **B** brain, **C** Adapty & proposals, **D** dashboard (consumer only).
@@ -220,7 +222,13 @@ Also in the response:
 ```
 - `status` ∈ `draft` → `approved` → `executing` → `live` | `failed`; or `draft` → `rejected`.
   With `action.needs_publish: true` (a new AI paywall, still a draft flow): `executing` → `awaiting_publish`
-  → (human publishes the flow) → `live`. This holds in autopilot too.
+  → (human publishes the flow) → `executing` → `live`. This holds in autopilot too.
+  `failed` → `approved` retries failures before A/B test creation was attempted. Existing decisions are retained.
+  Retries after an attempted create/start return `409 activation_retry_unsafe`; equivalent active proposals return
+  `409 proposal_already_active`. Concurrent approval and continuation are claimed atomically.
+  A default flow A/B test is supported: a copied flow uses its original active arm, otherwise an explicitly named
+  `control` arm or the unique other active arm is used. Ambiguous controls return `placement_control_ambiguous`
+  in the failed decision. The existing default audience is preserved.
 - `expected_effect.metric` is `net_revenue_<N>d`, N = the outcome window of the insight run (`BrainRuntime.outcome_window_days`,
   default 90; the live demo uses 60, see `docs/brain/10-outcome-window.md`). `diff`, `ci_*` and the `*_90d` field names of
   `InsightRun` (`net_arpu_90d`, `diff_net_90d`) keep their historical names; the window is in `evidence.outcome_window_days`.

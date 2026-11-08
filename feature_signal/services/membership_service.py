@@ -186,9 +186,15 @@ class MembershipService:
 
         outcomes = await asyncio.gather(*(one(u) for u in ids), return_exceptions=True)
         changed = written = failed = 0
+        causes: dict[str, int] = {}
+        first_message = ""
         for outcome in outcomes:
             if isinstance(outcome, BaseException):
                 failed += 1
+                code = outcome.code if isinstance(outcome, ApiError) else "unexpected_error"
+                causes[code] = causes.get(code, 0) + 1
+                if not first_message and isinstance(outcome, ApiError):
+                    first_message = outcome.message
                 continue
             user, desired, count = outcome
             if count:
@@ -199,8 +205,9 @@ class MembershipService:
             raise ApiError(
                 502,
                 "membership_sync_partial",
-                f"{failed} of {len(ids)} users could not be written to Adapty; the rest were",
-                {"failed": failed, "checked": len(ids), "changed": changed},
+                f"{failed} of {len(ids)} users could not be written to Adapty. {changed} users updated."
+                + (f" {first_message}" if first_message else ""),
+                {"failed": failed, "checked": len(ids), "changed": changed, "causes": causes},
             )
         return SyncResult(checked=len(ids), changed=changed, attributes_written=written)
 

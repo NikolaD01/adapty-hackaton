@@ -10,6 +10,7 @@ import { mockProposal, mockSettings } from '../mocks/fixtures'
 import { createHandlers } from '../mocks/handlers'
 import { apiUrl, appApiUrl } from '../shared/api'
 import { proposalStatuses } from '../types/targeting'
+import type { Proposal } from '../types/targeting'
 
 const server = setupServer(...createHandlers())
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
@@ -19,6 +20,58 @@ afterAll(() => server.close())
 function renderProposals() {
   return render(<AppProviders><MemoryRouter><ProposalsPage /></MemoryRouter></AppProviders>)
 }
+
+it('retries a failed approval and renders the returned live status', async () => {
+  let proposal: Proposal = { ...mockProposal, status: 'failed' }
+  let approvals = 0
+  server.use(
+    http.get(`${appApiUrl}/proposals`, () => HttpResponse.json([proposal])),
+    http.post(`${apiUrl}/proposals/:operation`, ({ params }) => {
+      expect(params.operation).toBe(`${mockProposal.proposal_id}:approve`)
+      approvals++
+      proposal = { ...proposal, status: 'live' }
+      return HttpResponse.json(proposal)
+    }),
+  )
+  renderProposals()
+  await userEvent.setup().click(await screen.findByRole('button', { name: 'Retry approval' }))
+  expect(await screen.findByText('Live')).toBeVisible()
+  expect(approvals).toBe(1)
+})
+
+it('does not offer retry when a failed approval already created a test', async () => {
+  server.use(http.get(`${appApiUrl}/proposals`, () => HttpResponse.json([{
+    ...mockProposal, status: 'failed', adapty: { ...mockProposal.adapty, ab_test_id: 'already-created' },
+  }])))
+  renderProposals()
+  expect(await screen.findByText('Failed')).toBeVisible()
+  expect(screen.queryByRole('button', { name: 'Retry approval' })).not.toBeInTheDocument()
+})
+
+it('points an old failed duplicate to the equivalent active test', async () => {
+  server.use(http.get(`${appApiUrl}/proposals`, () => HttpResponse.json([
+    { ...mockProposal, status: 'failed' },
+    { ...mockProposal, proposal_id: 'pr_active', status: 'live' },
+  ])))
+  renderProposals()
+  expect(await screen.findByRole('link', { name: 'View active test' })).toHaveAttribute(
+    'href', '/dashboard/decisions?proposal_id=pr_active',
+  )
+  expect(screen.queryByRole('button', { name: 'Retry approval' })).not.toBeInTheDocument()
+})
+
+it('shows the failed step reason and blocks retry after an ambiguous test creation', async () => {
+  server.use(
+    http.get(`${appApiUrl}/proposals`, () => HttpResponse.json([{ ...mockProposal, status: 'failed' }])),
+    http.get(`${appApiUrl}/decisions`, () => HttpResponse.json([{
+      proposal_id: mockProposal.proposal_id,
+      steps: [{ step: 'ab_tests_create', ok: false, detail: { message: 'Adapty timed out.' } }],
+    }])),
+  )
+  renderProposals()
+  expect(await screen.findByRole('alert')).toHaveTextContent('Approval failed: Adapty timed out.')
+  expect(screen.queryByRole('button', { name: 'Retry approval' })).not.toBeInTheDocument()
+})
 
 it.each(proposalStatuses)('shows the %s proposal status with the right approval controls', async (status) => {
   server.use(http.get(`${appApiUrl}/proposals`, () => HttpResponse.json([{ ...mockProposal, status }])))

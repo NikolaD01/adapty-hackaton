@@ -111,6 +111,20 @@ class AdaptyProfileClient:
             else:
                 if response.is_success:
                     return
+                try:
+                    missing_profile = response.status_code == 404 and (
+                        response.json().get("error_code") == "profile_does_not_exist"
+                    )
+                except (ValueError, AttributeError):
+                    missing_profile = False
+                if missing_profile:
+                    raise ApiError(
+                        502,
+                        "adapty_profile_missing",
+                        "The profile does not exist in the configured Adapty app. "
+                        "Connect the app containing these users or seed its demo profiles before approving.",
+                        {"customer_user_id": customer_user_id, "status": 404},
+                    )
                 if response.status_code not in RETRY_STATUSES:
                     raise ApiError(
                         502,

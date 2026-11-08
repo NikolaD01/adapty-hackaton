@@ -174,3 +174,24 @@ async def test_the_secret_never_appears_in_an_error():
         await client.write("u1", {"p_segment": "x"})
     assert SECRET not in caught.value.message
     assert SECRET not in repr(caught.value.details)
+
+
+async def test_missing_profile_explains_how_to_repair_the_connection():
+    handler, seen = recorder(httpx.Response(404, json={"error_code": "profile_does_not_exist"}))
+    client, sleeps = make_client(handler)
+    with pytest.raises(ApiError) as caught:
+        await client.write("lumen_282506_00007", {"p_segment": "power_editor"})
+    assert caught.value.code == "adapty_profile_missing"
+    assert caught.value.details["customer_user_id"] == "lumen_282506_00007"
+    assert "configured Adapty app" in caught.value.message
+    assert len(seen) == 1
+    assert sleeps == []
+
+
+@pytest.mark.parametrize("response", [httpx.Response(404, text="Not found"), httpx.Response(404, json={})])
+async def test_an_unrelated_404_does_not_claim_the_profile_is_missing(response):
+    handler, _ = recorder(response)
+    client, _ = make_client(handler)
+    with pytest.raises(ApiError) as caught:
+        await client.write("u1", {"p_segment": "x"})
+    assert caught.value.code == "adapty_rejected"

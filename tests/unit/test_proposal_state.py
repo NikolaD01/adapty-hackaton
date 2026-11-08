@@ -18,7 +18,9 @@ ALL = ["draft", "approved", "executing", "awaiting_publish", "live", "failed", "
         ("executing", "failed"),
         ("executing", "awaiting_publish"),
         ("awaiting_publish", "live"),
+        ("awaiting_publish", "executing"),
         ("awaiting_publish", "failed"),
+        ("failed", "approved"),
     ],
 )
 def test_contract_transitions_are_allowed(src, dst):
@@ -36,8 +38,8 @@ def test_every_other_transition_is_a_409():
             assert (caught.value.status, caught.value.code) == (409, "invalid_transition")
 
 
-def test_live_failed_and_rejected_are_final():
-    for final in ("live", "failed", "rejected"):
+def test_live_and_rejected_are_final():
+    for final in ("live", "rejected"):
         assert ALLOWED_TRANSITIONS.get(final, set()) == set()
 
 

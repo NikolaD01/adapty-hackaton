@@ -19,6 +19,8 @@ unchanged profiles or leaking history into the 30 attribute slots.
    written, keys the user no longer has are written as `null`. Unchanged user → 0 writes.
 4. Writes go through the `AttributeWriter` (C1), at most 8 at once. State is saved only for users whose write succeeded;
    if some failed the call raises `502 membership_sync_partial` after saving the rest, so the next sync retries only those.
+   Its message preserves the first safe API error and `details.causes` counts failures by code; raw upstream details
+   are not copied into the decision log. Missing demo profiles can be repaired with the [profile seeder](17-approval-repair.md).
 5. `SqlMembershipSync(session_factory, writer)` is the `MembershipSync` port A calls after ingest (own session, commits state).
    `POST /membership:sync` uses the same service on the request session; the writer is `app.state.attribute_writer` or the real client.
 

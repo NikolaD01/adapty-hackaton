@@ -34,6 +34,15 @@ Open **http://localhost:5173** for the dashboard, **http://localhost:5173/demo**
 
 The included configuration expects the Lumen demo’s flows, profiles, and placements in Adapty. Connecting another app requires updating those mappings; see [runtime configuration](docs/adapty/13-brain-wiring.md).
 
+If the selected Adapty demo app does not contain the Lumen user profiles, create the missing identities before approving proposals:
+
+```bash
+docker compose exec api python scripts/seed_adapty_profiles.py --users 5000
+```
+
+This skips existing profiles and marks new ones as synthetic. It does not create purchases or subscriptions.
+See [approval troubleshooting](docs/adapty/17-approval-repair.md).
+
 To explore just the interface without credentials or a backend, run `VITE_USE_MOCKS=true npm run dev` from `web/`. This mode displays a labeled mock preview.
 
 ## Make paid offers relevant to how people use your app

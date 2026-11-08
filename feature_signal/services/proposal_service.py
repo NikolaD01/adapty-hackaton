@@ -36,7 +36,8 @@ ALLOWED_TRANSITIONS: dict[str, set[str]] = {
     "draft": {"approved", "rejected"},
     "approved": {"executing"},
     "executing": {"live", "failed", "awaiting_publish"},
-    "awaiting_publish": {"live", "failed"},
+    "awaiting_publish": {"executing", "live", "failed"},
+    "failed": {"approved"},  # ActivationService checks that no test creation was attempted.
 }
 
 
