@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http } from 'msw'
 import { setupServer } from 'msw/node'
@@ -31,19 +31,19 @@ it('saves the feature and event payloads and links the event to its features', a
   const user = userEvent.setup()
   await user.click(screen.getByText('Add feature'))
   const feature = within(screen.getByRole('group', { name: 'Feature details' }))
-  await user.type(feature.getByRole('textbox', { name: 'Key' }), 'retouch')
-  await user.type(feature.getByRole('textbox', { name: 'Name' }), 'Retouch')
-  await user.type(feature.getByRole('textbox', { name: 'Description' }), 'Retouch a photo.')
-  await user.type(feature.getByRole('textbox', { name: 'Plans (comma-separated)' }), 'premium, pro, premium')
+  fireEvent.change(feature.getByRole('textbox', { name: 'Key' }), { target: { value: 'retouch' } })
+  fireEvent.change(feature.getByRole('textbox', { name: 'Name' }), { target: { value: 'Retouch' } })
+  fireEvent.change(feature.getByRole('textbox', { name: 'Description' }), { target: { value: 'Retouch a photo.' } })
+  fireEvent.change(feature.getByRole('textbox', { name: 'Plans (comma-separated)' }), { target: { value: 'premium, pro, premium' } })
   await user.click(feature.getByRole('button', { name: 'Save feature' }))
   expect(await screen.findByText('Retouch saved.')).toBeVisible()
   expect(featureBody).toEqual({ key: 'retouch', name: 'Retouch', description: 'Retouch a photo.', plans: ['premium', 'pro'] })
 
   await user.click(screen.getByText('Add event'))
   const event = within(screen.getByRole('group', { name: 'Event details' }))
-  await user.type(event.getByRole('textbox', { name: 'Key' }), 'photo_retouch')
-  await user.type(event.getByRole('textbox', { name: 'Name' }), 'Photo retouched')
-  await user.type(event.getByRole('textbox', { name: 'Description' }), 'The photo was retouched.')
+  fireEvent.change(event.getByRole('textbox', { name: 'Key' }), { target: { value: 'photo_retouch' } })
+  fireEvent.change(event.getByRole('textbox', { name: 'Name' }), { target: { value: 'Photo retouched' } })
+  fireEvent.change(event.getByRole('textbox', { name: 'Description' }), { target: { value: 'The photo was retouched.' } })
   await user.selectOptions(event.getByRole('listbox', { name: 'Features (up to five)' }), ['retouch', 'photo_import'])
   await user.click(event.getByRole('button', { name: 'Save event' }))
   expect(await screen.findByText('Photo retouched saved.')).toBeVisible()

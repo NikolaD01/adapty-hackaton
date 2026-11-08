@@ -33,7 +33,7 @@ export function createHandlers() {
 
   function syncDefaultRules(feature: Feature) {
     const keys = [...eventTypes.values()].filter((event) => event.features.includes(feature.key)).map((event) => event.key)
-    const defaults: { suffix: string; definition: RuleInput['definition'] }[] = [
+    const defaults: { suffix: string; definition: RuleInput['definition'] }[] = keys.length === 0 ? [] : [
       { suffix: 'uses_total', definition: { measure: 'count', event_keys: keys } },
       { suffix: 'uses_7d', definition: { measure: 'count', event_keys: keys, window_days: 7 } },
       { suffix: 'days_active_7d', definition: { measure: 'days_active', event_keys: keys, window_days: 7 } },
@@ -187,7 +187,7 @@ export function createHandlers() {
       ]
       const updated: Proposal = {
         ...proposal, ...fields, updated_at: at,
-        action: { ...proposal.action, flow_id: flow_id ?? proposal.action.flow_id },
+        action: flow_id === undefined ? proposal.action : { ...proposal.action, flow_id, flow_name: null },
         condition: { ...proposal.condition, value: condition_value ?? proposal.condition.value },
         edits: [...proposal.edits, ...changes],
       }
@@ -225,7 +225,7 @@ export function createHandlers() {
           const match = customer_user_id === freeUser ? live : undefined
           return {
             customer_user_id, segment_hash: match ? 'preview-targeted' : 'preview-default',
-            flow_id: match?.action.flow_id ?? 'preview-default-flow', flow_name: match?.action.flow_name ?? 'Default flow',
+            flow_id: match?.action.flow_id ?? 'preview-default-flow', flow_name: match ? match.action.flow_name : 'Default flow',
           }
         }),
       })
