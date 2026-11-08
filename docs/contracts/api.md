@@ -88,6 +88,8 @@ POST /v1/apps/{app_id}/events
 ```
 - `event_id` is a client-generated UUID and the primary key: a repeated id is a duplicate, never counted twice.
 - `received_at` is set by the server. Max 500 events per batch.
+- Optional write key: when the server sets `INGEST_API_KEY`, writes (`/events`, `/features`, `/event-types`)
+  need the header `X-Api-Key`; otherwise `401 unauthorized`. Reads never need it.
 - Unknown `key` → the event is rejected and listed in `unknown_keys` (register the type first).
 - `props` are small values: number, bool, string ≤100 chars, null; at most 20 per event. Numbers must be
   JSON numbers (`40`, not `"40"`) so rules can add them up. **Never send free text** (e.g. the prompt):

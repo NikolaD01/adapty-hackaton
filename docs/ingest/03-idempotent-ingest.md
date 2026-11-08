@@ -35,6 +35,10 @@ curl -s -XPOST localhost:8000/v1/apps/$APP/events -H 'content-type: application/
 Expected: `48 passed`; first curl `{"accepted":1,"duplicates":0,"unknown_keys":[]}`, the same curl again
 `{"accepted":0,"duplicates":1,"unknown_keys":[]}` (register the feature and event type first, chapter 2).
 
+## Write key (optional)
+With `INGEST_API_KEY` set, `POST /events`, `/features` and `/event-types` need `X-Api-Key` (the SDK sends
+it with `init({ apiKey })`); reads stay open. Unset = open, as in the local demo.
+
 ## Limits / not claimed
 The fast loop gets every user of a batch that stored at least one new event. Timeline (`GET …/timeline`) is A4.
 

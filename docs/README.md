@@ -6,6 +6,7 @@ Start with [plan.md](plan.md).
 - [diagrams/](diagrams/README.md) — Mermaid diagrams: system, flow, ingest sequence, proposal lifecycle, data model.
 - [plan.md](plan.md) — what we build, why, how we measure, what we don't claim, demo script.
 - [STATUS.md](STATUS.md) — one row per area, updated at every chapter end.
+- [demo.md](demo.md) — the 3-minute demo script, numbers we say, backup plan.
 
 ## Contract (shared, change only through `contract-change`)
 - [contracts/api.md](contracts/api.md) — every endpoint and schema, Adapty attribute keys.
