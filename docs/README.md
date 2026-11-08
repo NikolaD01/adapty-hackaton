@@ -1,8 +1,9 @@
 # Documentation index
 
-Start with the [diagram](https://claude.ai/artifact/X9YbYnKEExYeSZjmAC733h) and [plan.md](plan.md).
+Start with [plan.md](plan.md).
 
 ## Product and decisions
+- [diagrams/](diagrams/README.md) — Mermaid diagrams: system, flow, ingest sequence, proposal lifecycle, data model.
 - [plan.md](plan.md) — what we build, why, how we measure, what we don't claim, demo script.
 - [STATUS.md](STATUS.md) — one row per area, updated at every chapter end.
 
@@ -22,7 +23,7 @@ Start with the [diagram](https://claude.ai/artifact/X9YbYnKEExYeSZjmAC733h) and 
 | Area | Index | Chapters |
 |---|---|---|
 | A — Ingest & Rules | [ingest/README.md](ingest/README.md) (what is ready for B, C, D) | [01 tables](ingest/01-tables-migration.md) · [02 features + catalog](ingest/02-features-catalog.md) · [03 ingest](ingest/03-idempotent-ingest.md) · [04 timeline](ingest/04-user-timeline.md) · [05 rules engine](ingest/05-rules-engine.md) · [06 values + profile](ingest/06-values-profile.md) · [07 SDK](ingest/07-sdk.md) · [08 demo events](ingest/08-demo-events.md) |
-| B — Brain | [brain/README.md](brain/README.md) | — |
+| B — Brain | [brain/README.md](brain/README.md) | [01 outcomes](brain/01-offline-outcomes.md) · [02 ranking](brain/02-ranking-and-tiers.md) · [03 segments](brain/03-segments.md) · [04 uplift](brain/04-uplift.md) · [05 API](brain/05-insights-api.md) · [06 suggestions](brain/06-rule-suggestions.md) · [07 explanations](brain/07-explanations.md) · [08 live](brain/08-live-insights.md) · [09 seed JSON](brain/09-seed-outcomes.md) |
 | C — Adapty & Proposals | [adapty/README.md](adapty/README.md) | — |
 | D — Dashboard & Demo | [web/README.md](web/README.md) | [01 web scaffold](web/01-web-scaffold.md) |
 

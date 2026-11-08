@@ -5,7 +5,7 @@
 ## What
 
 The Vite app renders the Adapty Overview reference at `/` using static HTML, CSS and SVG charts.
-Behavioral Targeting opens the Events placeholder. Overview and the Adapty logo link to `/`.
+Behavioral Targeting opens Events. Overview and the Adapty logo link to `/`.
 
 ## Why
 
@@ -21,19 +21,28 @@ review the dashboard before connecting API calls.
 - `web/src/shared/`, `types/` and `styles/` hold reusable UI, environment configuration, shared
   TypeScript types and global styles. Keep page logic in the feature that uses it.
 - `web/src/mocks/` owns the shared MSW handlers and separate browser and Node entry points.
-  The SDK alias points at `sdk-stub.ts` until Role A's A5 is ready.
+  The SDK alias now points to `sdk/js/src/index.ts`.
 - `/dashboard` redirects to `/dashboard/events`. The other feature routes are
   `/dashboard/metrics`, `/dashboard/insights`, `/dashboard/proposals`, `/dashboard/decisions`,
-  and `/dashboard/lookup`. The Lumen placeholder is at `/demo`.
+  and `/dashboard/lookup`. The Lumen demo is at `/demo`.
 
 ## Contract touched
 
-The test exercises the mock for `GET /v1/apps/{app_id}/event-types` from the v1 API contract.
-The browser Overview uses data from the design reference.
+Events and Metrics read the live catalog, rules and values. The Lumen demo sends events through
+the SDK and refreshes the selected user's timeline and feature profile after `flush()`.
+Insights, Proposals and Decisions keep development mocks and show **Coming soon** for HTTP 501.
+Lookup is a route placeholder. Overview uses data from the design reference.
 
 ## How to test
 
 Use Node 20.19 or later in the Node 20 line, as in CI. Run these commands from the repository root.
+
+```sh
+make up
+# In a second terminal, once the API is healthy:
+make offline-data
+make demo-events
+```
 
 ```sh
 cd web
@@ -50,6 +59,8 @@ at 125% scale, then check Overview and Events for horizontal overflow at 1280, 7
 The narrow preview uses the icon rail to keep the charts in view. [Adapty Overview reference](adapty-admin-reference.png)
 
 The local defaults in `web/.env.example` target the Lumen app and `http://localhost:8000`.
+Open `http://localhost:5173/demo` and try full-resolution export as the free user. The event
+`pt_track_hd_export_blocked` appears in the timeline and HD export values refresh in the profile.
 Set `VITE_USE_MOCKS=false` to disable the development service worker integration.
 
 ## Overview style measurements
@@ -70,7 +81,7 @@ These desktop values come from the rendered Adapty Overview. Dimensions use CSS 
 
 ## Limits
 
-The chart values and toolbar are static. The feature pages are route placeholders.
+The chart values and toolbar are static. Events and Metrics currently provide read-only views.
 The screenshot guides visual review. The app renders the interface from components.
 
 ## Status

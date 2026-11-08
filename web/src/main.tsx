@@ -6,6 +6,7 @@ import { AppRoutes } from './app/AppRoutes'
 import { webEnv } from './shared/env'
 import '@fontsource-variable/inter/wght.css'
 import './styles/index.css'
+import './styles/behavioral.css'
 
 if (webEnv.useMocks) {
   const { worker } = await import('./mocks/browser')

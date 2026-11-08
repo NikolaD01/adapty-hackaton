@@ -7,10 +7,11 @@ measure which values really separate buyers, and write only the decision into Ad
 A/B tests then serve and measure the offer. Human mode by default; autopilot within limits; publishing a
 paywall is always a human click.
 
-**Flow in 8 steps (diagram):** https://claude.ai/artifact/X9YbYnKEExYeSZjmAC733h ·
-**Plan:** [docs/plan.md](docs/plan.md) · **All docs:** [docs/README.md](docs/README.md)
+**Plan:** [docs/plan.md](docs/plan.md) · **Diagrams:** [docs/diagrams](docs/diagrams/README.md) · **All docs:** [docs/README.md](docs/README.md)
 
 ## How it works
+Full picture: [flow diagram](docs/diagrams/flow.md) · [system](docs/diagrams/system.md).
+
 1. **App** — `track("ai_enhance", { edits_left: 0 })` via `feature-signal-sdk` (buffered, retry-safe).
 2. **Catalog** — features (groups of events, with the plans that include them) and event types.
 3. **History** — one row per event (who, what, phone time, arrival time); a repeated `event_id` counts once.
@@ -28,7 +29,7 @@ paywall is always a human click.
 | JS SDK `sdk/js` | A | ✅ on `main` ([chapter 07](docs/ingest/07-sdk.md)) |
 | Synthetic demo events for 1000 seed users | A | ✅ `make demo-events` ([chapter 08](docs/ingest/08-demo-events.md)) |
 | Dashboard scaffold (`web/`) | D | ✅ scaffold on mocks ([docs/web](docs/web/01-web-scaffold.md)) |
-| Ranking, tiers, uplift, insights, LLM suggestions | B | ⏳ routes return `501 not_implemented` |
+| Ranking, tiers, uplift, insights, LLM suggestions | B | Implemented on this branch; insight runs require app-scoped runtime configuration ([docs/brain](docs/brain/README.md)) |
 | Adapty attributes, segments, A/B, proposals, membership sync, lookup, paywall draft | C | ⏳ routes return `501 not_implemented` |
 
 Live status per area: [docs/STATUS.md](docs/STATUS.md) · task graph: `make board`.
