@@ -5,6 +5,7 @@ Owner: everyone (the `chapter-done` skill reminds you); final edit in Phase 6.
 
 ## Tools and what we used them for
 - **Codex + Context7 MCP** — Brain implementation, current library documentation, offline tests, and independent subagent review.
+  Playwright exercised the dashboard in preview and against a fresh local API.
 - **Claude Code** (CLI, one session per developer) — research, dataset analysis, the plan, repo scaffold,
   and the code of each area under the rules in `CLAUDE.md`.
 - **Adapty CLI 0.18 + Adapty skills plugin** (`adaptyteam/adapty-skills`: audiences, ab-tests,
