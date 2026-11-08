@@ -5,6 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from feature_signal.api.v1.ingest_auth import require_ingest_key
 from feature_signal.core.errors import ApiError
 from feature_signal.db.session import get_session
 from feature_signal.repositories.event_types import EventTypeRepository
@@ -25,7 +26,7 @@ def catalog_service(session: Annotated[AsyncSession, Depends(get_session)]) -> C
 Svc = Annotated[CatalogService, Depends(catalog_service)]
 
 
-@router.post("/apps/{app_id}/event-types", response_model=EventTypeOut)
+@router.post("/apps/{app_id}/event-types", response_model=EventTypeOut, dependencies=[Depends(require_ingest_key)])
 async def register_event_type(app_id: str, body: EventTypeIn, svc: Svc) -> EventTypeOut:
     try:
         return await svc.register_event_type(app_id, body)
@@ -38,7 +39,7 @@ async def list_event_types(app_id: str, svc: Svc) -> list[EventTypeOut]:
     return await svc.list_event_types(app_id)
 
 
-@router.post("/apps/{app_id}/features", response_model=FeatureOut)
+@router.post("/apps/{app_id}/features", response_model=FeatureOut, dependencies=[Depends(require_ingest_key)])
 async def register_feature(app_id: str, body: FeatureIn, svc: Svc) -> FeatureOut:
     return await svc.register_feature(app_id, body)
 

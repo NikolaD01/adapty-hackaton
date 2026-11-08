@@ -1,5 +1,7 @@
 # Feature Signal for Adapty
 
+[![ci](https://github.com/NikolaD01/adapty-hackaton/actions/workflows/ci.yml/badge.svg)](https://github.com/NikolaD01/adapty-hackaton/actions/workflows/ci.yml)
+
 An add-on for Adapty that learns from what users **do** in the app which group should see which offer.
 The app sends behavior events through a tiny SDK; we keep the history, compute values per feature,
 measure which values really separate buyers, and write only the decision into Adapty
@@ -36,6 +38,8 @@ Full picture: [flow diagram](docs/diagrams/flow.md) · [system](docs/diagrams/sy
 Live status per area: [docs/STATUS.md](docs/STATUS.md) · task graph: `make board`.
 
 ## Quick start
+One command for a demo: `make demo` (or `make demo-reset` for a clean database) — then follow
+[docs/demo.md](docs/demo.md). Step by step:
 ```bash
 cp .env.example .env              # fill ADAPTY_SECRET_KEY (C) / OPENAI_API_KEY (B) if you need them
 make up                           # API with the Adapty CLI in Docker → http://localhost:8000/docs (runs migrations)
@@ -43,7 +47,7 @@ make offline-data                 # seed datasets into data/ (offline CSVs + lum
 make demo-events                  # 1000 synthetic seed users, ~25k events, values recomputed
 curl -s "localhost:8000/v1/apps/c6c7bdd1-1010-4343-8b29-837a77793cab/users/lumen_282506_00007/features"
 ```
-Tests: `make test-docker` (lint + backend tests + task graph, same as CI) · SDK: `cd sdk/js && npm install && npm test -- --run` ·
+Tests: `make test-docker` (lint, 340+ backend tests, task graph — same as CI) · SDK: `cd sdk/js && npm install && npm test -- --run` ·
 Web: `cd web && npm install && npm run dev` → http://localhost:5173.
 
 ## Repository map

@@ -4,6 +4,7 @@ Append newest first. Every change to a shared file (CLAUDE.md §6) gets a line h
 
 | Date | Area | Change | Who acked |
 |---|---|---|---|
+| 2026-11-08 | ingest | Optional `INGEST_API_KEY` / `X-Api-Key` on writes (off by default), SDK `init({ apiKey })`; `make demo`, `make demo-reset` | pending |
 | 2026-11-08 | ingest | New `POST /adapty-webhook` (A), setting `ADAPTY_WEBHOOK_AUTH`, default rule `adapty_net_revenue_90d`; router mounts `adapty_webhook` | pending |
 | 2026-11-08 | ingest | `make offline-data` also copies `lumen_dataset.json.gz`; `make demo-events`; `data/*.json.gz` ignored | pending |
 | 2026-11-08 | ingest | Ingest calls `app.state.membership_sync` (set by C in `create_app`) in the background after commit | pending |

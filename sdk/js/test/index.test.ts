@@ -114,6 +114,20 @@ describe('catalog', () => {
     expect(et.features).toEqual(['ai_generate'])
   })
 
+  it('sends X-Api-Key only when an apiKey is given', async () => {
+    const f = okFetch()
+    init({ baseUrl: 'http://api', appId: APP, customerUserId: 'u', fetch: f, apiKey: 'k1' })
+    track('generate_click')
+    await flush()
+    expect((f.mock.calls[0][1]?.headers as Record<string, string>)['x-api-key']).toBe('k1')
+    shutdown()
+    const g = okFetch()
+    init({ baseUrl: 'http://api', appId: APP, customerUserId: 'u', fetch: g })
+    track('generate_click')
+    await flush()
+    expect((g.mock.calls[0][1]?.headers as Record<string, string>)['x-api-key']).toBeUndefined()
+  })
+
   it('throws a clear error before init', () => {
     expect(() => track('x')).toThrow('call init() first')
   })
