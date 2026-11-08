@@ -1,10 +1,12 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { BehavioralLayout } from '../features/behavioral/BehavioralLayout'
+import { DecisionsPage } from '../features/behavioral/DecisionsPage'
 import { EventsPage } from '../features/behavioral/EventsPage'
+import { InsightsPage } from '../features/behavioral/InsightsPage'
+import { LookupPage } from '../features/behavioral/LookupPage'
 import { MetricsPage } from '../features/behavioral/MetricsPage'
-import { PendingPage } from '../features/behavioral/PendingPage'
 import { PlaceholderPage } from '../features/behavioral/PlaceholderPage'
-import { behavioralPages } from '../features/behavioral/pages'
+import { ProposalsPage } from '../features/behavioral/ProposalsPage'
 import { DemoPage } from '../features/demo/DemoPage'
 import { OverviewPage } from '../features/overview/OverviewPage'
 import { DashboardLayout } from './layout/DashboardLayout'
@@ -18,13 +20,10 @@ export function AppRoutes() {
           <Route index element={<Navigate to="events" replace />} />
           <Route path="events" element={<EventsPage />} />
           <Route path="metrics" element={<MetricsPage />} />
-          {behavioralPages.filter((page) => page.path !== 'events' && page.path !== 'metrics').map((page) => (
-            <Route
-              key={page.path}
-              path={page.path}
-              element={<PendingPage {...page} />}
-            />
-          ))}
+          <Route path="insights" element={<InsightsPage />} />
+          <Route path="proposals" element={<ProposalsPage />} />
+          <Route path="decisions" element={<DecisionsPage />} />
+          <Route path="lookup" element={<LookupPage />} />
         </Route>
         <Route path="*" element={<PlaceholderPage title="Page not found" />} />
       </Route>

@@ -2,10 +2,14 @@ import { useAppQuery } from '../../shared/api'
 import { QueryFeedback } from '../../shared/ui/QueryFeedback'
 import type { FeatureProfile, Timeline } from '../../types/ingest'
 
+export function useDemoProfile(userId: string) {
+  return useAppQuery<FeatureProfile>(['demo-user', userId, 'profile'], `/users/${encodeURIComponent(userId)}/features`)
+}
+
 export function DemoUserPanel({ userId }: { userId: string }) {
   const base = `/users/${encodeURIComponent(userId)}`
   const timeline = useAppQuery<Timeline>(['demo-user', userId, 'timeline'], `${base}/timeline?limit=20`)
-  const profile = useAppQuery<FeatureProfile>(['demo-user', userId, 'profile'], `${base}/features`)
+  const profile = useDemoProfile(userId)
 
   return (
     <aside aria-label="User activity">
@@ -18,6 +22,7 @@ export function DemoUserPanel({ userId }: { userId: string }) {
             {timeline.data.items.map((event) => (
               <li key={event.event_id}>
                 <code>{event.key}</code>
+                {typeof event.props?.edits_left === 'number' && <small> · {event.props.edits_left} edits left</small>}
                 <div><time dateTime={event.occurred_at}>{new Date(event.occurred_at).toLocaleString()}</time></div>
               </li>
             ))}

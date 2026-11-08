@@ -2,35 +2,37 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { flush, init, pending, setUser, shutdown, track } from 'feature-signal-sdk'
 import { useEffect, useRef, useState } from 'react'
 import { webEnv } from '../../shared/env'
-import { demoUsers, freeDailyEdits } from './demoActions'
-import type { DemoAction } from './demoActions'
+import { blockedExport, demoUsers, freeDailyEdits, type DemoAction, type DemoUser } from './demoActions'
 
-export function useDemoTracking(user: typeof demoUsers[number]) {
+export function useDemoTracking(user: DemoUser, canExportHd: boolean | undefined) {
   const client = useQueryClient()
-  const photo = useRef<string>()
-  const [editsLeft, setEditsLeft] = useState(freeDailyEdits)
+  const photoByUser = useRef<Record<string, string>>({})
+  const [quota, setQuota] = useState<Record<string, number>>({})
+  const editsLeft = user.accessLevel === null ? quota[user.id] ?? freeDailyEdits : null
 
   useEffect(() => {
     init({ baseUrl: webEnv.apiBase, appId: webEnv.appId, customerUserId: demoUsers[0].id })
     return shutdown
   }, [])
 
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: async (action: DemoAction | null) => {
       setUser(user.id)
       if (action) {
-        if (!photo.current || action === 'photo_import') photo.current = crypto.randomUUID()
-        const props = { photo_id: photo.current, synthetic: true }
-        if (action === 'ai_enhance' && !user.premium) {
-          const remaining = Math.max(editsLeft - 1, 0)
-          setEditsLeft(remaining)
+        if (action === 'export_hd_attempt' && canExportHd === undefined) return
+        if (action === 'ai_enhance' && editsLeft === 0) return
+        if (!photoByUser.current[user.id] || action === 'photo_import') {
+          photoByUser.current[user.id] = crypto.randomUUID()
+        }
+        const props = { photo_id: photoByUser.current[user.id], synthetic: true }
+        if (action === 'ai_enhance' && editsLeft !== null) {
+          const remaining = editsLeft - 1
+          setQuota((previous) => ({ ...previous, [user.id]: remaining }))
           track(action, { ...props, edits_left: remaining })
         } else {
           track(action, props)
         }
-        if (action === 'export_hd_attempt' && !user.premium) {
-          track('pt_track_hd_export_blocked', props)
-        }
+        if (action === 'export_hd_attempt' && canExportHd === false) track(blockedExport, props)
       }
 
       const unknown = new Set<string>()
@@ -46,4 +48,6 @@ export function useDemoTracking(user: typeof demoUsers[number]) {
       }
     },
   })
+
+  return { ...mutation, editsLeft }
 }

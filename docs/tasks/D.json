@@ -1,12 +1,12 @@
 {
   "role": "D",
   "name": "Dashboard & Demo",
-  "inbox_ack": "2026-11-07T23:57:49Z",
+  "inbox_ack": "2026-11-08T01:42:36Z",
   "tasks": [
     {
       "id": "D1",
       "title": "Web scaffold and MSW mocks from the contract",
-      "status": "doing",
+      "status": "done",
       "brief": "D ch.1",
       "steps": [
         "Vite + React + TS + Tailwind + Router + TanStack Query",
@@ -29,7 +29,7 @@
     {
       "id": "D2",
       "title": "Proposals screen + mode toggle",
-      "status": "todo",
+      "status": "done",
       "brief": "D ch.2",
       "steps": [
         "Proposal card: finding, rule, paywall change, effect +- CI, holdout, reason",
@@ -60,7 +60,7 @@
     {
       "id": "D3",
       "title": "Insights and metrics screens",
-      "status": "todo",
+      "status": "done",
       "brief": "D ch.3",
       "steps": [
         "Rankings table with CI bars, passed marks",
@@ -100,7 +100,7 @@
     {
       "id": "D4",
       "title": "Demo app with the real SDK",
-      "status": "todo",
+      "status": "done",
       "brief": "D ch.4",
       "steps": [
         "Buttons: import, remove background, AI enhance, export, export full-res (Pro only)",
@@ -141,7 +141,7 @@
     {
       "id": "D5",
       "title": "Features and events screen",
-      "status": "todo",
+      "status": "done",
       "brief": "D screens",
       "steps": [
         "Features list with their events + live counter",
@@ -175,7 +175,7 @@
     {
       "id": "D6",
       "title": "Decisions and lookup screens",
-      "status": "todo",
+      "status": "done",
       "brief": "D ch.6",
       "steps": [
         "Decision log with steps and decided_by badge",
@@ -208,7 +208,7 @@
     {
       "id": "D7",
       "title": "Switch to the real backend per endpoint",
-      "status": "todo",
+      "status": "blocked",
       "brief": "D ch.5",
       "steps": [
         "Turn off mocks endpoint by endpoint as owners finish",

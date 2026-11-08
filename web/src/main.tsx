@@ -7,6 +7,7 @@ import { webEnv } from './shared/env'
 import '@fontsource-variable/inter/wght.css'
 import './styles/index.css'
 import './styles/behavioral.css'
+import './styles/targeting.css'
 
 if (webEnv.useMocks) {
   const { worker } = await import('./mocks/browser')
