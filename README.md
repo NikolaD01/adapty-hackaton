@@ -28,6 +28,7 @@ Full picture: [flow diagram](docs/diagrams/flow.md) · [system](docs/diagrams/sy
 | Tables, migrations, features + event catalog, idempotent ingest, timeline, rules engine (all measures), values, feature profile, TierStore | A | ✅ on `main` ([docs/ingest](docs/ingest/README.md)) |
 | JS SDK `sdk/js` | A | ✅ on `main` ([chapter 07](docs/ingest/07-sdk.md)) |
 | Synthetic demo events for 1000 seed users | A | ✅ `make demo-events` ([chapter 08](docs/ingest/08-demo-events.md)) |
+| Adapty webhook: real purchases and refunds as events, live net revenue per user | A | ✅ `POST /adapty-webhook` ([chapter 09](docs/ingest/09-adapty-webhook.md)) |
 | Dashboard scaffold (`web/`) | D | ✅ scaffold on mocks ([docs/web](docs/web/01-web-scaffold.md)) |
 | Ranking, tiers, uplift, insights, LLM suggestions | B | Implemented on this branch; insight runs require app-scoped runtime configuration ([docs/brain](docs/brain/README.md)) |
 | Adapty attributes, segments, A/B, proposals, membership sync, lookup, paywall draft | C | ⏳ routes return `501 not_implemented` |

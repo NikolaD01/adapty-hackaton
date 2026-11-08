@@ -251,7 +251,8 @@
       ],
       "consumes": [
         "port:ValueStore.matrix",
-        "data:demo-events"
+        "data:demo-events",
+        "data:adapty-outcomes"
       ],
       "done_when": "insights:run {source:live} returns rankings on demo users"
     }
