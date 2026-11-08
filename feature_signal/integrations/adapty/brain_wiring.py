@@ -9,6 +9,8 @@ published flows.
   seed outcomes. They must not be reused for another dataset.
 - The typed event properties the demo app really sends are declared for B's rule suggestions. Without them B may
   only suggest event-only rules, so it could never use the quota (`edits_left`) the app reports.
+- The proposal sink stores B's drafts and starts an autopilot pass, so the human/autopilot choice also covers drafts
+  from an insight run. For the demo, `main` drafts move to the test placement and autopilot may change only it.
 Nothing here runs inside `create_app()`; `main.py` calls `wire_brain` for the running app only.
 """
 
@@ -50,6 +52,11 @@ DEMO_PROPERTY_ALLOWLIST: dict[str, dict[str, str]] = {
     "export": {"photo_id": "label"},
     "photo_import": {"photo_id": "label"},
 }
+# Demo: drafts for the app's real `main` placement go to the test placement. Its default flow ("Main - 3 plans") is
+# main's control, so the test compares what the evidence measured. Autopilot may change only the test placement;
+# drafts for other placements (onboarding, settings) wait for a human.
+DEMO_PLACEMENT_MAP = {"main": "fs_test"}
+AUTOPILOT_PLACEMENTS = frozenset({"fs_test"})
 
 
 def published_flows_from_listing(listing: list[dict[str, Any]]) -> dict[str, PublishedFlow]:
@@ -93,17 +100,20 @@ def list_flows(settings: Settings, timeout: float = 30.0) -> list[dict[str, Any]
 def configure_demo_brain(app: Any, settings: Settings, *, listing: list[dict[str, Any]] | None) -> bool:
     """Register B's runtime for the demo app id (and the Adapty app id if it differs). False = not configured.
 
-    The property allowlist is registered first and in any case: rule suggestions do not need the published flows.
+    The property allowlist and the autopilot placement limit are registered first and in any case: rule suggestions
+    and autopilot do not need the published flows.
     """
     from feature_signal.api.v1.insights import BrainRuntime, configure_brain
     from feature_signal.integrations.offline import SeedJsonDataset
-    from feature_signal.services.proposal_service import ProposalService
 
     app_ids = list(dict.fromkeys([DEMO_APP_ID, settings.adapty_app_id]))
     allowlists = getattr(app.state, "brain_property_allowlists", None) or {}
+    placements = getattr(app.state, "autopilot_placements", None) or {}
     for app_id in app_ids:
         allowlists[app_id] = {event: dict(props) for event, props in DEMO_PROPERTY_ALLOWLIST.items()}
+        placements[app_id] = AUTOPILOT_PLACEMENTS
     app.state.brain_property_allowlists = allowlists
+    app.state.autopilot_placements = placements
 
     flows = published_flows_from_listing(listing) if listing else {}
     if not flows:
@@ -115,7 +125,7 @@ def configure_demo_brain(app: Any, settings: Settings, *, listing: list[dict[str
     ids = {f"lumen_{SEED_RUN}_{i:05d}": f"lumen_{SEED_RUN}_{i:05d}" for i in range(SEED_USERS)}
     runtime = BrainRuntime(
         as_of=AS_OF,
-        proposal_sink_factory=lambda session: ProposalService(session),
+        proposal_sink_factory=lambda session: launching_sink(app, settings, session),
         published_flows=flows,
         live_dataset=live_dataset,
         user_id_map=ids,
@@ -126,3 +136,29 @@ def configure_demo_brain(app: Any, settings: Settings, *, listing: list[dict[str
     for app_id in app_ids:
         configure_brain(app, app_id, runtime)
     return True
+
+
+def launching_sink(app: Any, settings: Settings, session: Any) -> Any:
+    """B's proposal sink: store the drafts (demo placement map applied), then an autopilot pass in the background.
+
+    In human mode the pass does nothing. Without the fast loop (`app.state.membership_sync`) autopilot cannot write
+    attributes, so the pass is skipped and the drafts wait for a human.
+    """
+    from feature_signal.db.session import SessionFactory
+    from feature_signal.integrations.adapty.cli import AdaptyCommands, SubprocessAdaptyCli
+    from feature_signal.services.activation_service import ActivationService
+    from feature_signal.services.autopilot_service import LaunchingSink, run_autopilot
+
+    async def launch(app_id: str) -> Any:
+        membership = getattr(app.state, "membership_sync", None)
+        if membership is None:
+            return []
+        commands = getattr(app.state, "adapty_commands", None)
+        if commands is None:
+            commands = AdaptyCommands(SubprocessAdaptyCli(settings.adapty_cli), settings.adapty_app_id)
+            app.state.adapty_commands = commands
+        factory = getattr(app.state, "session_factory", None) or SessionFactory
+        allowed = getattr(app.state, "autopilot_placements", {}).get(app_id)
+        return await run_autopilot(factory, lambda s: ActivationService(s, commands, membership), app_id, allowed)
+
+    return LaunchingSink(session, launch, placement_map=DEMO_PLACEMENT_MAP)

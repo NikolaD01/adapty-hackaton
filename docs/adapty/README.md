@@ -20,3 +20,4 @@ Brief: [../team/C-adapty-proposals.md](../team/C-adapty-proposals.md). Template:
 | 13 | [Brain wiring](13-brain-wiring.md) | B switched on at server start |
 | 14 | [Real run on Adapty](14-real-run.md) | 9,968 attributes, 3 segments, 3 A/B tests (30-day window) |
 | 15 | [Event properties for AI](15-ai-property-allowlist.md) | Rule suggestions can use `edits_left` and `photo_id` |
+| 16 | [Autopilot that launches](16-autopilot-launch.md) | Mode switch and insight runs start eligible drafts, only on `fs_test` |

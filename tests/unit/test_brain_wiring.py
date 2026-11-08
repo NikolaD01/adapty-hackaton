@@ -9,6 +9,7 @@ from feature_signal.core.config import Settings
 from feature_signal.domain.models import EventType, Rule, RuleDefinition, Where
 from feature_signal.integrations.adapty.brain_wiring import (
     DEMO_APP_ID,
+    DEMO_PLACEMENT_MAP,
     DEMO_PROPERTY_ALLOWLIST,
     LIVE_OUTCOME_RULES,
     OUTCOME_WINDOW_DAYS,
@@ -137,3 +138,19 @@ def test_a_quota_rule_on_edits_left_passes_b_validation_only_with_the_declaratio
     accepted = validate_suggestions([(quota_rule, "quota")], catalog, declared)
     assert [rule.key for rule, _ in accepted] == ["ai_enhance_at_quota_7d"]
     assert validate_suggestions([(quota_rule, "quota")], catalog, undeclared) == []
+
+
+def test_autopilot_is_limited_to_the_test_placement_for_both_app_ids(tmp_path):
+    app = FastAPI()
+    configure_demo_brain(app, settings(tmp_path), listing=None)
+    assert app.state.autopilot_placements == {DEMO_APP_ID: frozenset({"fs_test"}), ADAPTY_APP: frozenset({"fs_test"})}
+
+
+def test_the_runtime_sink_sends_main_drafts_to_the_test_placement(tmp_path):
+    from feature_signal.services.autopilot_service import LaunchingSink
+
+    app = FastAPI()
+    configure_demo_brain(app, settings(tmp_path), listing=LISTING)
+    sink = app.state.brain_runtimes[DEMO_APP_ID].proposal_sink_factory(object())
+    assert isinstance(sink, LaunchingSink)
+    assert DEMO_PLACEMENT_MAP == {"main": "fs_test"}

@@ -9,7 +9,7 @@ from feature_signal.integrations.adapty.cli import AdaptyCommands
 from feature_signal.repositories.decisions import DecisionRepository
 from feature_signal.schemas.proposals import AppSettings, AutopilotLimits
 from feature_signal.services.activation_service import ActivationService
-from feature_signal.services.autopilot_service import AutopilotService, AutopilotSink
+from feature_signal.services.autopilot_service import AutopilotService, AutopilotSink, LaunchingSink
 from feature_signal.services.proposal_service import ProposalService
 from tests.integration.adapty_helpers import make_factory
 from tests.integration.test_activation import ADAPTY, APP, World, arg, proposal_input
@@ -184,3 +184,128 @@ def test_posting_proposals_in_autopilot_launches_them(api, factory):
     assert r.status_code == 200, r.text
     assert [p["status"] for p in r.json()] == ["live"]
     assert r.json()[0]["decided_by"] == "autopilot"
+
+
+async def test_autopilot_leaves_drafts_for_other_placements_to_a_human(factory):
+    ids = await setup(
+        factory,
+        items=[
+            proposal_input(segment_key="main_seg", trigger_placement="main"),
+            proposal_input(
+                segment_key="onb_seg",
+                trigger_placement="onboarding",
+                expected_effect={"diff": 99.0, "ci_low": 1.0, "ci_high": 120.0},  # more valuable, still skipped
+            ),
+        ],
+    )
+    world = World()
+    async with factory() as s:
+        activation = ActivationService(s, AdaptyCommands(world, ADAPTY), world)
+        results = await AutopilotService(s, activation, allowed_placements={"main"}).run(APP)
+    assert [r.trigger_placement for r in results] == ["main"]
+    assert await statuses(factory) == {ids[0]: "live", ids[1]: "draft"}
+
+
+async def test_launching_sink_moves_main_drafts_and_schedules_one_pass(factory):
+    await setup(factory, mode="human")
+    scheduled, launched = [], []
+
+    async def launch(app_id):
+        launched.append(app_id)
+
+    def draft(placement, key):
+        return ProposalDraft(
+            segment_key=key,
+            trigger_placement=placement,
+            condition=Condition(field="p_segment", op="IN", value=[key]),
+            flow_id="f-lifetime",
+            flow_name="Lifetime",
+            expected_diff=1.0,
+            ci_low=0.5,
+            ci_high=1.5,
+            reason="r",
+        )
+
+    async with factory() as s:
+        sink = LaunchingSink(s, launch, placement_map={"main": "fs_test"}, schedule=scheduled.append)
+        ids = await sink.create_many(APP, [draft("main", "a"), draft("onboarding", "b")])
+    async with factory() as s:
+        stored = {p.proposal_id: p.trigger_placement for p in await ProposalService(s).list(APP)}
+    assert stored == {ids[0]: "fs_test", ids[1]: "onboarding"}
+    assert len(scheduled) == 1 and launched == []  # the pass runs after the insight run returns
+    await scheduled[0]
+    assert launched == [APP]
+
+
+LIMITS = {"max_live_proposals": 3, "min_holdout_pct": 10, "allow_publish_flow": False}
+AUTOPILOT = {"mode": "autopilot", "autopilot": LIMITS}
+
+
+def wire_fakes(api, factory, world):
+    api.app.state.adapty_commands = AdaptyCommands(world, ADAPTY)
+    api.app.state.membership_sync = world
+    api.app.state.session_factory = factory
+
+
+def test_switching_to_autopilot_launches_the_waiting_drafts_after_the_answer(api, factory):
+    import asyncio
+
+    ids = asyncio.run(setup(factory, mode="human", items=drafts(1)))
+    world = World()
+    wire_fakes(api, factory, world)
+    r = api.put(f"/v1/apps/{APP}/settings", json=AUTOPILOT)
+    assert r.status_code == 200, r.text
+    assert r.json()["mode"] == "autopilot"
+    assert asyncio.run(statuses(factory)) == {ids[0]: "live"}
+
+
+def test_switching_to_autopilot_respects_the_placement_limit(api, factory):
+    import asyncio
+
+    ids = asyncio.run(setup(factory, mode="human", items=drafts(1)))
+    world = World()
+    wire_fakes(api, factory, world)
+    api.app.state.autopilot_placements = {APP: frozenset({"fs_test"})}  # the draft is for `main`
+    assert api.put(f"/v1/apps/{APP}/settings", json=AUTOPILOT).status_code == 200
+    assert asyncio.run(statuses(factory)) == {ids[0]: "draft"}
+    assert world.cli_calls == []
+
+
+def test_switching_to_human_launches_nothing(api, factory):
+    import asyncio
+
+    ids = asyncio.run(setup(factory, mode="human", items=drafts(1)))
+    world = World()
+    wire_fakes(api, factory, world)
+    assert api.put(f"/v1/apps/{APP}/settings", json={**AUTOPILOT, "mode": "human"}).status_code == 200
+    assert asyncio.run(statuses(factory)) == {ids[0]: "draft"}
+    assert world.cli_calls == []
+
+
+async def test_a_repeated_insight_run_does_not_queue_the_same_offer_twice(factory):
+    await setup(factory, mode="human")
+    draft = ProposalDraft(
+        segment_key="a",
+        trigger_placement="main",
+        condition=Condition(field="p_segment", op="IN", value=["a"]),
+        flow_id="f-lifetime",
+        flow_name="Lifetime",
+        expected_diff=1.0,
+        ci_low=0.5,
+        ci_high=1.5,
+        reason="r",
+    )
+
+    async def launch(app_id):
+        return None
+
+    async with factory() as s:
+        first = await LaunchingSink(
+            s, launch, placement_map={"main": "fs_test"}, schedule=lambda c: c.close()
+        ).create_many(APP, [draft])
+    async with factory() as s:
+        second = await LaunchingSink(
+            s, launch, placement_map={"main": "fs_test"}, schedule=lambda c: c.close()
+        ).create_many(APP, [draft])
+    assert first == second
+    assert len(await statuses(factory)) == 1

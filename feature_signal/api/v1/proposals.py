@@ -1,6 +1,7 @@
 """Proposal lifecycle and paywall draft routes (owner C)."""
 
-from typing import Annotated
+from collections.abc import Awaitable, Callable
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,7 +21,7 @@ from feature_signal.schemas.proposals import (
     RejectIn,
 )
 from feature_signal.services.activation_service import ActivationService
-from feature_signal.services.autopilot_service import AutopilotService
+from feature_signal.services.autopilot_service import AutopilotService, run_autopilot
 from feature_signal.services.membership_service import SqlMembershipSync
 from feature_signal.services.paywall_service import PaywallService
 from feature_signal.services.proposal_service import ProposalService
@@ -47,6 +48,24 @@ def get_membership_sync(
     return sync if sync is not None else SqlMembershipSync(SessionFactory, writer)
 
 
+def autopilot_allowed_placements(request: Request, app_id: str) -> frozenset[str] | None:
+    """`app.state.autopilot_placements[app_id]` when the app limits autopilot (the demo: `fs_test` only)."""
+    return getattr(request.app.state, "autopilot_placements", {}).get(app_id)
+
+
+def autopilot_job(request: Request, app_id: str) -> Callable[[], Awaitable[Any]]:
+    """An autopilot pass that runs after the response, in its own session (`app.state.session_factory` in tests)."""
+    commands = get_adapty_commands(request)
+    membership = get_membership_sync(request, get_attribute_writer(request))
+    factory = getattr(request.app.state, "session_factory", None) or SessionFactory
+    allowed = autopilot_allowed_placements(request, app_id)
+
+    async def job() -> Any:
+        return await run_autopilot(factory, lambda s: ActivationService(s, commands, membership), app_id, allowed)
+
+    return job
+
+
 @router.get("/apps/{app_id}/proposals", response_model=list[ProposalOut])
 async def list_proposals(app_id: str, session: Session, status: ProposalStatus | None = None) -> list[ProposalOut]:
     return await ProposalService(session).list(app_id, status)
@@ -56,6 +75,7 @@ async def list_proposals(app_id: str, session: Session, status: ProposalStatus |
 async def create_proposals(
     app_id: str,
     body: ProposalsIn,
+    request: Request,
     session: Session,
     commands: Annotated[AdaptyCommands, Depends(get_adapty_commands)],
     membership: Annotated[MembershipSync, Depends(get_membership_sync)],
@@ -63,7 +83,9 @@ async def create_proposals(
     """Store drafts. In autopilot mode they are launched right away (within the limits); the answer shows the result."""
     service = ProposalService(session)
     created = await service.create(app_id, body.proposals)
-    launched = await AutopilotService(session, ActivationService(session, commands, membership)).run(app_id)
+    activation = ActivationService(session, commands, membership)
+    allowed = autopilot_allowed_placements(request, app_id)
+    launched = await AutopilotService(session, activation, allowed_placements=allowed).run(app_id)
     if not launched:
         return created
     current = {p.proposal_id: p for p in await service.list(app_id)}
