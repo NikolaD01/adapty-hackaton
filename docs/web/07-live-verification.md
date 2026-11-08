@@ -36,6 +36,8 @@ Expected: Events reads the real catalog. The Lumen demo submits a blocked export
 
 D7 needs a configured Brain runtime for the same app ID, an available model provider for rule suggestions, and an approved Adapty placement with a published offer and control. Use the placement on the proposal when comparing the returned flows. The local check used the ingest API and database only.
 
+C recorded a backend run on the separate `fs_test` placement. That run used a 30-day outcome window and returned audiences and available test arms. The dashboard displays the window from a proposal and, when available, from the proposal linked to an insight run. Lookup supports both response shapes.
+
 ## Status
 
 D7 stays open pending the live sequence from a measured rule through Human approval, an Adapty decision and a two-user lookup. The browser preview is ready for rehearsal.

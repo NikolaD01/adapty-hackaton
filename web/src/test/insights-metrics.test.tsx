@@ -6,7 +6,7 @@ import { afterAll, afterEach, beforeAll, expect, it } from 'vitest'
 import { AppProviders } from '../app/AppProviders'
 import { InsightsPage } from '../features/behavioral/InsightsPage'
 import { MetricsPage } from '../features/behavioral/MetricsPage'
-import { mockInsight, mockSuggestions } from '../mocks/fixtures'
+import { mockInsight, mockProposal, mockSuggestions } from '../mocks/fixtures'
 import { createHandlers } from '../mocks/handlers'
 import { appApiUrl } from '../shared/api'
 
@@ -66,4 +66,12 @@ it('explains the provider configuration error for suggestions', async () => {
   render(<AppProviders><MetricsPage /></AppProviders>)
   await userEvent.setup().click(screen.getByRole('button', { name: 'Suggest with AI' }))
   expect(await screen.findByRole('alert')).toHaveTextContent('model provider is configured on the server')
+})
+
+it('labels historical uplift with the outcome window of the matching proposal', async () => {
+  server.use(http.get(`${appApiUrl}/proposals`, () => HttpResponse.json([
+    { ...mockProposal, expected_effect: { ...mockProposal.expected_effect, metric: 'net_revenue_30d' } },
+  ])))
+  render(<AppProviders><InsightsPage /></AppProviders>)
+  expect(await screen.findByText(/30-day net revenue per user, after refunds/)).toBeVisible()
 })

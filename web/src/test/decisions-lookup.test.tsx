@@ -66,3 +66,25 @@ it('requires distinct customer IDs before sending the lookup', async () => {
   await user.click(screen.getByRole('button', { name: 'Compare flows' }))
   expect(screen.getByRole('alert')).toHaveTextContent('two different customer user IDs')
 })
+
+it('compares the targeted audience and available arms with the default audience', async () => {
+  server.use(http.post(`${appApiUrl}/lookup`, () => HttpResponse.json({ results: [
+    {
+      customer_user_id: freeUser, segment_hash: 'targeted', audience_name: '[fs] editor', ab_test_name: 'Editor test',
+      flow_name: 'Largest arm placeholder', flow_id: 'legacy-id', arms: [
+        { name: 'control', weight: 20, flow_name: 'Control flow', flow_id: 'control-id' },
+        { name: 'offer', weight: 80, flow_name: 'Offer flow', flow_id: 'offer-id' },
+      ],
+    },
+    { customer_user_id: paidUser, segment_hash: 'default', audience_name: 'All Users', flow_name: 'Default flow', flow_id: 'default-id', arms: [] },
+  ] })))
+  render(<AppProviders><MemoryRouter><LookupPage /></MemoryRouter></AppProviders>)
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Compare flows' }))
+  expect(await screen.findByText('[fs] editor')).toBeVisible()
+  expect(screen.getByText('Editor test')).toBeVisible()
+  expect(screen.getByText('control · 20%')).toBeVisible()
+  expect(screen.getByText('offer · 80%')).toBeVisible()
+  expect(screen.getByText('All Users')).toBeVisible()
+  expect(screen.getByText('Default flow')).toBeVisible()
+  expect(screen.queryByText('Largest arm placeholder')).not.toBeInTheDocument()
+})

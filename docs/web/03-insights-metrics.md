@@ -26,7 +26,7 @@ npm test -- --run src/test/insights-metrics.test.tsx
 npm run build
 ```
 
-Expected four tests pass. The rule body is preserved, an offline fallback is labeled correctly, and both configuration errors are explained.
+Expected five tests pass. The rule body is preserved, an offline fallback is labeled correctly, and both configuration errors are explained.
 
 ## Limits
 

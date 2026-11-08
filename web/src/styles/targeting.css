@@ -93,3 +93,6 @@
 .step-detail { margin-left: 12px; color: var(--muted); }
 .lookup-result { min-width: 0; padding: 12px; border: 1px solid var(--line); border-radius: 8px; }
 .targeting-actions a { color: #5921bb; text-decoration: underline; }
+
+.lookup-arms { margin-top: 10px; }
+.lookup-arms li { border-top: 1px solid var(--line); padding-top: 6px; }
