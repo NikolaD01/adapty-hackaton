@@ -44,7 +44,7 @@ async def _run_process(argv: list[str], timeout: float) -> tuple[int, str, str]:
         raise ApiError(502, "adapty_cli_missing", f"Cannot run '{argv[0]}': not found", {"binary": argv[0]}) from exc
     try:
         out, err = await asyncio.wait_for(proc.communicate(), timeout)
-    except TimeoutError as exc:
+    except asyncio.TimeoutError as exc:  # a different class from TimeoutError before Python 3.11
         with contextlib.suppress(ProcessLookupError):
             proc.kill()
         await proc.wait()
