@@ -56,7 +56,8 @@ Brain review also caught schema-valid explanations claiming causal offer effects
 reject those statements; measured facts are rendered locally and generated hypotheses use a vetted set.
 
 ## What we would never delegate to AI
-- Publishing a paywall or starting/stopping an A/B test on real users — always a human click.
+- Publishing a flow to real users — always a human click. In Autopilot the system may start a bounded A/B
+  test, but it never publishes.
 - Deciding the success metric and the claims we make to the jury; every number is re-checked by a person.
 - Handling secrets and production credentials.
 - Prices and discounts.
