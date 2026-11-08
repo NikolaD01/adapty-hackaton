@@ -59,8 +59,10 @@ The check worked because we tested against the service itself. Tests written aro
 
 Our product automates the routine part of experimentation, so we draw the line at what cannot be undone. Autopilot
 may compute values, write attributes, create segments and start an A/B test, but only on placements we allow-list,
-at most three at a time and always with a control group of at least 10%. AI may draft paywall copy; publishing a
-paywall to real users is always a human click.
+at most three at a time and always with a control group of at least 10%. Inside the product the AI does two things
+only: it suggests new rules and explains measured results in plain language. It never picks a threshold, segment or
+offer, and it does not write paywalls: a person types the title of a paywall draft. Publishing a paywall to real
+users is always a human click.
 
 Three things stay with people: publishing paywalls and changing prices, setting the limits Autopilot works inside,
 and choosing the success metric and what our evidence lets us claim. We learned this during a live run: drafts

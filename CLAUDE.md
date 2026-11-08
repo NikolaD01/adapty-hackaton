@@ -61,7 +61,8 @@ Five hard rules: no service imports fastapi · no repository knows HTTP · `doma
 from `integrations/`, `repositories/` or `api/` · secrets only in `core/config.py` Settings · anything
 external comes in through a port in the constructor. Consequence we rely on in the pitch:
 **statistics decides, the LLM only explains** — `domain/ranking.py` physically cannot call a model.
-The LLM touches exactly two services: `rule_suggest_service` (B) and `paywall_service` (C).
+The LLM touches exactly two things: rule suggestions and explanations (`rule_suggest_service`, B). It does not write
+paywalls: `paywall_service` (C) copies the live flow with a title a person provides; AI paywall copy was planned, not built.
 
 ## 5. Verified facts (do not re-derive, do not contradict)
 - Adapty attribute write: `PATCH https://api.adapty.io/api/v2/server-side-api/profile/`, headers
@@ -179,7 +180,7 @@ Phase 0 setup (done) · 1 ingest (A) · 2 brain (B) · 3 Adapty loop (C — risk
 mentors are here) · 4 demo client + dashboard (D) · 5 paywall draft (C) · 6 README, AI_LOG, demo video
 (all) · 7 rehearsal + submit. Sync points (10 min, everyone): **S1** after A's ingest + D's mocks run;
 **S2** first end-to-end: event → value → insight → proposal → approve → segment in Adapty; **S3** demo
-dry run. What we cut if late, in order: our MCP server, dashboard polish, generated paywall copy.
+dry run. What we cut if late, in order: our MCP server, dashboard polish, generated paywall copy (cut: not built).
 We never cut Phase 3.
 
 Timeline (code freeze **8 Nov, morning**; exact hour from the organizers — update here when known):
