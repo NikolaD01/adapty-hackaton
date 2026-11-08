@@ -110,7 +110,7 @@ describe('dashboard scaffold', () => {
         features: [{
           feature: 'hd_export',
           name: 'HD export',
-          values: { attempts: history.length ? 1 : 0 },
+          values: { hd_export_uses_7d: history.length ? 1 : 0 },
           tier: null,
         }],
       })),
@@ -118,34 +118,40 @@ describe('dashboard scaffold', () => {
 
     renderRoute('/demo')
     await screen.findByText('No events recorded.')
-    await screen.findByText('0')
+    const profile = within(screen.getByRole('region', { name: 'Feature profile' }))
+    await profile.findByText('0')
     expect(await screen.findByText('Full-resolution export requires Premium.')).toBeVisible()
     await user.click(screen.getByRole('button', { name: 'Export in full resolution' }))
 
-    expect(await screen.findByText('pt_track_hd_export_blocked')).toBeInTheDocument()
-    expect(await screen.findByText('HD export')).toBeInTheDocument()
-    expect(screen.getByText('1')).toBeInTheDocument()
+    const timeline = within(await screen.findByRole('table'))
+    expect(await timeline.findByRole('cell', { name: 'HD export blocked' })).toBeInTheDocument()
+    expect(timeline.getByRole('cell', { name: 'HD export attempted' })).toBeInTheDocument()
+    expect(profile.getByText('1')).toBeInTheDocument()
     expect(history.map((event) => [event.customer_user_id, event.key])).toEqual([
       [userId, 'export_hd_attempt'],
       [userId, 'pt_track_hd_export_blocked'],
     ])
-    expect(await screen.findByText('Activity refreshed.')).toBeInTheDocument()
+    expect(await screen.findByText('Last action recorded 2 events.')).toBeInTheDocument()
+    expect(timeline.getByRole('row', { name: /HD export blocked/ })).toHaveClass('demo-event-new')
   })
 
   it('tracks an HD attempt without a blocked event when the selected user has the plan', async () => {
     const history: QueuedEvent[] = []
-    server.use(http.post(`${appApiUrl}/events`, async ({ request }) => {
-      const { events } = await request.json() as { events: QueuedEvent[] }
-      history.push(...events)
-      return HttpResponse.json({ accepted: events.length, duplicates: 0, unknown_keys: [] })
-    }))
+    server.use(
+      http.post(`${appApiUrl}/events`, async ({ request }) => {
+        const { events } = await request.json() as { events: QueuedEvent[] }
+        history.push(...events)
+        return HttpResponse.json({ accepted: events.length, duplicates: 0, unknown_keys: [] })
+      }),
+      http.get(`${appApiUrl}/users/${demoUsers[1].id}/timeline`, () => HttpResponse.json({ items: history })),
+    )
     renderRoute('/demo')
     const user = userEvent.setup()
     await screen.findByText('Full-resolution export requires Premium.')
     await user.click(screen.getByRole('combobox', { name: 'Demo user' }))
     await user.click(screen.getByRole('option', { name: 'Premium user' }))
     await user.click(screen.getByRole('button', { name: 'Export in full resolution' }))
-    expect(await screen.findByText('Activity refreshed.')).toBeVisible()
+    expect(await screen.findByText('Last action recorded 1 event.')).toBeVisible()
     expect(history.map((event) => [event.customer_user_id, event.key])).toEqual([
       [demoUsers[1].id, 'export_hd_attempt'],
     ])

@@ -7,6 +7,7 @@ import { blockedExport, demoUsers, freeDailyEdits, type DemoAction, type DemoUse
 export function useDemoTracking(user: DemoUser, canExportHd: boolean | undefined) {
   const client = useQueryClient()
   const photoByUser = useRef<Record<string, string>>({})
+  const actionEventIds = useRef<string[]>([])
   const [quota, setQuota] = useState<Record<string, number>>({})
   const editsLeft = user.accessLevel === null ? quota[user.id] ?? freeDailyEdits : null
 
@@ -25,6 +26,7 @@ export function useDemoTracking(user: DemoUser, canExportHd: boolean | undefined
           photoByUser.current[user.id] = crypto.randomUUID()
         }
         const props = { photo_id: photoByUser.current[user.id], synthetic: true }
+        const queuedCount = pending().length
         if (action === 'ai_enhance' && editsLeft !== null) {
           const remaining = editsLeft - 1
           setQuota((previous) => ({ ...previous, [user.id]: remaining }))
@@ -33,6 +35,7 @@ export function useDemoTracking(user: DemoUser, canExportHd: boolean | undefined
           track(action, props)
         }
         if (action === 'export_hd_attempt' && canExportHd === false) track(blockedExport, props)
+        actionEventIds.current = pending().slice(queuedCount).map(({ event_id }) => event_id)
       }
 
       const unknown = new Set<string>()
@@ -46,6 +49,7 @@ export function useDemoTracking(user: DemoUser, canExportHd: boolean | undefined
       if (unknown.size > 0) {
         throw new Error(`Register these event keys before tracking: ${[...unknown].join(', ')}.`)
       }
+      return actionEventIds.current
     },
   })
 

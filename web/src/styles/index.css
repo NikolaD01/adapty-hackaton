@@ -29,18 +29,6 @@ a:focus-visible {
   margin-top: 12px;
 }
 
-.demo-page {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 40px 24px;
-}
-
-.demo-page a {
-  display: inline-block;
-  margin-top: 24px;
-  color: var(--accent);
-}
-
 @media (max-width: 1020px) {
   .placeholder-page h1 {
     font-size: 22px;
