@@ -75,10 +75,10 @@ event: refresh the user's profile, re-check tiers and segments, and write to Ada
 change reaches the Adapty segment in 0.6 s.
 
 ## The paywall for that segment
-For that segment the AI prepares a paywall that highlights full-resolution export — only if the offered plan
-includes it (checked against the feature's plans; we never promise what the product doesn't give). This is the second place AI works: it takes the
-live paywall config, changes the title and plan list and uploads it; if it composes one itself, a validator
-checks it and we fall back to the edited copy, because the upload rejects invalid configs and the demo has one try.
+For that segment we prepare a paywall draft that highlights full-resolution export — only if the offered plan
+includes it (checked against the feature's plans; we never promise what the product doesn't give). The draft is a
+copy of the live paywall config with a new title and plan list; a person writes the title. (AI-written paywall copy
+was planned and cut: the AI suggests rules and explains results, it does not write paywalls.)
 No discounts: we highlight what the user already does. There is no randomized discount arm in this data, so
 we claim nothing about discounts.
 
@@ -87,7 +87,7 @@ Two modes, Human by default. In Human the team reviews each proposal: finding, p
 on the paywall, expected effect, and approve / edit / reject. "Edit" changes rule values, never paywall JSON;
 every edit is logged because a human correction is data.
 In Autopilot the system starts the A/B test by itself within preset limits. It may write attributes, create
-the segment, attach the audience, create the A/B test and write the paywall config. Publishing a flow stays
+the segment, attach the audience and create the A/B test with an already published paywall. Publishing a flow stays
 human — users see a published paywall immediately, and Adapty itself asks for confirmation on that command.
 So autopilot runs end to end with already published flows (e.g. the lifetime-anchor flow the data
 recommends); a new AI paywall waits as "awaiting publish" for one human click, then the test starts.
@@ -133,8 +133,8 @@ Adapty's per-arm result. Everything is reversible: deleting our fields and segme
 ## Code shape
 Ports and adapters; `domain/` has no I/O and holds the risky parts: `rules.py`, `ranking.py` (holdout +
 bootstrap interval), `uplift.py` (randomized arms). Rules are data. Statistics decides, the LLM explains —
-`domain/` cannot import integrations, so ranking physically can't call a model. The LLM touches two services:
-rule suggestions and paywall config. Tests on three levels, none touching the network.
+`domain/` cannot import integrations, so ranking physically can't call a model. The LLM touches two things:
+rule suggestions and plain-language explanations. Tests on three levels, none touching the network.
 
 ## Phases
 0 repo · 1 ingest · 2 brain · 3 Adapty loop (riskiest, early) · 4 demo client + our page · 5 paywall for the
