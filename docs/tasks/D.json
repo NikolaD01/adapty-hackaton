@@ -208,7 +208,7 @@
     {
       "id": "D7",
       "title": "Switch to the real backend per endpoint",
-      "status": "needs-review",
+      "status": "blocked",
       "brief": "D ch.5",
       "steps": [
         "Turn off mocks endpoint by endpoint as owners finish",
