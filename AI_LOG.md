@@ -1,70 +1,62 @@
 # AI log
 
-How we used AI on this project. Keep it to **½–1 page**: update the sections below, don't append a diary.
-Owner: everyone (the `chapter-done` skill reminds you); final edit in Phase 6.
+We used Codex and Claude Code throughout development—for research, planning, writing code and tests, debugging, and reviewing changes. Each of the four developers worked with an agent. We spent time setting up shared instructions and repeatable workflows so that each session could pick up the work without needing the whole project explained again.
 
-## Tools and what we used them for
-- **Codex + Context7 MCP** — Brain implementation, current library documentation, offline tests, and independent subagent review.
-  Playwright exercised the dashboard in preview and against a fresh local API.
-- **Claude Code** (CLI, one session per developer) — research, dataset analysis, the plan, repo scaffold,
-  and the code of each area under the rules in `CLAUDE.md`.
-- **Adapty CLI 0.18 + Adapty skills plugin and its MCP server** (`adaptyteam/adapty-skills`: audiences,
-  ab-tests, flow-generator, adapty-docs) — reading the Lumen app, products and live tests, creating
-  segments/placements/A-B tests, learning exact CLI syntax (e.g. `attributes__<key>@string`) from the skills.
-- **Web-fetch subagents** — parallel reading of Adapty docs, Meta/TikTok/YouTube/Duolingo ranking
-  papers and competitor docs (Helium), so research didn't block the main session.
-- **REA (static reverse engineering, MCP + CLI)** — looked at how 16 popular apps structure monetization
-  signals (event names, decision logs, holdouts). Static only; nothing from it is in our code.
-- **Claude Docs** — the team decision document. **LLM inside the product** (OpenAI, behind a port):
-  suggests rules and writes explanations only; statistics decides.
+## Tools we used
 
-## Setup
-- `CLAUDE.md` (shared rules: stack, layers, ownership, git, tests, verified Adapty facts) +
-  `CLAUDE.local.md` per developer with their role, which points the agent to `docs/team/<role>.md`.
-- Repo skills: `chapter-done` (tests → docs → small commits → rebase → PR), `sync-main`, `contract-change`.
-- Frozen contract `docs/contracts/api.md` + fakes in `tests/fakes.py`, so four agents work in parallel
-  without waiting. `tests/unit/test_architecture.py` enforces that `domain/` can't call the network or the LLM.
-- Project settings: commit/PR attribution disabled; Adapty skills marketplace enabled. Dev container with
-  the Adapty CLI logged in.
-- The demo server reloads on every code change, so changes made during a live run were built in a git
-  worktree and tested in a throwaway container on a copy of the database; the running demo was never restarted
-  in the middle of an approval.
+Alongside the coding agents, we used:
 
-## Prompts that worked well
-1. *"Check whether a placement can serve 'show nothing'. Test only on the `pulse_test` placement, try
-   these four audience shapes, record what the API accepts, then restore the placement and delete the
-   test profiles."* — a bounded, reversible experiment with explicit cleanup; it answered a design
-   question in minutes and left the account clean.
-2. *"Recompute the uplift with a fixed 90-day window for both arms, only users with a full window,
-   bootstrap 90% interval."* — forcing the same window on both sides exposed a horizon bias in our
-   earlier conclusion.
-3. *"Compare the AI's rule suggestions before and after, and check each one against the real data."* — after
-   we gave the model the event properties, it proposed the quota rule (`edits_left <= 0`); the data check showed
-   no seed user ever reaches 0, so statistics could never pass it, and that the earlier suggestion's ratio
-   counted blocked exports twice (capped at 50%). We present the quota rule as "AI proposes, statistics refuses".
-4. *"Run the exact commands the adapter will send, by hand, on one test profile or the test placement, and write the
-   tests from the real answers."* — for the Adapty adapter (role C) this found, before any code existed, that the flow lookup
-   returns `401` without an `Authorization` header and the real key names (`id` for a segment, `ab_test_id` for a test).
+- **Context7 MCP** to look up library documentation while implementing, especially where SDK behavior or response formats mattered.
+- **Adapty’s skills plugin and MCP server, together with its CLI**, for platform documentation, account inspection, and checking how integration calls actually behaved.
+- **Playwright** to exercise the interface in a browser, check interactions against the local backend, and rehearse the demo.
+- **Research subagents** to read documentation and papers in parallel. We also used **REA MCP/CLI** for static research into monetization patterns in other apps; none of their code was incorporated.
 
-## One thing AI got wrong, and how we caught it
-The agent wrote the Adapty attribute update as a `POST` with a JSON object. A real call on a single test
-profile returned `400 "value is not a valid list"`; the correct form is `PATCH` with
-`{"custom_attributes":[{"key":…,"value":…}]}`. We caught it because we test every Adapty call by hand on
-one profile before writing code against it. (Also caught by review: the first plan let one measurement
-choose both the group and the offer — split into ranking (who) and randomized arms (what to show).)
-The agent also stated that Adapty cannot create store products. Asked *"are you sure, check the docs"*, it read
-Adapty's docs and corrected itself: the dashboard can push new products and prices to both stores; only the CLI and
-API cannot, and promotional offers must exist in the store first. Every Adapty claim now cites a docs page or a real
-call. In role C, writing the step-order test first exposed that the membership sync counted only `live` proposals,
-while activation writes attributes *before* a proposal is live.
+## How we set up the agents
 
-Brain review also caught schema-valid explanations claiming causal offer effects. Regression tests now
-reject those statements; measured facts are rendered locally and generated hypotheses use a vetted set.
+Our shared instructions lived in `CLAUDE.md`: the agreed stack, code boundaries, file ownership, testing requirements, git workflow, and integration facts we had already verified. Each developer also had a `CLAUDE.local.md` pointing to their role brief. This kept agents from independently redesigning shared parts or editing another developer’s files.
+
+We agreed on API contracts and shared interfaces early. Agents could work against fakes while another developer was still implementing the real dependency. We also kept a task graph with dependencies and change notices, so a change in one area could flag the people and agents relying on it.
+
+We wrote three project skills for work we otherwise would have had to explain repeatedly:
+
+- **`chapter-done`** covered finishing a piece of work: check scope, run tests, update its documentation, and follow the commit and PR workflow.
+- **`contract-change`** covered shared interface changes, including updating the documentation, schemas, fakes, and affected mocks together and getting teammate review.
+- **`sync-main`** covered bringing in other developers’ work, checking dependency changes, and rerunning tests.
+
+We also used Superpowers skills for implementation planning, test-first development, and review. For larger tasks, implementation and review were separate agent assignments. The reviewer checked the requirements and actual code, and findings went back to the implementer for correction.
+
+Automated tests used fake external services. Real API checks were separate, deliberately scoped actions. We used isolated worktrees and disposable containers where needed, including database copies for checks alongside the running demo. Agents were expected to report what they had actually tested and what still needed verification.
+
+## Three prompts that worked well
+
+**Checking an integration before coding against it**
+
+> “Run the exact commands the adapter will send, by hand, on one test profile or the test placement, and write the tests from the real answers.”
+
+This caught missing authorization and differences between expected and actual response fields. Giving the agent a specific target and asking for observable results made the answer useful for implementation.
+
+**Checking an analysis instead of accepting its headline number**
+
+> “Recompute the uplift with a fixed 90-day window for both arms, only users with a full window, bootstrap 90% interval.”
+
+This exposed that an earlier comparison used a different observation window. We kept the corrected result, including its uncertainty, even though it made the original conclusion less convincing.
+
+**Evaluating whether better context actually helped**
+
+> “Compare the AI’s rule suggestions before and after, and check each one against the real data.”
+
+Adding typed event properties let the model suggest more relevant rules. But one plausible suggestion—detecting an exhausted quota—matched no users in the seed data. Checking the computed values stopped us from treating a better-sounding suggestion as a useful finding.
+
+## One thing AI got wrong
+
+An agent produced an Adapty attribute update with the wrong payload shape. It looked reasonable, but a call on one test profile returned `400`: Adapty expected a list of key/value entries.
+
+We corrected the request, added tests for the actual payload and headers, and recorded the verified format in the shared instructions. That last step mattered: the next agent session had the answer available instead of having to rediscover it.
+
+The check worked because we tested against the service itself. Tests written around the agent’s original assumption could have passed while the integration remained broken.
 
 ## What we would never delegate to AI
-- Publishing a flow to real users — always a human click. In Autopilot the system may start a bounded A/B
-  test, but it never publishes. During the demo run the agent's own permission layer also refused to stop live
-  tests or approve a proposal until a person asked explicitly; the approve stays a click in our dashboard.
-- Deciding the success metric and the claims we make to the jury; every number is re-checked by a person.
-- Handling secrets and production credentials.
-- Prices and discounts.
+
+We would not give a development agent open-ended permission to publish paywalls, change prices, or modify live experiments. A person needs to agree on the action and its scope. We allowed bounded automation where we had explicitly defined those limits; publishing new flows remained human-controlled.
+
+We also kept responsibility for choosing the success metric and deciding what the evidence justified saying to the jury. AI helped calculate, investigate, and challenge those claims. Deciding that a result was convincing enough to present was still our job.
