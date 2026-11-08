@@ -3,7 +3,7 @@
 **Area:** C (as B's docs hand it over) · **Date:** 2026-11-08
 
 ## What
-`main.py` calls `wire_brain` for the running app, so `insights:run` and `insights/latest` answer instead of `503 brain_not_configured`.
+When the real server starts, `main.py:wire_running_app` (the app's lifespan) calls `wire_membership_sync` and `wire_brain`, so `insights:run` and `insights/latest` answer instead of `503 brain_not_configured`.
 
 ## How it works
 `integrations/adapty/brain_wiring.py`:
@@ -17,6 +17,8 @@
    OpenAI key exists. The sink is the human-mode `ProposalService`.
 4. B's trigger placement for the settings test is now `settings_upgrade` (the name in the Adapty app); it was `settings`.
 5. Proposals created in one batch keep their order (one microsecond apart), which decides the shared `p_segment` key.
+6. Nothing is wired on import or in `create_app()`. Before this, importing `main.py` (every test run does) wired the app and, with a
+   local `.env`, ran the Adapty CLI over the network during tests. A test now pins that importing wires nothing.
 
 ## Contract touched
 `main.py` (shared), `domain/uplift.py` placement name (B). See `docs/contracts/CHANGES.md`.

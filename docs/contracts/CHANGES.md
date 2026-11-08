@@ -4,6 +4,7 @@ Append newest first. Every change to a shared file (CLAUDE.md §6) gets a line h
 
 | Date | Area | Change | Who acked |
 |---|---|---|---|
+| 2026-11-08 | adapty | Lookup result gains optional `audience_name`, `ab_test_name`, `arms` (an A/B test returns every arm; `flow_*` is the largest, not the user's arm); lookup retries with the Android platform on `INCORRECT_SEGMENT_HASH_ERROR`; wiring moved from module import to the server lifespan (`wire_running_app`), so importing `main.py` (tests) reaches nothing | pending |
 | 2026-11-08 | adapty | `main.py` also calls `wire_brain` (configures B's runtime for the running app, flows read from Adapty by name); B's trigger placement `settings` is now `settings_upgrade` (the placement's name in the Adapty app); proposals of one batch keep their order | pending |
 | 2026-11-08 | brain | Outcome window is a setting: `build_outcomes(window_days=90)`, `BrainRuntime.outcome_window_days`; `expected_effect.metric` is `net_revenue_<N>d` (pattern, was the literal `net_revenue_90d`); field names `*_90d` unchanged; demo uses 30 | pending |
 | 2026-11-08 | contracts | Documented the existing B→C interface `evidence.segment_conditions` (fields, ops) in api.md | pending |

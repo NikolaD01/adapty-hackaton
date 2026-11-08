@@ -6,5 +6,5 @@ Each area updates only its own row (the `chapter-done` skill does it).
 |---|---|---|---|---|---|
 | A — Ingest & Rules | Aleksa | A8 — demo events (all A tasks done) | done | support B/C/D, review PRs | — |
 | B — Brain | | B1–B8 — implemented and tested | ready for integration | C/D runtime wiring and demo presentation | verified published-flow configuration |
-| C — Adapty & Proposals | | C8 — paywall draft (all C done) | done | wire configure_brain; end-to-end with B's drafts | live rule for ai_edits_first_day (A/B decision), see docs/adapty/12 |
+| C — Adapty & Proposals | | 14 — real run (B wired, 9,968 attributes) | done | demo on a real placement (needs the team's yes) | — |
 | D — Dashboard & Demo | | 0 — scaffold | in progress | 1 — contract mocks for the remaining screens | — |

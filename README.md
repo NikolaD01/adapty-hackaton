@@ -31,8 +31,8 @@ Full picture: [flow diagram](docs/diagrams/flow.md) · [system](docs/diagrams/sy
 | JS SDK `sdk/js` | A | ✅ on `main` ([chapter 07](docs/ingest/07-sdk.md)) |
 | Synthetic demo events for 1000 seed users | A | ✅ `make demo-events` ([chapter 08](docs/ingest/08-demo-events.md)) |
 | Adapty webhook: real purchases and refunds as events, live net revenue per user | A | ✅ `POST /adapty-webhook` ([chapter 09](docs/ingest/09-adapty-webhook.md)) |
-| Ranking, tiers, uplift, insights, LLM suggestions and explanations | B | ✅ built and tested ([docs/brain](docs/brain/README.md)); ⏳ not yet configured in `create_app()` — `insights:run` / `rules:suggest` answer `503 brain_not_configured` |
-| Adapty attributes, segments, A/B, proposals, decisions, autopilot, membership sync, lookup, paywall draft | C | ✅ built and tested ([docs/adapty](docs/adapty/README.md)); fast loop wired in `main.py` when `ADAPTY_SECRET_KEY` is set (#22) |
+| Ranking, tiers, uplift, insights, LLM suggestions and explanations | B | ✅ built and tested ([docs/brain](docs/brain/README.md)); ✅ switched on at server start (`wire_brain`, demo settings: live rules, 30-day window — [chapter 10](docs/brain/10-outcome-window.md)) |
+| Adapty attributes, segments, A/B, proposals, decisions, autopilot, membership sync, lookup, paywall draft | C | ✅ built and tested ([docs/adapty](docs/adapty/README.md)); fast loop and brain wired at server start; real run on Adapty: [chapter 14](docs/adapty/14-real-run.md) |
 | Dashboard + demo on the live ingest API | D | 🟡 in progress ([docs/web](docs/web/README.md)) |
 
 Live status per area: [docs/STATUS.md](docs/STATUS.md) · task graph: `make board`.
