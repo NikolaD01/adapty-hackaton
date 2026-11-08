@@ -32,7 +32,7 @@ class ProposalAction(BaseModel):
 
 
 class ExpectedEffect(BaseModel):
-    metric: Literal["net_revenue_90d"] = "net_revenue_90d"
+    metric: str = Field(default="net_revenue_90d", pattern=r"^net_revenue_[0-9]{1,3}d$")  # window = the outcome window
     diff: float
     ci_low: float
     ci_high: float

@@ -212,7 +212,8 @@ def validate_suggestions(
 def fallback_explanation(ranking: Ranking) -> Explanation:
     """Render measured facts locally; generated text can never replace these numbers."""
     summary = (
-        f"{ranking.feature}: net revenue in 90 days; threshold {ranking.threshold}; direction {ranking.direction}; "
+        f"{ranking.feature}: net revenue over the outcome window; threshold {ranking.threshold}; "
+        f"direction {ranking.direction}; "
         f"lift {ranking.lift}; 90% interval [{ranking.ci_low}, {ranking.ci_high}]; "
         f"holdout lift {ranking.holdout_lift}; groups {ranking.n_above} and {ranking.n_below}; "
         f"passed={ranking.passed}. Association does not establish a causal offer effect."

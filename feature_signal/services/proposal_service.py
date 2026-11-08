@@ -63,7 +63,12 @@ def draft_to_input(draft: ProposalDraft) -> ProposalIn:
         ),
         holdout_pct=draft.holdout_pct,
         cooldown_days=draft.cooldown_days,
-        expected_effect=ExpectedEffect(diff=draft.expected_diff, ci_low=draft.ci_low, ci_high=draft.ci_high),
+        expected_effect=ExpectedEffect(
+            metric=f"net_revenue_{int(draft.evidence.get('outcome_window_days', 90))}d",
+            diff=draft.expected_diff,
+            ci_low=draft.ci_low,
+            ci_high=draft.ci_high,
+        ),
         reason=draft.reason,
         evidence=draft.evidence,
         created_by="ai",

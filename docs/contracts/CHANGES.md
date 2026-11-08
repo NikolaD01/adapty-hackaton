@@ -4,6 +4,7 @@ Append newest first. Every change to a shared file (CLAUDE.md §6) gets a line h
 
 | Date | Area | Change | Who acked |
 |---|---|---|---|
+| 2026-11-08 | brain | Outcome window is a setting: `build_outcomes(window_days=90)`, `BrainRuntime.outcome_window_days`; `expected_effect.metric` is `net_revenue_<N>d` (pattern, was the literal `net_revenue_90d`); field names `*_90d` unchanged; demo uses 30 | pending |
 | 2026-11-08 | contracts | Documented the existing B→C interface `evidence.segment_conditions` (fields, ops) in api.md | pending |
 | 2026-11-08 | ingest | Optional `INGEST_API_KEY` / `X-Api-Key` on writes (off by default), SDK `init({ apiKey })`; `make demo`, `make demo-reset` | pending |
 | 2026-11-08 | ingest | New `POST /adapty-webhook` (A), setting `ADAPTY_WEBHOOK_AUTH`, default rule `adapty_net_revenue_90d`; router mounts `adapty_webhook` | pending |

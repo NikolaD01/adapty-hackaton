@@ -39,3 +39,16 @@ def test_every_other_transition_is_a_409():
 def test_live_failed_and_rejected_are_final():
     for final in ("live", "failed", "rejected"):
         assert ALLOWED_TRANSITIONS.get(final, set()) == set()
+
+
+def test_the_proposal_metric_follows_the_outcome_window_of_the_draft():
+    from feature_signal.domain.models import Condition, ProposalDraft
+    from feature_signal.services.proposal_service import draft_to_input
+
+    def draft(**evidence):
+        return ProposalDraft(
+            "s", "main", Condition("p_segment", "IN", ["s"]), "f", "F", 1.0, 0.5, 1.5, "r", evidence=evidence
+        )
+
+    assert draft_to_input(draft()).expected_effect.metric == "net_revenue_90d"
+    assert draft_to_input(draft(outcome_window_days=30)).expected_effect.metric == "net_revenue_30d"

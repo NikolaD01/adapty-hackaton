@@ -219,6 +219,9 @@ Also in the response:
 - `status` ∈ `draft` → `approved` → `executing` → `live` | `failed`; or `draft` → `rejected`.
   With `action.needs_publish: true` (a new AI paywall, still a draft flow): `executing` → `awaiting_publish`
   → (human publishes the flow) → `live`. This holds in autopilot too.
+- `expected_effect.metric` is `net_revenue_<N>d`, N = the outcome window of the insight run (`BrainRuntime.outcome_window_days`,
+  default 90; the demo run uses 30, see `docs/brain/10-outcome-window.md`). `diff`, `ci_*` and the `*_90d` field names of
+  `InsightRun` (`net_arpu_90d`, `diff_net_90d`) keep their historical names; the window is in `evidence.outcome_window_days`.
 - `evidence.segment_conditions` (B writes, C's membership sync reads): `[{"field", "op", "value"}]`, all must
   hold, empty = nobody. `field` = one of our rule keys (number) or `f_<feature>_tier` (text); `op` ∈
   `> >= < <= = == IN NOT IN`. This is the rule that decides who gets `p_segment`; `condition` only names the

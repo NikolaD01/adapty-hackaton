@@ -41,6 +41,7 @@ class BrainRuntime:
     user_id_map: dict[str, str] = field(default_factory=dict)
     live_outcome_rules: frozenset[str] = frozenset()
     explain: bool = True
+    outcome_window_days: int = 90  # the purchase window of the outcome metric; 90 unless the team decides otherwise
     state: InsightState = field(default_factory=InsightState)
 
 
@@ -95,6 +96,7 @@ async def insight_service(
             state=runtime.state,
             explainer=explainer,
             commit=session.commit,
+            window_days=runtime.outcome_window_days,
         )
 
 

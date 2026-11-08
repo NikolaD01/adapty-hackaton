@@ -71,6 +71,15 @@ def service(**kwargs):
     return InsightService(**defaults)
 
 
+async def test_the_outcome_window_setting_reaches_the_drafts_and_the_reason_text():
+    svc = service(window_days=30, dataset=Dataset())
+    await svc.run("app", "offline")
+    assert svc.proposal_sink.created
+    for draft in svc.proposal_sink.created:
+        assert draft.evidence["outcome_window_days"] == 30
+        assert "over 30 days" in draft.reason
+
+
 async def test_offline_run_stores_tiers_and_hands_measured_drafts_to_sink():
     explainer = Explainer()
     svc = service(explainer=explainer)
