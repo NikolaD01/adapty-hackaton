@@ -1,6 +1,9 @@
 """App entry: `uvicorn feature_signal.main:app --reload`."""
 
+import asyncio
 import logging
+from collections.abc import AsyncIterator, Callable
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,9 +13,9 @@ from feature_signal.core.config import Settings, get_settings
 from feature_signal.core.errors import ApiError, api_error_handler
 
 
-def create_app() -> FastAPI:
+def create_app(*, lifespan: Callable[[FastAPI], AbstractAsyncContextManager[None]] | None = None) -> FastAPI:
     settings = get_settings()
-    app = FastAPI(title="Feature Signal for Adapty", version="0.1.0")
+    app = FastAPI(title="Feature Signal for Adapty", version="0.1.0", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[o.strip() for o in settings.cors_origins.split(",") if o.strip()],
@@ -27,7 +30,7 @@ def create_app() -> FastAPI:
 def wire_membership_sync(app: FastAPI, settings: Settings) -> None:
     """Let ingest drive the fast loop: after every committed batch, write only the changed Adapty attributes.
 
-    Done for the running app only (below), never inside `create_app()`, so tests never write to Adapty.
+    Done when the real server starts (`wire_running_app`), never inside `create_app()`, so tests never write to Adapty.
     Skipped without an Adapty secret key; ingest then simply does not sync (it treats the hook as optional).
     """
     secret = settings.adapty_secret_key.get_secret_value()
@@ -54,6 +57,13 @@ def wire_brain(app: FastAPI, settings: Settings) -> None:
         logging.getLogger(__name__).exception("Could not configure the brain")
 
 
-app = create_app()
-wire_membership_sync(app, get_settings())
-wire_brain(app, get_settings())
+@asynccontextmanager
+async def wire_running_app(app: FastAPI) -> AsyncIterator[None]:
+    """Server startup only: connect the fast loop and the brain. Importing this module (tests do) wires nothing."""
+    settings = get_settings()
+    wire_membership_sync(app, settings)
+    await asyncio.to_thread(wire_brain, app, settings)  # reads the flows through the Adapty CLI, off the event loop
+    yield
+
+
+app = create_app(lifespan=wire_running_app)
