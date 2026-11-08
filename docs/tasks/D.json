@@ -175,7 +175,7 @@
     {
       "id": "D6",
       "title": "Decisions and lookup screens",
-      "status": "todo",
+      "status": "done",
       "brief": "D ch.6",
       "steps": [
         "Decision log with steps and decided_by badge",

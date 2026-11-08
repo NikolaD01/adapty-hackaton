@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
+import { MemoryRouter } from 'react-router-dom'
 import { setupServer } from 'msw/node'
 import { afterAll, afterEach, beforeAll, expect, it } from 'vitest'
 import { AppProviders } from '../app/AppProviders'
@@ -16,7 +17,7 @@ afterEach(() => server.resetHandlers(...createHandlers()))
 afterAll(() => server.close())
 
 function renderProposals() {
-  return render(<AppProviders><ProposalsPage /></AppProviders>)
+  return render(<AppProviders><MemoryRouter><ProposalsPage /></MemoryRouter></AppProviders>)
 }
 
 it.each(proposalStatuses)('shows the %s proposal status with the right approval controls', async (status) => {
