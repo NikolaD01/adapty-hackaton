@@ -111,3 +111,11 @@ def test_equal_arms_are_not_a_positive_recommendation():
     frame["net_revenue_90d"] = 2.0
     result = by_segment(frame, [segment()])[0]
     assert result.ci_low <= 0 <= result.ci_high
+
+
+def test_the_settings_test_triggers_on_the_settings_upgrade_placement():
+    from feature_signal.domain.uplift import RANDOMIZED_TESTS
+
+    assert RANDOMIZED_TESTS["Settings: upgrade vs lifetime anchor"][0] == "settings_upgrade"
+    assert RANDOMIZED_TESTS["Main: 3 plans vs lifetime anchor (NA)"][0] == "main"
+    assert RANDOMIZED_TESTS["Onboarding: annual trial vs weekly first"][0] == "onboarding"

@@ -23,3 +23,11 @@ def test_no_secret_wires_nothing():
 
 def test_create_app_alone_never_wires_it():
     assert getattr(create_app().state, "membership_sync", None) is None
+
+
+def test_wire_brain_does_nothing_without_an_adapty_secret():
+    from feature_signal.main import wire_brain
+
+    app = FastAPI()
+    wire_brain(app, Settings(adapty_secret_key=SecretStr("")))
+    assert not getattr(app.state, "brain_runtimes", {})

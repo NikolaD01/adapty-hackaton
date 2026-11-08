@@ -6,7 +6,7 @@ Implements the `ProposalSink` port (B hands drafts to C). Approve / activation i
 from __future__ import annotations
 
 from collections.abc import Sequence
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import uuid4
 
@@ -112,9 +112,11 @@ class ProposalService:
         return [to_out(r) for r in await self.proposals.list(app_id, status)]
 
     async def create(self, app_id: str, items: Sequence[ProposalIn]) -> list[ProposalOut]:
-        now = datetime.now(timezone.utc)
+        started = datetime.now(timezone.utc)
         rows = []
-        for item in items:
+        for position, item in enumerate(items):
+            # one microsecond apart: proposals of one batch keep their order, which decides the shared segment key
+            now = started + timedelta(microseconds=position)
             row = ProposalRow(
                 proposal_id=f"pr_{uuid4().hex[:10]}",
                 app_id=app_id,

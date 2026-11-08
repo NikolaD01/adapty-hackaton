@@ -191,3 +191,11 @@ async def test_create_many_implements_the_proposal_sink_for_b(db_url):
     assert first.adapty_filters[0].field == "subscription_state"
     assert first.expected_effect.diff == 14.4
     await engine.dispose()
+
+
+def test_proposals_of_one_batch_keep_their_order(api):
+    items = [{**PROPOSAL, "segment_key": f"seg{i}"} for i in range(6)]
+    created = api.post(f"{BASE}/proposals", json={"proposals": items}).json()
+    assert [p["segment_key"] for p in created] == [f"seg{i}" for i in range(6)]
+    listed = api.get(f"{BASE}/proposals").json()
+    assert [p["segment_key"] for p in listed] == [f"seg{i}" for i in range(6)]

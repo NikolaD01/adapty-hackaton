@@ -1,5 +1,7 @@
 """App entry: `uvicorn feature_signal.main:app --reload`."""
 
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -40,5 +42,18 @@ def wire_membership_sync(app: FastAPI, settings: Settings) -> None:
     app.state.membership_sync = SqlMembershipSync(SessionFactory, writer)
 
 
+def wire_brain(app: FastAPI, settings: Settings) -> None:
+    """Switch B on for the running app (needs the Adapty CLI to read the real flows, else `insights:run` stays 503)."""
+    if not settings.adapty_secret_key.get_secret_value():
+        return
+    try:
+        from feature_signal.integrations.adapty.brain_wiring import configure_demo_brain, list_flows
+
+        configure_demo_brain(app, settings, listing=list_flows(settings))
+    except Exception:  # noqa: BLE001 - never stop the API from starting because of the demo wiring
+        logging.getLogger(__name__).exception("Could not configure the brain")
+
+
 app = create_app()
 wire_membership_sync(app, get_settings())
+wire_brain(app, get_settings())

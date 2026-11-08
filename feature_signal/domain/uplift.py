@@ -12,7 +12,7 @@ from feature_signal.domain.ranking import segment_mask
 RANDOMIZED_TESTS = {
     "Main: 3 plans vs lifetime anchor (NA)": ("main", "main", "main_lifetime"),
     "Onboarding: annual trial vs weekly first": ("onboarding", "onb_trial", "onb_weekly"),
-    "Settings: upgrade vs lifetime anchor": ("settings", "settings", "main_lifetime"),
+    "Settings: upgrade vs lifetime anchor": ("settings_upgrade", "settings", "main_lifetime"),
 }
 
 
