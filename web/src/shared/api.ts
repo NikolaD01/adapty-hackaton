@@ -30,6 +30,10 @@ export function useAppQuery<T>(queryKey: readonly string[], path: string) {
   return useQuery({
     queryKey,
     queryFn: ({ signal }) => request<T>(`${appApiUrl}${path}`, { signal }),
-    retry: (failures, error) => !(error instanceof ApiError) && failures < 2,
+    retry: (failures, error) => {
+      if (error instanceof ApiError && (error.status < 500 || error.status === 501
+        || error.code === 'brain_not_configured' || error.code === 'llm_not_configured')) return false
+      return failures < 2
+    },
   })
 }
