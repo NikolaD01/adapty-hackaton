@@ -8,7 +8,7 @@ rehearsal (S3) every line must be ✅ or cut.
 
 ## Before you start (10 minutes earlier)
 ```bash
-make demo-reset                 # clean DB, api on :8000, 1000 demo users (≈16 s)
+make demo-reset                 # clean DB, api on :8000, 5000 demo users (≈1 min)
 cd web && npm run dev           # http://localhost:5173
 ```
 Tabs, in this order: `localhost:5173/demo` · `localhost:5173/dashboard/insights` ·

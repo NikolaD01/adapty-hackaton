@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Load synthetic demo events for Lumen seed users through the real API (owner A, task A8).
 
-    python scripts/load_demo_events.py --base http://localhost:8000 --users 1000
+    python scripts/load_demo_events.py --base http://localhost:8000 --users 5000
 
 Registers Lumen features and event types, then sends events for the first N seed users of
 `lumen_dataset.json.gz` (Adapty ids `lumen_<run>_<i:05d>`), consistent with each user's
@@ -192,7 +192,7 @@ def main() -> None:
 
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--base", default="http://localhost:8000")
-    p.add_argument("--users", type=int, default=1000)  # 200 is too few: the first 200 invert the edits signal
+    p.add_argument("--users", type=int, default=5000)  # live insights need all 5000 (docs/ingest/08-demo-events.md)
     p.add_argument("--dataset", type=Path, default=Path("data/lumen_dataset.json.gz"))
     p.add_argument("--app-id", default=APP_ID)
     p.add_argument("--run-id", default=RUN_ID)

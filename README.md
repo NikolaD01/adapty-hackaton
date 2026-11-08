@@ -29,7 +29,7 @@ Full picture: [flow diagram](docs/diagrams/flow.md) · [system](docs/diagrams/sy
 |---|---|---|
 | Tables, migrations, features + event catalog, idempotent ingest, timeline, rules engine (all measures), values, feature profile, TierStore | A | ✅ on `main` ([docs/ingest](docs/ingest/README.md)) |
 | JS SDK `sdk/js` | A | ✅ on `main` ([chapter 07](docs/ingest/07-sdk.md)) |
-| Synthetic demo events for 1000 seed users | A | ✅ `make demo-events` ([chapter 08](docs/ingest/08-demo-events.md)) |
+| Synthetic demo events for all 5000 seed users | A | ✅ `make demo-events` ([chapter 08](docs/ingest/08-demo-events.md)) |
 | Adapty webhook: real purchases and refunds as events, live net revenue per user | A | ✅ `POST /adapty-webhook` ([chapter 09](docs/ingest/09-adapty-webhook.md)) |
 | Ranking, tiers, uplift, insights, LLM suggestions and explanations | B | ✅ built and tested ([docs/brain](docs/brain/README.md)); ⏳ not yet configured in `create_app()` — `insights:run` / `rules:suggest` answer `503 brain_not_configured` |
 | Adapty attributes, segments, A/B, proposals, decisions, autopilot, membership sync, lookup, paywall draft | C | ✅ built and tested ([docs/adapty](docs/adapty/README.md)); fast loop wired in `main.py` when `ADAPTY_SECRET_KEY` is set (#22) |
@@ -44,7 +44,7 @@ One command for a demo: `make demo` (or `make demo-reset` for a clean database) 
 cp .env.example .env              # fill ADAPTY_SECRET_KEY (C) / OPENAI_API_KEY (B) if you need them
 make up                           # API with the Adapty CLI in Docker → http://localhost:8000/docs (runs migrations)
 make offline-data                 # seed datasets into data/ (offline CSVs + lumen_dataset.json.gz)
-make demo-events                  # 1000 synthetic seed users, ~25k events, values recomputed
+make demo-events                  # 5000 synthetic seed users, ~125k events (~50 s), values recomputed
 curl -s "localhost:8000/v1/apps/c6c7bdd1-1010-4343-8b29-837a77793cab/users/lumen_282506_00007/features"
 ```
 Tests: `make test-docker` (lint, ~490 backend tests, task graph — same as CI) · SDK: `cd sdk/js && npm install && npm test -- --run` ·

@@ -39,18 +39,18 @@ board:
 impact:
 	python3 tools/tasks.py impact --diff origin/main
 
-# Synthetic demo events for the first 1000 Lumen seed users (needs `make offline-data` and a running api).
+# Synthetic demo events for all 5000 Lumen seed users (needs `make offline-data` and a running api). ~50 s.
 demo-events:
-	docker compose exec api python scripts/load_demo_events.py --base http://localhost:8000 --users 1000
+	docker compose exec api python scripts/load_demo_events.py --base http://localhost:8000 --users 5000
 
-# One command before a demo: api up (migrations run), seed data present, 1000 demo users loaded.
+# One command before a demo: api up (migrations run), seed data present, 5000 demo users loaded.
 demo:
 	docker compose up -d --build api
 	@for i in $$(seq 60); do curl -sf localhost:8000/v1/health >/dev/null && break; sleep 1; done
 	@curl -sf localhost:8000/v1/health >/dev/null || (echo "api did not start: docker compose logs api" && exit 1)
-	@test -f data/lumen_dataset.json.gz || $(MAKE) offline-data
+	@test -f data/lumen_dataset.json.gz -a -f data/offline/users.csv.gz -a -f data/offline/transactions.csv.gz || $(MAKE) offline-data
 	$(MAKE) demo-events
-	@echo "API docs: http://localhost:8000/docs  ·  web: cd web && npm run dev → http://localhost:5173  ·  script: docs/demo.md"
+	@echo "Demo users: 5000. API docs: http://localhost:8000/docs  ·  web: cd web && npm run dev → http://localhost:5173  ·  script: docs/demo.md"
 
 # Clean slate: stop the api, delete the local database, run `make demo` again.
 demo-reset:

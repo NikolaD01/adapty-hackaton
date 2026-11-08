@@ -12,7 +12,7 @@ Everything below is on `main`, tested, and follows `docs/contracts/api.md`. Chap
 | `POST/GET /v1/apps/{app_id}/rules` | 05 |
 | `POST /v1/apps/{app_id}/values:recompute`, `GET …/values` | 06 |
 | `GET /v1/apps/{app_id}/users/{id}/features` (feature profile) | 06 |
-| `make demo-events` (1000 synthetic seed users) | 08 |
+| `make demo-events` (5000 synthetic seed users) | 08 |
 | `POST /v1/apps/{app_id}/adapty-webhook` (real Adapty purchases → events, `adapty_net_revenue_90d`) | 09 |
 
 ## For B (Brain)
@@ -23,7 +23,7 @@ Everything below is on `main`, tested, and follows `docs/contracts/api.md`. Chap
 - `RuleRepo` / `EventTypeRepo` / `FeatureRepo`: `repositories/{rules,event_types,features}.py` — the LLM prompt
   can read features, events and descriptions from there. Your suggested rules are validated on save
   (`422 unknown_event_key` / `unknown_feature`).
-- Live demo data: `make demo-events` loads 1000 Lumen seed users (`lumen_282506_00000`…`00999`). Their
+- Live demo data: `make demo-events` loads all 5000 Lumen seed users (`lumen_282506_00000`…`04999`). Their
   purchases are in `data/lumen_dataset.json.gz` → `users[i].tx` (`usd`, `refunded`, `t` = seconds relative
   to the dataset's "now"), user `i` = `lumen_282506_{i:05d}`. That is the outcome to join for `source: live`.
   The events are synthetic (`props.synthetic = true`): say so in the dashboard.
