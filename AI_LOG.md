@@ -4,6 +4,7 @@ How we used AI on this project. Keep it to **½–1 page**: update the sections 
 Owner: everyone (the `chapter-done` skill reminds you); final edit in Phase 6.
 
 ## Tools and what we used them for
+- **Codex + Context7 MCP** — Brain implementation, current library documentation, offline tests, and independent subagent review.
 - **Claude Code** (CLI, one session per developer) — research, dataset analysis, the plan, repo scaffold,
   and the code of each area under the rules in `CLAUDE.md`.
 - **Adapty CLI 0.18 + Adapty skills plugin** (`adaptyteam/adapty-skills`: audiences, ab-tests,
@@ -42,6 +43,9 @@ profile returned `400 "value is not a valid list"`; the correct form is `PATCH` 
 `{"custom_attributes":[{"key":…,"value":…}]}`. We caught it because we test every Adapty call by hand on
 one profile before writing code against it. (Also caught by review: the first plan let one measurement
 choose both the group and the offer — split into ranking (who) and randomized arms (what to show).)
+
+Brain review also caught schema-valid explanations claiming causal offer effects. Regression tests now
+reject those statements; measured facts are rendered locally and generated hypotheses use a vetted set.
 
 ## What we would never delegate to AI
 - Publishing a paywall or starting/stopping an A/B test on real users — always a human click.

@@ -29,7 +29,7 @@ Full picture: [flow diagram](docs/diagrams/flow.md) · [system](docs/diagrams/sy
 | JS SDK `sdk/js` | A | ✅ on `main` ([chapter 07](docs/ingest/07-sdk.md)) |
 | Synthetic demo events for 1000 seed users | A | ✅ `make demo-events` ([chapter 08](docs/ingest/08-demo-events.md)) |
 | Dashboard scaffold (`web/`) | D | ✅ scaffold on mocks ([docs/web](docs/web/01-web-scaffold.md)) |
-| Ranking, tiers, uplift, insights, LLM suggestions | B | ⏳ routes return `501 not_implemented` |
+| Ranking, tiers, uplift, insights, LLM suggestions | B | Implemented on this branch; insight runs require app-scoped runtime configuration ([docs/brain](docs/brain/README.md)) |
 | Adapty attributes, segments, A/B, proposals, membership sync, lookup, paywall draft | C | ⏳ routes return `501 not_implemented` |
 
 Live status per area: [docs/STATUS.md](docs/STATUS.md) · task graph: `make board`.

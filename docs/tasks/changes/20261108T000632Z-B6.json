@@ -1,0 +1,32 @@
+{
+  "at": "2026-11-08T00:06:32Z",
+  "by": "B",
+  "task": "B6",
+  "reason": "LLMProvider and rules:suggest are implemented. Typed property metadata is explicit per-app context. Explanation facts are local; paywall_copy edits only existing top-level title/subtitle fields, so C8 must supply that scope.",
+  "affects": [
+    {
+      "id": "B7",
+      "role": "B",
+      "depth": 1,
+      "why": "hard dependency on B6"
+    },
+    {
+      "id": "C8",
+      "role": "C",
+      "depth": 1,
+      "why": "contract dependency on B6"
+    },
+    {
+      "id": "D3",
+      "role": "D",
+      "depth": 1,
+      "why": "contract dependency on B6"
+    },
+    {
+      "id": "D7",
+      "role": "D",
+      "depth": 1,
+      "why": "hard dependency on B6"
+    }
+  ]
+}
