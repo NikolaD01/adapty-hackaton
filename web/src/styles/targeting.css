@@ -74,3 +74,17 @@
 @media (max-width: 760px) {
   .targeting-grid, .targeting-form fieldset { grid-template-columns: minmax(0, 1fr); }
 }
+
+.insight-source { margin: 12px 0; }
+.insight-detail { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+.insight-detail h3 { font-weight: 600; }
+.table-scroll { overflow-x: auto; }
+.targeting-table { width: 100%; border-collapse: collapse; }
+.targeting-table th, .targeting-table td { padding: 8px; border-bottom: 1px solid var(--line); text-align: left; }
+.targeting-table thead th { color: var(--muted); }
+.targeting-table td { white-space: nowrap; }
+.ci-track { display: block; position: relative; margin-top: 4px; height: 6px; border-radius: 6px; background: #efeaf7; }
+.ci-range, .ci-neutral, .ci-point { position: absolute; top: 0; height: 100%; border-radius: 6px; }
+.ci-range { background: #b78af1; }
+.ci-neutral { width: 1px; background: #484054; }
+.ci-point { width: 4px; background: #6720d8; transform: translateX(-50%); }
