@@ -88,3 +88,8 @@
 .ci-range { background: #b78af1; }
 .ci-neutral { width: 1px; background: #484054; }
 .ci-point { width: 4px; background: #6720d8; transform: translateX(-50%); }
+
+.decision-steps { margin-top: 10px; }
+.step-detail { margin-left: 12px; color: var(--muted); }
+.lookup-result { min-width: 0; padding: 12px; border: 1px solid var(--line); border-radius: 8px; }
+.targeting-actions a { color: #5921bb; text-decoration: underline; }

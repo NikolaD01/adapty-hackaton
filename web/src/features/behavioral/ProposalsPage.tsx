@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { apiUrl, appWrite, request, useAppQuery } from '../../shared/api'
 import { QueryFeedback, RequestError } from '../../shared/ui/QueryFeedback'
 import type { AppSettings, Mode, Proposal, ProposalPatch, ProposalStatus } from '../../types/targeting'
@@ -210,6 +211,12 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
             <button type="button" disabled={mutation.isPending} onClick={() => showForm('edit')}>Edit</button>
             <button type="button" disabled={mutation.isPending} onClick={() => showForm('reject')}>Reject</button>
           </>}
+        </div>
+      )}
+      {proposal.decided_by && (
+        <div className="targeting-actions">
+          <Link to={`/dashboard/decisions?proposal_id=${encodeURIComponent(proposal.proposal_id)}`}>View decision log</Link>
+          {proposal.status === 'live' && <Link to={`/dashboard/lookup?placement=${encodeURIComponent(proposal.trigger_placement)}`}>Compare served flows</Link>}
         </div>
       )}
       <RequestError error={mutation.error} />

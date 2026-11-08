@@ -5,3 +5,4 @@
 - [03 — Insights and Metrics](03-insights-metrics.md)
 - [04 — Lumen demo access and tracking](04-lumen-tracking.md)
 - [05 — Event catalog and activity](05-event-catalog.md)
+- [06 — Decisions and flow lookup](06-decisions-lookup.md)
