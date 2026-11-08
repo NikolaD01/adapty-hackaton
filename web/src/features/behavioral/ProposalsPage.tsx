@@ -5,7 +5,7 @@ import { apiUrl, appWrite, request, useAppQuery } from '../../shared/api'
 import { QueryFeedback, RequestError } from '../../shared/ui/QueryFeedback'
 import type { AppSettings, Mode, Proposal, ProposalPatch, ProposalStatus } from '../../types/targeting'
 import { PlaceholderPage } from './PlaceholderPage'
-import { ConditionList, NetEffect, showValue } from './TargetingDetails'
+import { ConditionList, NetEffect, outcomeWindow, showValue } from './TargetingDetails'
 
 const statusLabels: Record<ProposalStatus, string> = {
   draft: 'Draft', approved: 'Approved', executing: 'Executing', awaiting_publish: 'Awaiting publish',
@@ -143,6 +143,7 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
   }
 
   const approving = mutation.isPending && mutation.variables?.action === 'approve'
+  const days = outcomeWindow(proposal)
   const draft = proposal.status === 'draft'
   const awaitingPublish = proposal.status === 'awaiting_publish'
   const flowName = proposal.edits.some((edit) => edit.field === 'flow_id') ? null : proposal.action.flow_name
@@ -175,7 +176,7 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
           </dl>
         </section>
       </div>
-      <p><strong>Expected 90-day net revenue effect per user</strong> <NetEffect value={proposal.expected_effect.diff} interval={proposal.expected_effect} /></p>
+      <p><strong>Expected {days ? `${days}-day ` : ''}net revenue effect per user</strong> <NetEffect value={proposal.expected_effect.diff} interval={proposal.expected_effect} /></p>
       {proposal.evidence.uplift_test && <p>Evidence from {proposal.evidence.uplift_test}</p>}
       {proposal.edits.length > 0 && (
         <details>
@@ -216,7 +217,7 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
       {proposal.decided_by && (
         <div className="targeting-actions">
           <Link to={`/dashboard/decisions?proposal_id=${encodeURIComponent(proposal.proposal_id)}`}>View decision log</Link>
-          {proposal.status === 'live' && <Link to={`/dashboard/lookup?placement=${encodeURIComponent(proposal.trigger_placement)}`}>Compare served flows</Link>}
+          {proposal.status === 'live' && <Link to={`/dashboard/lookup?placement=${encodeURIComponent(proposal.trigger_placement)}`}>View audience and flows</Link>}
         </div>
       )}
       <RequestError error={mutation.error} />

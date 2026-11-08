@@ -34,7 +34,7 @@ npm run build
 VITE_USE_MOCKS=true npm run dev
 ```
 
-Expected: 39 tests pass and the build succeeds. Open `http://localhost:5173/dashboard/events` at 1280 × 800 and follow the steps above in the same tab. The **Mock preview** banner stays visible when switching routes.
+Expected: 42 tests pass and the build succeeds. Open `http://localhost:5173/dashboard/events` at 1280 × 800 and follow the steps above in the same tab. The **Mock preview** banner stays visible when switching routes.
 
 ## Limits
 
