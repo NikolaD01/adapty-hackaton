@@ -8,6 +8,7 @@ from feature_signal.integrations.adapty.cli import AdaptyCommands
 from feature_signal.repositories.decisions import DecisionRepository
 from feature_signal.schemas.proposals import AppSettings, ProposalIn
 from feature_signal.services.activation_service import ActivationService
+from feature_signal.services.membership_service import canonical_segment_keys
 from feature_signal.services.proposal_service import ProposalService
 from tests.integration.adapty_helpers import make_factory
 
@@ -183,6 +184,15 @@ async def test_segments_with_the_same_behaviour_filter_on_one_shared_p_segment_k
         "attributes__p_segment@string:IN:ios_key",
         "platform:IN:Android",
     ]
+    # The key is frozen on the activated proposal: rejecting the iOS draft later must not re-key its users.
+    async with factory() as s:
+        stored = {p.segment_key: p for p in await ProposalService(s).list(APP)}
+    assert stored["android_key"].condition.value == ["ios_key"]
+    async with factory() as s:
+        await ProposalService(s).reject(ids["ios_key"], "not now")
+    async with factory() as s:
+        keys = canonical_segment_keys(await ProposalService(s).list(APP))
+    assert keys["android_key"] == "ios_key"
 
 
 async def test_a_human_edited_condition_value_is_what_the_segment_targets(factory):

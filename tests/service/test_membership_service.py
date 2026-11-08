@@ -245,3 +245,39 @@ def test_segment_matches_numbers_tiers_and_missing_fields():
     assert segment_matches([{"field": "edits", "op": "=", "value": 6}], values, tiers)  # B may write "=" / "=="
     assert segment_matches([{"field": "f_x_tier", "op": "==", "value": "high"}], values, tiers)
     assert not segment_matches([{"field": "edits", "op": "!=", "value": 6}], values, tiers)
+
+
+def activated(key, conditions, value, status="live"):
+    return SimpleNamespace(
+        status=status,
+        segment_key=key,
+        evidence={"segment_conditions": conditions},
+        condition=SimpleNamespace(value=value),
+    )
+
+
+async def test_rejecting_an_earlier_draft_does_not_re_key_an_activated_segment():
+    rule = [{"field": "edits_1d", "op": ">=", "value": 5}]
+    # Android was activated while the iOS draft decided the shared key; the iOS draft is rejected afterwards.
+    props = [proposal("ios_key", rule, status="rejected"), activated("android_key", rule, ["ios_key"])]
+    service, writer, _ = await build({"edits_1d": {"u1": 6.0}}, tiers=(), proposals=props)
+    await service.sync_users(APP, ["u1"])
+    assert writer.writes == [("u1", {"p_segment": "ios_key"})]  # still what the live Adapty segment filters on
+
+
+async def test_a_human_edited_value_on_an_activated_proposal_is_what_sync_writes():
+    rule = [{"field": "edits_1d", "op": ">=", "value": 5}]
+    props = [activated("power_editor", rule, ["heavy"])]
+    service, writer, _ = await build({"edits_1d": {"u1": 6.0}}, tiers=(), proposals=props)
+    await service.sync_users(APP, ["u1"])
+    assert writer.writes == [("u1", {"p_segment": "heavy"})]
+
+
+async def test_later_drafts_share_the_frozen_key_of_an_activated_proposal():
+    rule = [{"field": "edits_1d", "op": ">=", "value": 5}]
+    from feature_signal.services.membership_service import canonical_segment_keys
+
+    keys = canonical_segment_keys(
+        [proposal("old_draft", rule, status="draft"), activated("live_one", rule, ["frozen"])]
+    )
+    assert keys == {"live_one": "frozen", "old_draft": "frozen"}

@@ -71,17 +71,47 @@ def _behaviour_signature(proposal: Any) -> str | None:
     )
 
 
+ACTIVATED_STATUSES = ("approved", "executing", "awaiting_publish", "live")
+
+
+def _frozen_value(proposal: Any) -> str | None:
+    """The `p_segment` value an activated proposal's Adapty segment filters on (its `condition.value`)."""
+    if proposal.status not in ACTIVATED_STATUSES:
+        return None
+    condition = getattr(proposal, "condition", None)
+    value = condition.get("value") if isinstance(condition, dict) else getattr(condition, "value", None)
+    if not (isinstance(value, list | tuple) and len(value) == 1):
+        return None
+    frozen = str(value[0])
+    # approved/executing come before activation stores the key: their own key is not decided yet
+    if frozen == proposal.segment_key and proposal.status not in ("live", "awaiting_publish"):
+        return None
+    return frozen
+
+
 def canonical_segment_keys(proposals: Sequence[Any]) -> dict[str, str]:
     """Proposals whose behaviour rule is identical share ONE `p_segment` value: the key of the earliest of them.
 
     A user has a single `p_segment`, and B splits one behaviour group by native filters (platform, country) that Adapty
     applies itself. Without sharing, only the first of those segments would ever get members. Drafts count (so
     activating a later one never re-keys users); rejected and failed proposals do not.
+
+    An activated proposal's key is frozen: activation stores the value its Adapty segment filters on in
+    `condition.value`, and that value wins for its behaviour. Otherwise rejecting an earlier draft would re-key the
+    users and leave the live Adapty segment (`p_segment IN [old key]`) empty; a human-edited value would also differ.
     """
     first: dict[str, str] = {}
     keys: dict[str, str] = {}
     for proposal in proposals:
-        if proposal.status in ("rejected", "failed"):
+        frozen = _frozen_value(proposal)
+        if frozen is None:
+            continue
+        keys[proposal.segment_key] = frozen
+        signature = _behaviour_signature(proposal)
+        if signature is not None:
+            first.setdefault(signature, frozen)
+    for proposal in proposals:
+        if proposal.status in ("rejected", "failed") or proposal.segment_key in keys:
             continue
         signature = _behaviour_signature(proposal)
         keys.setdefault(

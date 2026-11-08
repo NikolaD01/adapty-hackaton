@@ -142,6 +142,8 @@ class ActivationService:
         if values == [row.segment_key]:  # not edited by a human: proposals with the same behaviour share one key
             canonical = canonical_segment_keys(await self._proposals.list(row.app_id))
             values = [canonical.get(row.segment_key, row.segment_key)]
+        # Freeze the key: the membership sync must keep writing exactly what this segment filters on.
+        row.condition = {**row.condition, "value": values}
         filters = [custom_attribute_filter(row.condition.get("attribute", "p_segment"), values)]
         filters += [condition_to_filter(Condition(**f)) for f in row.adapty_filters or []]
         title = segment_title(row.segment_key)
