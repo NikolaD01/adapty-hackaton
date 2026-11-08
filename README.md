@@ -12,7 +12,7 @@ paywall is always a human click.
 **Plan:** [docs/plan.md](docs/plan.md) · **Diagrams:** [docs/diagrams](docs/diagrams/README.md) · **All docs:** [docs/README.md](docs/README.md)
 
 ## How it works
-Full picture: [flow diagram](docs/diagrams/flow.md) · [system](docs/diagrams/system.md).
+Full picture: [flow diagram](docs/diagrams/flow.md) · [system](docs/diagrams/system.md) · [dashboard workflow](docs/web/README.md#behavioral-targeting-workflow).
 
 1. **App** — `track("ai_enhance", { edits_left: 0 })` via `feature-signal-sdk` (buffered, retry-safe).
 2. **Catalog** — features (groups of events, with the plans that include them) and event types.
@@ -32,7 +32,7 @@ Full picture: [flow diagram](docs/diagrams/flow.md) · [system](docs/diagrams/sy
 | JS SDK `sdk/js` | A | ✅ on `main` ([chapter 07](docs/ingest/07-sdk.md)) |
 | Synthetic demo events for all 5000 seed users | A | ✅ `make demo-events` ([chapter 08](docs/ingest/08-demo-events.md)) |
 | Adapty webhook: real purchases and refunds as events, live net revenue per user | A | ✅ `POST /adapty-webhook` ([chapter 09](docs/ingest/09-adapty-webhook.md)) |
-| Ranking, tiers, uplift, insights, LLM suggestions and explanations | B | ✅ built and tested ([docs/brain](docs/brain/README.md)); ✅ switched on at server start (`wire_brain`, demo settings: live rules, 30-day window — [chapter 10](docs/brain/10-outcome-window.md)) |
+| Ranking, tiers, uplift, insights, LLM suggestions and explanations | B | ✅ built and tested ([docs/brain](docs/brain/README.md)); ✅ switched on at server start (`wire_brain`, demo settings: live rules, 60-day window — [chapter 10](docs/brain/10-outcome-window.md)) |
 | Adapty attributes, segments, A/B, proposals, decisions, autopilot, membership sync, lookup, paywall draft | C | ✅ built and tested ([docs/adapty](docs/adapty/README.md)); fast loop and brain wired at server start; real run on Adapty: [chapter 14](docs/adapty/14-real-run.md) |
 | Dashboard + demo on the live ingest API | D | ✅ dashboard screens and SDK demo in preview; live catalog and ingest verified · ⏳ full Adapty loop ([docs/web](docs/web/README.md)) |
 
