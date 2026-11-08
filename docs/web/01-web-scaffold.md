@@ -30,7 +30,7 @@ review the dashboard before connecting API calls.
 
 Events and Metrics read the live catalog, rules and values. The Lumen demo sends events through
 the SDK and refreshes the selected user's timeline and feature profile after `flush()`.
-The preview covers the dashboard's catalog, events, rules, insights, proposals, settings, decisions and lookup calls. It keeps state in memory and labels the data as synthetic. The live mode passes HTTP 501 to the dashboard's **Coming soon** state. Overview uses data from the design reference.
+The preview covers the dashboard's catalog, events, rules, insights, proposals, settings, decisions and lookup calls. It keeps state in memory and labels the data as synthetic. An HTTP 501 read leaves the panel without a placeholder. An unavailable action shows feedback after the user tries it. Overview uses data from the design reference.
 
 ## How to test
 
