@@ -141,7 +141,7 @@
     {
       "id": "D5",
       "title": "Features and events screen",
-      "status": "todo",
+      "status": "done",
       "brief": "D screens",
       "steps": [
         "Features list with their events + live counter",
