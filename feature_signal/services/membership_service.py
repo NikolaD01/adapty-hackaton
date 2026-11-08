@@ -14,6 +14,7 @@ Segment conditions of a proposal are read from `evidence["segment_conditions"]`,
 from __future__ import annotations
 
 import asyncio
+import json
 from collections.abc import Sequence
 from typing import Any, Protocol
 
@@ -58,6 +59,36 @@ def _holds(actual: Any, op: str, expected: Any) -> bool:
     if op == "NOT IN":
         return actual not in wanted
     return False
+
+
+def _behaviour_signature(proposal: Any) -> str | None:
+    conditions = (proposal.evidence or {}).get("segment_conditions") or []
+    if not conditions:
+        return None
+    parts = [{k: c.get(k) for k in ("field", "op", "value")} for c in conditions]
+    return json.dumps(
+        sorted(parts, key=lambda c: json.dumps(c, sort_keys=True, default=str)), sort_keys=True, default=str
+    )
+
+
+def canonical_segment_keys(proposals: Sequence[Any]) -> dict[str, str]:
+    """Proposals whose behaviour rule is identical share ONE `p_segment` value: the key of the earliest of them.
+
+    A user has a single `p_segment`, and B splits one behaviour group by native filters (platform, country) that Adapty
+    applies itself. Without sharing, only the first of those segments would ever get members. Drafts count (so
+    activating a later one never re-keys users); rejected and failed proposals do not.
+    """
+    first: dict[str, str] = {}
+    keys: dict[str, str] = {}
+    for proposal in proposals:
+        if proposal.status in ("rejected", "failed"):
+            continue
+        signature = _behaviour_signature(proposal)
+        keys.setdefault(
+            proposal.segment_key,
+            proposal.segment_key if signature is None else first.setdefault(signature, proposal.segment_key),
+        )
+    return keys
 
 
 def segment_matches(conditions: Sequence[dict[str, Any]], values: dict[str, float], tiers: dict[str, str]) -> bool:
@@ -106,13 +137,15 @@ class MembershipService:
         passed = sorted((t for t in await self._tiers.list(app_id) if t.passed), key=lambda t: t.feature)[
             :MAX_TIER_FEATURES
         ]
-        live = [p for p in await self._proposals.list(app_id) if p.status in COUNTING_STATUSES]
+        everything = list(await self._proposals.list(app_id))
+        live = [p for p in everything if p.status in COUNTING_STATUSES]
+        canonical = canonical_segment_keys(everything)
         last = await self._state.get_many(app_id, ids)
 
         semaphore = asyncio.Semaphore(self._concurrency)
 
         async def one(user: str) -> tuple[str, Attributes, int]:
-            desired = self._desired(by_user.get(user, {}), passed, live)
+            desired = self._desired(by_user.get(user, {}), passed, live, canonical)
             previous = last.get(user, {})
             changes: Attributes = {k: v for k, v in desired.items() if previous.get(k) != v}
             changes.update({k: None for k in previous if k not in desired})
@@ -142,7 +175,9 @@ class MembershipService:
         return SyncResult(checked=len(ids), changed=changed, attributes_written=written)
 
     @staticmethod
-    def _desired(values: dict[str, float], passed: Sequence[FeatureTier], live: Sequence[Any]) -> Attributes:
+    def _desired(
+        values: dict[str, float], passed: Sequence[FeatureTier], live: Sequence[Any], canonical: dict[str, str]
+    ) -> Attributes:
         desired: Attributes = {}
         tier_by_attribute: dict[str, str] = {}
         for tier in passed:
@@ -153,7 +188,7 @@ class MembershipService:
         for proposal in live:
             conditions = (proposal.evidence or {}).get("segment_conditions") or []
             if segment_matches(conditions, values, tier_by_attribute):
-                desired[SEGMENT_ATTRIBUTE] = proposal.segment_key
+                desired[SEGMENT_ATTRIBUTE] = canonical.get(proposal.segment_key, proposal.segment_key)
                 break
         return desired
 
