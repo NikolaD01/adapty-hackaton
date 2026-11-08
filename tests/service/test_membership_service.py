@@ -199,3 +199,6 @@ def test_segment_matches_numbers_tiers_and_missing_fields():
     assert segment_matches([{"field": "f_x_tier", "op": "NOT IN", "value": ["low"]}], values, tiers)
     assert not segment_matches([{"field": "missing", "op": ">=", "value": 0}], values, tiers)
     assert not segment_matches([], values, tiers)  # no conditions = matches nobody
+    assert segment_matches([{"field": "edits", "op": "=", "value": 6}], values, tiers)  # B may write "=" / "=="
+    assert segment_matches([{"field": "f_x_tier", "op": "==", "value": "high"}], values, tiers)
+    assert not segment_matches([{"field": "edits", "op": "!=", "value": 6}], values, tiers)

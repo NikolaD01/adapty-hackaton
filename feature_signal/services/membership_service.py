@@ -49,6 +49,10 @@ def _holds(actual: Any, op: str, expected: Any) -> bool:
             return False
         return {">": actual > expected, ">=": actual >= expected, "<": actual < expected, "<=": actual <= expected}[op]
     wanted = list(expected) if isinstance(expected, list | tuple) else [expected]
+    if op in ("=", "=="):
+        return actual in wanted
+    if op == "!=":
+        return actual not in wanted
     if op == "IN":
         return actual in wanted
     if op == "NOT IN":
