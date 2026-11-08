@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { BehavioralLayout } from '../features/behavioral/BehavioralLayout'
 import { EventsPage } from '../features/behavioral/EventsPage'
 import { MetricsPage } from '../features/behavioral/MetricsPage'
+import { ProposalsPage } from '../features/behavioral/ProposalsPage'
 import { PendingPage } from '../features/behavioral/PendingPage'
 import { PlaceholderPage } from '../features/behavioral/PlaceholderPage'
 import { behavioralPages } from '../features/behavioral/pages'
@@ -18,7 +19,8 @@ export function AppRoutes() {
           <Route index element={<Navigate to="events" replace />} />
           <Route path="events" element={<EventsPage />} />
           <Route path="metrics" element={<MetricsPage />} />
-          {behavioralPages.filter((page) => page.path !== 'events' && page.path !== 'metrics').map((page) => (
+          <Route path="proposals" element={<ProposalsPage />} />
+          {behavioralPages.filter((page) => page.path !== 'events' && page.path !== 'metrics' && page.path !== 'proposals').map((page) => (
             <Route
               key={page.path}
               path={page.path}

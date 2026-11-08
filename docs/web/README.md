@@ -1,3 +1,4 @@
 # Dashboard and Lumen demo
 
 - [01 — Web scaffold and Adapty Overview](01-web-scaffold.md)
+- [02 — Proposal review and controls](02-proposals.md)
