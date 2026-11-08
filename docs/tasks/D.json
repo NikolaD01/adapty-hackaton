@@ -1,7 +1,7 @@
 {
   "role": "D",
   "name": "Dashboard & Demo",
-  "inbox_ack": "2026-11-07T23:57:49Z",
+  "inbox_ack": "2026-11-08T01:42:36Z",
   "tasks": [
     {
       "id": "D1",
@@ -60,7 +60,7 @@
     {
       "id": "D3",
       "title": "Insights and metrics screens",
-      "status": "todo",
+      "status": "done",
       "brief": "D ch.3",
       "steps": [
         "Rankings table with CI bars, passed marks",
@@ -208,7 +208,7 @@
     {
       "id": "D7",
       "title": "Switch to the real backend per endpoint",
-      "status": "todo",
+      "status": "needs-review",
       "brief": "D ch.5",
       "steps": [
         "Turn off mocks endpoint by endpoint as owners finish",
