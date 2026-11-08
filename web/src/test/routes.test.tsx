@@ -7,6 +7,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import { AppProviders } from '../app/AppProviders'
 import { AppRoutes } from '../app/AppRoutes'
 import { demoUsers } from '../features/demo/demoActions'
+import { mockFeatures } from '../mocks/fixtures'
 import { server } from '../mocks/server'
 import { appApiUrl } from '../shared/api'
 
@@ -17,7 +18,7 @@ afterAll(() => server.close())
 
 function mockLiveReads() {
   server.use(
-    http.get(`${appApiUrl}/features`, () => HttpResponse.json([])),
+    http.get(`${appApiUrl}/features`, () => HttpResponse.json(mockFeatures)),
     http.get(`${appApiUrl}/event-types`, () => HttpResponse.json([])),
     http.get(`${appApiUrl}/rules`, () => HttpResponse.json([])),
     http.get(`${appApiUrl}/values`, () => HttpResponse.json({ items: [], next_cursor: null })),
@@ -112,6 +113,7 @@ describe('dashboard scaffold', () => {
     renderRoute('/demo')
     await screen.findByText('No events recorded.')
     await screen.findByText('0')
+    expect(await screen.findByText('Full-resolution export requires Premium.')).toBeVisible()
     await user.click(screen.getByRole('button', { name: 'Export in full resolution' }))
 
     expect(await screen.findByText('pt_track_hd_export_blocked')).toBeInTheDocument()
@@ -122,5 +124,23 @@ describe('dashboard scaffold', () => {
       [userId, 'pt_track_hd_export_blocked'],
     ])
     expect(await screen.findByText('Activity refreshed.')).toBeInTheDocument()
+  })
+
+  it('tracks an HD attempt without a blocked event when the selected user has the plan', async () => {
+    const history: QueuedEvent[] = []
+    server.use(http.post(`${appApiUrl}/events`, async ({ request }) => {
+      const { events } = await request.json() as { events: QueuedEvent[] }
+      history.push(...events)
+      return HttpResponse.json({ accepted: events.length, duplicates: 0, unknown_keys: [] })
+    }))
+    renderRoute('/demo')
+    const user = userEvent.setup()
+    await screen.findByText('Full-resolution export requires Premium.')
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Demo user' }), '1')
+    await user.click(screen.getByRole('button', { name: 'Export in full resolution' }))
+    expect(await screen.findByText('Activity refreshed.')).toBeVisible()
+    expect(history.map((event) => [event.customer_user_id, event.key])).toEqual([
+      [demoUsers[1].id, 'export_hd_attempt'],
+    ])
   })
 })
