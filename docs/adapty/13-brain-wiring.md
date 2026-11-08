@@ -12,7 +12,7 @@ When the real server starts, `main.py:wire_running_app` (the app's lifespan) cal
    A missing flow is left out, never invented. No highlight feature is claimed for any flow.
 3. `configure_demo_brain` registers one `BrainRuntime` for the demo app id `c6c7bdd1…` (what the data, scripts and web use) and for
    `ADAPTY_APP_ID` when it differs. Demo settings (explicit, synthetic data only): cutoff `2026-11-08T00:00:00Z`, outcome window
-   **30 days** (`docs/brain/10-outcome-window.md`), identity map `lumen_282506_00000…04999`, the four `*_uses_7d` rules asserted as
+   **60 days** (was 30; `docs/brain/10-outcome-window.md`), identity map `lumen_282506_00000…04999`, the four `*_uses_7d` rules asserted as
    comparable with the seed outcomes. Without `data/lumen_dataset.json.gz` no live rule is asserted. Explanations are on only when an
    OpenAI key exists. The sink is the human-mode `ProposalService`.
 4. B's trigger placement for the settings test is now `settings_upgrade` (the name in the Adapty app); it was `settings`.

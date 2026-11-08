@@ -191,6 +191,8 @@ Also in the response:
                "low_max": 2, "mid_max": 7, "passed": true } ],
   "hypotheses": ["regenerate_rate_7d", "tokens_exhausted_7d"]
 ```
+- `tiers`: only a run whose effective source is `live` writes them to the TierStore (they become `f_<feature>_tier`);
+  an offline run reports tiers but never stores or clears them.
 - `tiers`: measured cut points turning one value per feature into `low` / `mid` / `high`
   (`value <= low_max` → low, `<= mid_max` → mid, else high). Only `passed: true` tiers are written to Adapty.
 - `hypotheses`: rules with no purchase outcome yet (new events). They are not ranked; they can only
@@ -220,12 +222,14 @@ Also in the response:
   With `action.needs_publish: true` (a new AI paywall, still a draft flow): `executing` → `awaiting_publish`
   → (human publishes the flow) → `live`. This holds in autopilot too.
 - `expected_effect.metric` is `net_revenue_<N>d`, N = the outcome window of the insight run (`BrainRuntime.outcome_window_days`,
-  default 90; the demo run uses 30, see `docs/brain/10-outcome-window.md`). `diff`, `ci_*` and the `*_90d` field names of
+  default 90; the live demo uses 60, see `docs/brain/10-outcome-window.md`). `diff`, `ci_*` and the `*_90d` field names of
   `InsightRun` (`net_arpu_90d`, `diff_net_90d`) keep their historical names; the window is in `evidence.outcome_window_days`.
 - `evidence.segment_conditions` (B writes, C's membership sync reads): `[{"field", "op", "value"}]`, all must
   hold, empty = nobody. `field` = one of our rule keys (number) or `f_<feature>_tier` (text); `op` ∈
   `> >= < <= = == IN NOT IN`. This is the rule that decides who gets `p_segment`; `condition` only names the
   segment for Adapty. Adapty-known fields go to `adapty_filters`, never here. (`docs/adapty/05-membership-sync.md`)
+- Shared `p_segment` key: proposals with identical `segment_conditions` share the earliest one's key; on activation the
+  key used is stored in `condition.value` and is **frozen** (rejecting an earlier draft later never re-keys users).
 - `adapty_filters`: fields Adapty already knows (e.g. no active subscription), ANDed with `condition` in the
   same Adapty segment. We don't copy subscription state into our attributes.
 - `decided_by` ∈ `human` | `autopilot`. Every edit is appended to `edits` (a human correction is data).

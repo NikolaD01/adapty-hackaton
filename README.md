@@ -22,7 +22,8 @@ Full picture: [flow diagram](docs/diagrams/flow.md) · [system](docs/diagrams/sy
 5. **AI suggests, measurement checks** — only values that hold on unseen users become tiers.
 6. **Adapty attributes** — `f_<feature>_tier` = low/mid/high for measured features, `p_segment` for the approved group.
 7. **Segment** — `p_segment` AND Adapty's own filters (e.g. no subscription).
-8. **Paywall + A/B test** — control keeps the current paywall; we compare net revenue in 90 days.
+8. **Paywall + A/B test** — control keeps the current paywall; we compare net revenue in the same window for both arms
+   (90 days by default; the live demo uses 60 because the seed data covers about four months).
 
 ## What works today
 | Part | Owner | State |

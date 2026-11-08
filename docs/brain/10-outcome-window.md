@@ -4,9 +4,9 @@
 
 ## What
 The purchase window of the outcome metric is `window_days` (`build_outcomes`, `InsightService`, `BrainRuntime.outcome_window_days`).
-Default 90, so nothing changes unless a run sets it. The demo run uses **30**.
+Default 90, so nothing changes unless a run sets it. The live demo uses **60** (team decision, 2026-11-08; it was 30 before).
 
-## Why 30 for the demo
+## Why 60 for the demo
 Only users whose whole window has passed are used. In the seed data 25% of users are old enough for 90 days (1255 of 5000),
 74% for 30 days (3720). With 90 days B's size check (150 users per side, also on the held-out 30%) leaves no live rule standing.
 
@@ -20,7 +20,16 @@ Only users whose whole window has passed are used. In the seed data 25% of users
 
 The finding is the same in every window: `ai_enhance` and `background` lift revenue 1.6 to 2.2 times, `photo_import` does not (it
 never passes). What changes with the window is only which rule clears the sample-size gate. **The window was chosen by the
-developer after seeing this table, so the passing rule at 30 days must not be presented as a result found independently of that choice.**
+team after seeing this table, so the passing rule must not be presented as a result found independently of that choice.
+60 days was picked over 30 because it stays closer to the planned 90, favours up-front plans less, and the rule that
+passes (`ai_enhance_uses_7d`) is the AI-editing signal the whole product story and the demo app are built on.
+
+Measured on 2026-11-08 (local, 5000 users, 60 days): live run → `ai_enhance_uses_7d` passed, tier cut points 0 / 3,
+4 drafts (`net_revenue_60d`); sync wrote `f_ai_enhance_tier` for 4984 users and one shared `p_segment` for 2499.**
+
+## Tiers come only from live runs (fix, 2026-11-08)
+An offline run used to store its (usually empty) tiers and so clear the live tiers; the next sync would then remove
+`f_<feature>_tier` from every profile in Adapty. Now only a run whose effective source is `live` writes the TierStore.
 
 ## How it works
 `window_days` (whole days, 1 to 365) sets both maturity (install + window must be before `as_of`) and the purchase range.

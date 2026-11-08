@@ -28,6 +28,10 @@ unchanged profiles or leaking history into the 30 attribute slots.
    ones do not). Activation (C4) uses the same function for the segment filter (`p_segment IN [<shared key>] AND platform IN
    [Android]`), unless a human edited `condition_value`. Found on 2026-11-08 with B's real drafts: without it the Android
    segments had no members.
+7. **The key is frozen on activation** (fix, 2026-11-08). Activation stores the key it used in `condition.value`; for
+   `live`/`awaiting_publish` proposals (or any value that differs from the proposal's own key, e.g. a human edit)
+   `canonical_segment_keys` uses that value first. Before, rejecting the earlier draft re-keyed the users and left the
+   live Adapty segment empty; a human-edited value also differed from what sync wrote.
 
 ## Contract touched
 `POST /apps/{app_id}/membership:sync`, port `MembershipSync`, table `adapty_attribute_state`.

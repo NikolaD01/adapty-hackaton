@@ -1,5 +1,9 @@
 # 14 — Real run on Adapty (B → C, all attributes written)
 
+> **Superseded window:** this run used 30 days. The demo now uses **60** (`docs/brain/10-outcome-window.md`), where the
+> measured rule is `ai_enhance_uses_7d`. The `[fs] background…` segments and A/B tests created here on `fs_test` stay in
+> the Adapty app (the CLI cannot delete segments): stop the tests in the dashboard before the rehearsal and re-run on 60 days.
+
 **Area:** C · **Date:** 2026-11-08 · Adapty app `9ccde368…` (`ADAPTY_APP_ID`), demo data app id `c6c7bdd1…`
 
 ## What ran
