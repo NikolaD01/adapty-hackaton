@@ -219,6 +219,10 @@ Also in the response:
 - `status` ∈ `draft` → `approved` → `executing` → `live` | `failed`; or `draft` → `rejected`.
   With `action.needs_publish: true` (a new AI paywall, still a draft flow): `executing` → `awaiting_publish`
   → (human publishes the flow) → `live`. This holds in autopilot too.
+- `evidence.segment_conditions` (B writes, C's membership sync reads): `[{"field", "op", "value"}]`, all must
+  hold, empty = nobody. `field` = one of our rule keys (number) or `f_<feature>_tier` (text); `op` ∈
+  `> >= < <= = == IN NOT IN`. This is the rule that decides who gets `p_segment`; `condition` only names the
+  segment for Adapty. Adapty-known fields go to `adapty_filters`, never here. (`docs/adapty/05-membership-sync.md`)
 - `adapty_filters`: fields Adapty already knows (e.g. no active subscription), ANDed with `condition` in the
   same Adapty segment. We don't copy subscription state into our attributes.
 - `decided_by` ∈ `human` | `autopilot`. Every edit is appended to `edits` (a human correction is data).

@@ -31,9 +31,9 @@ Full picture: [flow diagram](docs/diagrams/flow.md) · [system](docs/diagrams/sy
 | JS SDK `sdk/js` | A | ✅ on `main` ([chapter 07](docs/ingest/07-sdk.md)) |
 | Synthetic demo events for 1000 seed users | A | ✅ `make demo-events` ([chapter 08](docs/ingest/08-demo-events.md)) |
 | Adapty webhook: real purchases and refunds as events, live net revenue per user | A | ✅ `POST /adapty-webhook` ([chapter 09](docs/ingest/09-adapty-webhook.md)) |
-| Dashboard scaffold (`web/`) | D | ✅ scaffold on mocks ([docs/web](docs/web/01-web-scaffold.md)) |
-| Ranking, tiers, uplift, insights, LLM suggestions | B | Implemented on this branch; insight runs require app-scoped runtime configuration ([docs/brain](docs/brain/README.md)) |
-| Adapty attributes, segments, A/B, proposals, membership sync, lookup, paywall draft | C | ⏳ routes return `501 not_implemented` |
+| Ranking, tiers, uplift, insights, LLM suggestions and explanations | B | ✅ built and tested ([docs/brain](docs/brain/README.md)); ⏳ not yet configured in `create_app()` — `insights:run` / `rules:suggest` answer `503 brain_not_configured` |
+| Adapty attributes, segments, A/B, proposals, decisions, autopilot, membership sync, lookup, paywall draft | C | ✅ built and tested ([docs/adapty](docs/adapty/README.md)); ⏳ membership sync not yet registered in `create_app()` (fast loop is a no-op) |
+| Dashboard + demo on the live ingest API | D | 🟡 in progress ([docs/web](docs/web/README.md)) |
 
 Live status per area: [docs/STATUS.md](docs/STATUS.md) · task graph: `make board`.
 
@@ -47,7 +47,7 @@ make offline-data                 # seed datasets into data/ (offline CSVs + lum
 make demo-events                  # 1000 synthetic seed users, ~25k events, values recomputed
 curl -s "localhost:8000/v1/apps/c6c7bdd1-1010-4343-8b29-837a77793cab/users/lumen_282506_00007/features"
 ```
-Tests: `make test-docker` (lint, 340+ backend tests, task graph — same as CI) · SDK: `cd sdk/js && npm install && npm test -- --run` ·
+Tests: `make test-docker` (lint, ~490 backend tests, task graph — same as CI) · SDK: `cd sdk/js && npm install && npm test -- --run` ·
 Web: `cd web && npm install && npm run dev` → http://localhost:5173.
 
 ## Repository map
