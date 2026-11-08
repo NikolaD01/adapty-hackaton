@@ -7,7 +7,20 @@ import type { AppSettings, Mode, Proposal, ProposalPatch, ProposalStatus } from 
 import { PlaceholderPage } from './PlaceholderPage'
 import { ReviewList } from './ReviewList'
 import { TargetingTable } from './TargetingTable'
-import { ConditionList, NetEffect, outcomeWindow, showValue } from './TargetingDetails'
+import { ConditionList, outcomeWindow, showValue } from './TargetingDetails'
+import { audienceLabel } from './plainLanguage'
+
+const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+const SMALL_SAMPLE = 100
+
+function signedUsd(value: number) {
+  return `${value > 0 ? '+' : ''}${usd.format(value)}`
+}
+
+function offerName(proposal: Proposal) {
+  const edited = proposal.edits.some((edit) => edit.field === 'flow_id')
+  return !edited && proposal.action.flow_name ? `“${proposal.action.flow_name}”` : 'the chosen'
+}
 
 const statusLabels: Record<ProposalStatus, string> = {
   draft: 'Draft', approved: 'Approved', executing: 'Executing', awaiting_publish: 'Awaiting publish',
@@ -28,7 +41,7 @@ function ModeSettings() {
       <div className="panel-heading">
         <div>
           <h2>Decision mode</h2>
-          <p className="targeting-muted">Choose how eligible proposals are approved.</p>
+          <p className="targeting-muted">Human: you approve, edit or reject every proposal. Autopilot: proposals start on their own, within limits.</p>
         </div>
         {query.data && (
           <label className="inline-control">
@@ -44,8 +57,9 @@ function ModeSettings() {
       <QueryFeedback {...query} />
       {query.data?.mode === 'autopilot' && (
         <p className="preview-notice" role="status">
-          Autopilot can start eligible tests with published flows. Limit {query.data.autopilot.max_live_proposals} live proposals,
-          minimum {query.data.autopilot.min_holdout_pct}% holdout. Publish new flows in Adapty.
+          Autopilot starts tests by itself: at most {query.data.autopilot.max_live_proposals} at a time, and at
+          least {query.data.autopilot.min_holdout_pct}% of every group keeps the current paywall. It only uses paywalls
+          that are already published. A new paywall always waits for you to publish it in Adapty.
         </p>
       )}
       <RequestError error={save.error} />
@@ -154,12 +168,17 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
   const draft = proposal.status === 'draft'
   const awaitingPublish = proposal.status === 'awaiting_publish'
   const flowName = proposal.edits.some((edit) => edit.field === 'flow_id') ? null : proposal.action.flow_name
+  const audience = audienceLabel(proposal)
+  const { diff, ci_low: low, ci_high: high } = proposal.expected_effect
+  const { n_a: nA, n_b: nB } = proposal.evidence
+  const sample = typeof nA === 'number' && typeof nB === 'number' ? nA + nB : null
+  const offerShare = 100 - proposal.holdout_pct
   return (
-    <article className="behavioral-panel review-card" aria-label={proposal.segment_key}>
+    <article className="behavioral-panel review-card" aria-label={audience}>
       <header className="review-card-heading">
         <div>
-          <h2>{proposal.segment_key}</h2>
-          <p>{proposal.reason}</p>
+          <h2>{audience}</h2>
+          <p>Offer: show them the {offerName(proposal)} paywall.</p>
         </div>
         <span className={`status-chip status-${approving ? 'executing' : proposal.status}`}>
           {approving ? 'Executing' : statusLabels[proposal.status]}
@@ -167,10 +186,19 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
       </header>
       <div className="review-body">
         <div className="review-outcome">
-          <strong>Expected {days ? `${days}-day ` : ''}net revenue effect per user</strong>
-          <NetEffect value={proposal.expected_effect.diff} interval={proposal.expected_effect} />
-          {proposal.evidence.uplift_test && <p className="targeting-muted">Evidence from {proposal.evidence.uplift_test}</p>}
+          <strong>Expected net revenue per user{days ? ` over ${days} days` : ''}</strong>
+          <span>{signedUsd(diff)} <span className="targeting-muted">likely between {usd.format(low)} and {usd.format(high)}, net of refunds</span></span>
+          {sample !== null && (
+            <p className="targeting-muted">
+              Based on {sample} users in a past randomized test{sample < SMALL_SAMPLE ? '. A small sample: treat it as uncertain.' : '.'}
+            </p>
+          )}
+          {proposal.evidence.synthetic && <p className="targeting-muted">Synthetic demo data.</p>}
         </div>
+        <p className="review-plain">
+          Test: {offerShare}% of this group see the offer and {proposal.holdout_pct}% keep the current paywall, so the
+          difference in revenue can be measured.
+        </p>
         {awaitingPublish && <p className="preview-notice">Publish the new paywall in Adapty, then continue approval to start the test.</p>}
         {form === 'edit' && draft && (
           <ProposalEdit proposal={proposal} onSave={(patch) => mutation.mutate({ action: 'edit', patch })}
@@ -208,6 +236,11 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
           </div>
         )}
         <RequestError error={mutation.error} />
+        <details className="review-details">
+          <summary>Technical details</summary>
+          <h3>Analysis notes</h3>
+          <p className="targeting-muted">{proposal.reason}</p>
+          {proposal.evidence.uplift_test && <p className="targeting-muted">Evidence from {proposal.evidence.uplift_test}.</p>}
         <div className="review-facts">
           <section>
             <h3>Behavioral conditions</h3>
@@ -228,9 +261,8 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
             </dl>
           </section>
         </div>
-      </div>
       {proposal.edits.length > 0 && (
-        <section className="review-body review-history">
+        <section className="review-history">
           <h3>Edit history</h3>
           <TargetingTable label="Edit history" headers={['Field', 'Previous value', 'New value', 'Changed at']}>
             {proposal.edits.map((edit, index) => (
@@ -244,6 +276,8 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
           </TargetingTable>
         </section>
       )}
+        </details>
+      </div>
     </article>
   )
 }
@@ -265,8 +299,8 @@ export function ProposalsPage() {
           <ReviewList label="Proposal queue" selectedId={selected.proposal_id} onSelect={setSelectedId}
             items={items.map((proposal) => ({
               id: proposal.proposal_id,
-              title: proposal.segment_key,
-              description: `${proposal.trigger_placement} · ${statusLabels[proposal.status]}`,
+              title: audienceLabel(proposal),
+              description: `Offer: ${proposal.action.flow_name ?? 'chosen paywall'} · ${statusLabels[proposal.status]}`,
             }))} />
           <div className="review-records">
             {items.map((proposal) => (

@@ -32,3 +32,4 @@ The demo uses Human mode and the Insights runtime saves proposals as drafts for 
 - [06 — Decisions and flow lookup](06-decisions-lookup.md)
 - [07 — Live API verification](07-live-verification.md)
 - [08 — Dashboard rehearsal](08-demo-rehearsal.md)
+- [09 — Plain-language proposal and insight review](09-plain-language-review.md)

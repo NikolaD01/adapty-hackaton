@@ -316,10 +316,17 @@
 .review-facts h3 { margin-bottom: 6px; }
 .review-facts h3:not(:first-child) { margin-top: 10px; }
 .review-actions { margin-top: 14px; }
-.review-history { border-top: 1px solid var(--targeting-border); }
+.review-history { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--targeting-border); }
+.review-plain { margin: 12px 0 0; }
+.review-details { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--targeting-border); }
+.review-details > summary { cursor: pointer; font-weight: 650; color: var(--muted); }
+.review-details[open] > summary { margin-bottom: 8px; }
+.review-details > p { margin-top: 4px; }
 .review-filter { align-items: center; flex-wrap: wrap; }
 .review-filter .targeting-actions, .insight-toolbar .targeting-actions { margin-top: 0; }
 .insight-toolbar > p { margin-top: 8px; }
+.insight-summary { display: grid; gap: 6px; margin: 8px 0 12px; padding: 12px; border: 1px solid var(--targeting-border); border-radius: 8px; background: var(--targeting-wash); }
+.insight-summary p { margin: 0; }
 .review-mode select { min-width: min(105px, 100%); }
 .review-mode > p { margin: 8px 0 0; }
 .decision-step-details { display: grid; gap: 5px; }

@@ -47,7 +47,10 @@ export interface Proposal {
   cooldown_days: number
   expected_effect: Interval & { metric: `net_revenue_${number}d`; diff: number }
   reason: string
-  evidence: { run_id?: string; uplift_test?: string; outcome_window_days?: number; segment_conditions?: Predicate[] }
+  evidence: {
+    run_id?: string; uplift_test?: string; outcome_window_days?: number; segment_conditions?: Predicate[]
+    synthetic?: boolean; n_a?: number; n_b?: number
+  }
   edits: { at: string; field: string; from: unknown; to: unknown }[]
   adapty: { segment_id: string | null; placement_id: string | null; ab_test_id: string | null; attributes_written: number }
   created_at: string

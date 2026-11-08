@@ -6,8 +6,32 @@ import type { InsightRun, InsightSource, Proposal } from '../../types/targeting'
 import { PlaceholderPage } from './PlaceholderPage'
 import { TargetingTable } from './TargetingTable'
 import { ConditionList, NetEffect, outcomeWindow } from './TargetingDetails'
+import { aboveThreshold, fieldLabel, times } from './plainLanguage'
 
 const number = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 })
+
+/** One sentence per confirmed signal and one line for the rest, above the detailed table. */
+function SignalSummary({ rankings, days }: { rankings: InsightRun['rankings']; days?: number }) {
+  const confirmed = rankings.filter((row) => row.passed)
+  const rejected = rankings.filter((row) => !row.passed)
+  const window = days ? ` over ${days} days` : ''
+  return (
+    <div className="insight-summary" aria-label="Summary">
+      {confirmed.map((row) => (
+        <p key={row.feature}>
+          <strong>Confirmed:</strong> {aboveThreshold(row.feature, row.threshold)} bring{' '}
+          <strong>{times(row.lift)}</strong> the net revenue of other users{window} (likely{' '}
+          {times(row.ci_low)}–{times(row.ci_high)}). It also held on users the analysis did not see ({times(row.holdout_lift)}).
+        </p>
+      ))}
+      {!confirmed.length && <p>No signal is confirmed yet.</p>}
+      {!!rejected.length && (
+        <p className="targeting-muted">Not confirmed: {rejected.map((row) => fieldLabel(row.feature)).join(', ')}.</p>
+      )}
+      <p className="targeting-muted">A confirmed signal shows who pays more, not why. The offer for each group comes from randomized tests.</p>
+    </div>
+  )
+}
 
 function LiftInterval({ lift, low, high }: { lift: number; low: number; high: number }) {
   const min = Math.min(low, lift, 1)
@@ -38,7 +62,8 @@ function Results({ insight }: { insight: InsightRun }) {
       </p>
       <section className="behavioral-panel">
         <h2>Ranked signals</h2>
-        <p className="targeting-muted">Net revenue ratio with training confidence interval and separate holdout check.</p>
+        {!!insight.rankings.length && <SignalSummary rankings={insight.rankings} days={days} />}
+        <p className="targeting-muted">Details: revenue ratio of users above the threshold, with its likely range, and the same ratio on held-out users.</p>
         {!insight.rankings.length ? <p>No measured rankings.</p> : (
           <TargetingTable label="Ranked signals" headers={['Feature', 'Threshold', 'Direction', 'Lift (CI)', 'Holdout', 'Passed']}>
             {insight.rankings.map((row) => (

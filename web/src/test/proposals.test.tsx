@@ -44,7 +44,9 @@ it('edits only changed whitelisted fields and renders the saved state', async ()
   await user.clear(input)
   await user.type(input, '30')
   await user.click(screen.getByRole('button', { name: 'Save changes' }))
-  expect(await screen.findByText('30%')).toBeVisible()
+  expect(await screen.findByText(/70% of this group see the offer and 30% keep the current paywall/)).toBeVisible()
+  await user.click(screen.getByText('Technical details'))
+  expect(screen.getByText('30%')).toBeVisible()
   expect(payload).toEqual({ holdout_pct: 30 })
   const history = within(screen.getByRole('table', { name: 'Edit history' }))
   expect(history.getByRole('rowheader', { name: 'holdout_pct' })).toBeVisible()
@@ -92,7 +94,7 @@ it('preserves autopilot limits when switching modes and shows the warning', asyn
   }))
   renderProposals()
   await userEvent.setup().selectOptions(await screen.findByRole('combobox', { name: 'Mode' }), 'autopilot')
-  expect(await screen.findByText(/autopilot can start eligible tests/i)).toBeVisible()
+  expect(await screen.findByText(/autopilot starts tests by itself/i)).toBeVisible()
   expect(payload).toEqual({ ...mockSettings, mode: 'autopilot' })
 })
 
@@ -101,12 +103,16 @@ it('shows the net revenue window returned by the API', async () => {
     { ...mockProposal, expected_effect: { ...mockProposal.expected_effect, metric: 'net_revenue_30d' } },
   ])))
   renderProposals()
-  expect(await screen.findByText('Expected 30-day net revenue effect per user')).toBeVisible()
+  expect(await screen.findByText('Expected net revenue per user over 30 days')).toBeVisible()
 })
 
 it('keeps the edit draft while switching between proposals', async () => {
   server.use(http.get(`${appApiUrl}/proposals`, () => HttpResponse.json([
-    mockProposal, { ...mockProposal, proposal_id: 'pr_second', segment_key: 'other_editors', status: 'live' },
+    mockProposal,
+    {
+      ...mockProposal, proposal_id: 'pr_second', segment_key: 'other_editors', status: 'live',
+      evidence: { ...mockProposal.evidence, segment_conditions: [{ field: 'ai_enhance_uses_7d', op: '>', value: 3 }] },
+    },
   ])))
   renderProposals()
   const user = userEvent.setup()
@@ -115,10 +121,30 @@ it('keeps the edit draft while switching between proposals', async () => {
   await user.clear(input)
   await user.type(input, '25')
 
-  await user.click(screen.getByRole('button', { name: /other_editors/ }))
-  expect(screen.getByRole('article', { name: 'other_editors' })).toBeVisible()
+  const second = 'Users who used AI enhance 4 or more times in 7 days, with subscription state never subscribed'
+  await user.click(screen.getByRole('button', { name: new RegExp(second) }))
+  expect(screen.getByRole('article', { name: second })).toBeVisible()
   expect(screen.queryByRole('spinbutton', { name: 'Holdout (%)' })).not.toBeInTheDocument()
 
-  await user.click(screen.getByRole('button', { name: new RegExp(mockProposal.segment_key) }))
+  await user.click(screen.getByRole('button', { name: /AI edits first day at least 5/ }))
   expect(screen.getByRole('spinbutton', { name: 'Holdout (%)' })).toHaveValue(25)
+})
+
+it('leads with a plain summary and keeps the technical details folded', async () => {
+  server.use(http.get(`${appApiUrl}/proposals`, () => HttpResponse.json([{
+    ...mockProposal,
+    expected_effect: { metric: 'net_revenue_60d', diff: 22.596, ci_low: 2.402, ci_high: 47.9002 },
+    evidence: { ...mockProposal.evidence, synthetic: true, n_a: 10, n_b: 10 },
+    reason: 'lift 2.013994749445399; holdout lift 1.2361809323776423',
+  }])))
+  renderProposals()
+  const card = await screen.findByRole('article', { name: /AI edits first day at least 5/ })
+  expect(within(card).getByRole('heading', { level: 2 })).toHaveTextContent('Users with AI edits first day at least 5')
+  expect(within(card).getByText('Offer: show them the “Lifetime anchor” paywall.')).toBeVisible()
+  expect(within(card).getByText('Expected net revenue per user over 60 days')).toBeVisible()
+  expect(within(card).getByText(/^\+\$22\.60/)).toBeVisible()
+  expect(within(card).getByText('likely between $2.40 and $47.90, net of refunds')).toBeVisible()
+  expect(within(card).getByText(/Based on 20 users .* treat it as uncertain/)).toBeVisible()
+  expect(within(card).getByText('Synthetic demo data.')).toBeVisible()
+  expect(within(card).getByText(/lift 2\.013994749445399/)).not.toBeVisible()
 })
