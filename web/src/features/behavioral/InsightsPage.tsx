@@ -2,9 +2,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { ApiError, appWrite, useAppQuery } from '../../shared/api'
 import { QueryFeedback, RequestError } from '../../shared/ui/QueryFeedback'
-import type { InsightRun, InsightSource } from '../../types/targeting'
+import type { InsightRun, InsightSource, Proposal } from '../../types/targeting'
 import { PlaceholderPage } from './PlaceholderPage'
-import { ConditionList, NetEffect } from './TargetingDetails'
+import { ConditionList, NetEffect, outcomeWindow } from './TargetingDetails'
 
 const number = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 })
 
@@ -26,6 +26,10 @@ function LiftInterval({ lift, low, high }: { lift: number; low: number; high: nu
 }
 
 function Results({ insight }: { insight: InsightRun }) {
+  const proposals = useAppQuery<Proposal[]>(['proposals'], '/proposals')
+  // InsightRun retains legacy field names even when the server uses a different window.
+  const evidence = proposals.data?.find((proposal) => proposal.evidence.run_id === insight.run_id)
+  const days = evidence && outcomeWindow(evidence)
   return (
     <>
       <p className="insight-source" role="status">
@@ -85,7 +89,7 @@ function Results({ insight }: { insight: InsightRun }) {
       </section>
       <section className="behavioral-panel">
         <h2>Historical randomized uplift</h2>
-        <p className="targeting-muted">Prior A/B arms · difference in 90-day net revenue per user, after refunds.</p>
+        <p className="targeting-muted">Prior A/B arms · difference in {days ? `${days}-day ` : ''}net revenue per user, after refunds.</p>
         {!insight.uplift.length && <p>No randomized comparisons in this run.</p>}
         {insight.uplift.map((row) => (
           <article key={`${row.segment_key}/${row.test}`} className="insight-detail">

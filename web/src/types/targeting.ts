@@ -45,9 +45,9 @@ export interface Proposal {
   action: { type: 'flow'; flow_id: string; flow_name: string | null; highlight_feature: string | null; needs_publish: boolean }
   holdout_pct: number
   cooldown_days: number
-  expected_effect: Interval & { metric: 'net_revenue_90d'; diff: number }
+  expected_effect: Interval & { metric: `net_revenue_${number}d`; diff: number }
   reason: string
-  evidence: { run_id?: string; uplift_test?: string; segment_conditions?: Predicate[] }
+  evidence: { run_id?: string; uplift_test?: string; outcome_window_days?: number; segment_conditions?: Predicate[] }
   edits: { at: string; field: string; from: unknown; to: unknown }[]
   adapty: { segment_id: string | null; placement_id: string | null; ab_test_id: string | null; attributes_written: number }
   created_at: string
@@ -81,4 +81,7 @@ export interface LookupResult {
   segment_hash: string
   flow_id: string | null
   flow_name: string | null
+  audience_name?: string | null
+  ab_test_name?: string | null
+  arms?: { flow_id: string | null; flow_name: string | null; weight: number; name: string | null }[]
 }

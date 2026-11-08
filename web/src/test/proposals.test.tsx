@@ -92,3 +92,11 @@ it('preserves autopilot limits when switching modes and shows the warning', asyn
   expect(await screen.findByText(/autopilot can start eligible tests/i)).toBeVisible()
   expect(payload).toEqual({ ...mockSettings, mode: 'autopilot' })
 })
+
+it('shows the net revenue window returned by the API', async () => {
+  server.use(http.get(`${appApiUrl}/proposals`, () => HttpResponse.json([
+    { ...mockProposal, expected_effect: { ...mockProposal.expected_effect, metric: 'net_revenue_30d' } },
+  ])))
+  renderProposals()
+  expect(await screen.findByText('Expected 30-day net revenue effect per user')).toBeVisible()
+})

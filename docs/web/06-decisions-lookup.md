@@ -12,7 +12,7 @@ The operator can verify the experiment action and check which content Adapty ret
 
 ## How it works
 
-Proposal links open the matching decision log or prefill the placement in Lookup. Lookup renders results by customer user ID and shows the flow name, flow ID and segment hash.
+Proposal links open the matching decision log or prefill the placement in Lookup. Lookup groups results by customer user ID. It displays the audience, segment hash and available A/B arms when the server returns them. A standalone flow uses the original name and ID fields.
 
 ## Contract touched
 
@@ -26,11 +26,11 @@ npm test -- --run src/test/decisions-lookup.test.tsx
 npm run build
 ```
 
-Expected three tests pass. A failed decision shows its error, reverse-ordered API results match the correct user, and duplicate IDs are rejected.
+Expected four tests pass. A failed decision shows its error, reverse-ordered results match the correct user, duplicate IDs are rejected, and an A/B result shows both arms.
 
 ## Limits
 
-The preview returns synthetic flows. In live mode both users can receive the control flow because Adapty assigns test arms.
+The preview returns synthetic flows. In a live test the SDK selects the arm on the device. The server lookup can show the audience and available arms.
 
 ## Status
 

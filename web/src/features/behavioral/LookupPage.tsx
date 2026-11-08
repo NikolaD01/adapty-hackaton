@@ -36,7 +36,7 @@ export function LookupPage() {
 
   return (
     <>
-      <PlaceholderPage title="Lookup" description="Compare the flows served to two users at the same placement." />
+      <PlaceholderPage title="Lookup" description="Compare the audiences and flows returned for two users at the same placement." />
       <form className="targeting-form" onSubmit={submit}>
         <fieldset disabled={lookup.isPending}>
           <legend>Adapty flow lookup</legend>
@@ -55,7 +55,7 @@ export function LookupPage() {
       {lookup.data && lookup.variables && (
         <section className="behavioral-panel" aria-label="Lookup results">
           <h2>Results for {lookup.variables.placement}</h2>
-          <p>Adapty assigns the test arm. A user inside the segment can receive the same flow as a user outside it.</p>
+          <p>The SDK chooses a test arm on the device. Compare the audience and available flows for each user.</p>
           <div className="targeting-grid">
             {lookup.variables.customer_user_ids.map((id) => {
               const result = lookup.data.results.find((item) => item.customer_user_id === id)
@@ -63,11 +63,28 @@ export function LookupPage() {
                 <article className="lookup-result" key={id}>
                   <h3>{id}</h3>
                   {result ? (
-                    <dl className="targeting-facts">
-                      <dt>Flow name</dt><dd>{result.flow_name ?? '—'}</dd>
-                      <dt>Flow ID</dt><dd>{result.flow_id ?? '—'}</dd>
-                      <dt>Segment hash</dt><dd>{result.segment_hash || '—'}</dd>
-                    </dl>
+                    <>
+                      <dl className="targeting-facts">
+                        {result.audience_name && <><dt>Audience</dt><dd>{result.audience_name}</dd></>}
+                        {result.ab_test_name && <><dt>A/B test</dt><dd>{result.ab_test_name}</dd></>}
+                        <dt>Segment hash</dt><dd>{result.segment_hash || '—'}</dd>
+                        {!result.ab_test_name && !result.arms?.length && <>
+                          <dt>Returned flow</dt><dd>{result.flow_name ?? '—'}</dd>
+                          <dt>Flow ID</dt><dd>{result.flow_id ?? '—'}</dd>
+                        </>}
+                      </dl>
+                      {!!result.arms?.length && (
+                        <ul className="lookup-arms" aria-label="A/B arms">
+                          {result.arms.map((arm, index) => (
+                            <li key={index}>
+                              <strong>{arm.name ?? 'Arm'} · {arm.weight}%</strong>
+                              <div>{arm.flow_name ?? arm.flow_id ?? '—'}</div>
+                              {arm.flow_name && arm.flow_id && <code>{arm.flow_id}</code>}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </>
                   ) : <p>No lookup result returned for this user.</p>}
                 </article>
               )
