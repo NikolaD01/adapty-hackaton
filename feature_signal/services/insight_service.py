@@ -64,8 +64,9 @@ class InsightService:
         live_dataset: OfflineDataset | None = None,
         explainer: RuleSuggestService | None = None,
         commit: Callable[[], Awaitable[None]] | None = None,
+        window_days: int = 90,
     ):
-        self.dataset, self.as_of = dataset, as_of
+        self.dataset, self.as_of, self.window_days = dataset, as_of, window_days
         self.value_store, self.tier_store, self.proposal_sink = value_store, tier_store, proposal_sink
         self.rule_repo, self.published_flows = rule_repo, dict(published_flows)
         self.state = state if state is not None else InsightState()
@@ -81,7 +82,7 @@ class InsightService:
 
     def _load(self, dataset: OfflineDataset | None = None):
         selected = self.dataset if dataset is None else dataset
-        return build_outcomes(selected.users(), selected.transactions(), as_of=self.as_of)
+        return build_outcomes(selected.users(), selected.transactions(), as_of=self.as_of, window_days=self.window_days)
 
     @staticmethod
     def _matrix(frame, columns):
@@ -195,7 +196,7 @@ class InsightService:
                 )
                 reason = (
                     f"Synthetic data: {effect.better_arm} has ${effect.diff_net_90d:.2f} higher net revenue per user "
-                    f"over 90 days in randomized test '{effect.test}' "
+                    f"over {self.window_days} days in randomized test '{effect.test}' "
                     f"(90% interval ${effect.ci_low:.2f} to ${effect.ci_high:.2f}). Refunds: {refund_text}. "
                     "Hypothesis: behavioral differences may reflect different user needs."
                 )
@@ -226,7 +227,7 @@ class InsightService:
                             "synthetic": True,
                             "dataset": dict(getattr(active_dataset, "provenance", {})),
                             "as_of": pd.Timestamp(self.as_of).isoformat(),
-                            "outcome_window_days": 90,
+                            "outcome_window_days": self.window_days,
                             "segment_conditions": [
                                 asdict(item) for item in segment.conditions if item.field not in _NATIVE_FIELDS
                             ],
@@ -242,7 +243,10 @@ class InsightService:
                 )
             # SQL-backed adapters share the request transaction; commit only after both succeed.
             # Other port implementations must supply their own transactional guarantees.
-            await self.tier_store.put_many(app_id, tiers)
+            # Tiers drive f_<feature>_tier in Adapty and are cut on live rule keys. Only a live run may replace them:
+            # an offline run has no live tiers, and writing its empty list would make the next sync clear every tier.
+            if effective_source == "live":
+                await self.tier_store.put_many(app_id, tiers)
             if drafts:
                 await self.proposal_sink.create_many(app_id, drafts)
             if self.commit:

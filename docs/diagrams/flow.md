@@ -36,7 +36,7 @@ flowchart TD
     MODE -- "approve" --> ACT["Adapty: segment = p_segment AND no subscription<br/>A/B on the placement: control = current paywall"]
     W --> ACT
     ACT --> PW["User sees the paywall for their group"]
-    PW --> RES["Net revenue in 90 days, both arms, same window"]
+    PW --> RES["Net revenue in N days, both arms, same window<br/>90 by default, 60 in the live demo"]
     RES -. "learn" .-> MEAS
 ```
 

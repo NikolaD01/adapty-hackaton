@@ -71,14 +71,23 @@ def service(**kwargs):
     return InsightService(**defaults)
 
 
-async def test_offline_run_stores_tiers_and_hands_measured_drafts_to_sink():
+async def test_the_outcome_window_setting_reaches_the_drafts_and_the_reason_text():
+    svc = service(window_days=30, dataset=Dataset())
+    await svc.run("app", "offline")
+    assert svc.proposal_sink.created
+    for draft in svc.proposal_sink.created:
+        assert draft.evidence["outcome_window_days"] == 30
+        assert "over 30 days" in draft.reason
+
+
+async def test_offline_run_reports_tiers_without_storing_them_and_hands_drafts_to_sink():
     explainer = Explainer()
     svc = service(explainer=explainer)
     result = await svc.run("app", "offline")
     assert result.source == "offline"
     assert result.rankings and any(item.passed for item in result.rankings)
     assert result.tiers and result.segments and result.uplift
-    assert await svc.tier_store.list("app")
+    assert await svc.tier_store.list("app") == []  # only a live run may write tiers (they become Adapty attributes)
     assert svc.proposal_sink.created
     for draft in svc.proposal_sink.created:
         assert draft.condition.field == "p_segment"
@@ -242,3 +251,13 @@ async def test_membership_evidence_contains_only_behavioral_predicates():
         assert all(item["field"] == "edits" for item in draft.evidence["segment_conditions"])
         assert any(item["field"] == "platform" for item in draft.evidence["analysis_conditions"])
         assert any(item.field == "platform" for item in draft.adapty_filters)
+
+
+async def test_offline_run_never_clears_tiers_from_a_live_run():
+    from feature_signal.domain.models import FeatureTier
+
+    svc = service()
+    live_tier = FeatureTier(feature="editor", rule_key="edits_7d", low_max=1, mid_max=4, passed=True)
+    await svc.tier_store.put_many("app", [live_tier])
+    await svc.run("app", "offline")
+    assert await svc.tier_store.list("app") == [live_tier]

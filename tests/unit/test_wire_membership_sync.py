@@ -23,3 +23,31 @@ def test_no_secret_wires_nothing():
 
 def test_create_app_alone_never_wires_it():
     assert getattr(create_app().state, "membership_sync", None) is None
+
+
+def test_wire_brain_does_nothing_without_an_adapty_secret():
+    from feature_signal.main import wire_brain
+
+    app = FastAPI()
+    wire_brain(app, Settings(adapty_secret_key=SecretStr("")))
+    assert not getattr(app.state, "brain_runtimes", {})
+
+
+def test_importing_main_wires_nothing_and_calls_nothing():
+    # Tests import this module; with a local .env the wiring would otherwise reach Adapty during a test run.
+    import feature_signal.main as main
+
+    assert getattr(main.app.state, "membership_sync", None) is None
+    assert not getattr(main.app.state, "brain_runtimes", {})
+
+
+def test_the_server_startup_runs_both_wirings(monkeypatch):
+    from fastapi.testclient import TestClient
+
+    import feature_signal.main as main
+
+    calls = []
+    monkeypatch.setattr(main, "wire_membership_sync", lambda app, settings: calls.append("sync"))
+    monkeypatch.setattr(main, "wire_brain", lambda app, settings: calls.append("brain"))
+    with TestClient(create_app(lifespan=main.wire_running_app)):
+        assert calls == ["sync", "brain"]

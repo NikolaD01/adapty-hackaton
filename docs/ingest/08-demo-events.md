@@ -32,8 +32,8 @@ make demo-events                    # second run: accepted 0, duplicates = event
 ```
 Expected (measured): 5000 users, 125,548 events in ≈51 s, `recompute` → 17 rules; a re-run is all duplicates.
 1000 users load in 9 s (25,226 events) but are too few for live insights: B's ranking needs 150 users per
-side among users whose outcome window has passed. With 5000 users and the demo's 30-day window, the local
-run on 2026-11-08 passed `background_uses_7d` and produced 8 proposals (see "Live loop check" below).
+side among users whose outcome window has passed. With 5000 users and the demo's 60-day window the local run
+on 2026-11-08 passed `ai_enhance_uses_7d` and produced 4 proposals (see "Live loop check" below).
 
 ## Limits / not claimed
 **Synthetic data.** The events are generated from the seed attributes, so a link between edits and revenue
@@ -42,11 +42,10 @@ days earn $12.09 vs $6.97 (1000 users; all 5000 seed users: $13.87 vs $6.42 by `
 The first **200** users alone invert it ($5.53 vs $9.20) — too small a sample, hence 1000 by default.
 
 ## Live loop check (2026-11-08, local, no Adapty writes)
-On `adapty/wire-brain` with 5000 users: `insights:run {source: live}` → `background_uses_7d` passed, tier cut points
-0 / 1, 5 segments, 8 proposals whose `segment_conditions` use live rule keys. With one proposal set live,
-`membership:sync` (fake writer) wrote `f_background_tier` for 4984 users and `p_segment` for 2130. Caveat found:
-an `offline` insight run afterwards replaced the tiers with none, and the next sync would clear every
-`f_*_tier` (reported to B/C).
+With 5000 users and the 60-day window: `insights:run {source: live}` → `ai_enhance_uses_7d` passed, tier cut points
+0 / 3, 4 proposals whose `segment_conditions` use live rule keys. An `offline` run afterwards keeps the live tier.
+With one proposal set live, `membership:sync` (fake writer) wrote `f_ai_enhance_tier` for 4984 users and one shared
+`p_segment` for 2499. (With 30 days it was `background_uses_7d`; an offline run then cleared the tiers — fixed.)
 
 ## Status
 Done · All A tasks done. Next: support B (live mode), C (fast loop wiring), D (SDK switch).

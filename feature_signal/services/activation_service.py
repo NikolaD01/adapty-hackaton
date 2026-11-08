@@ -23,6 +23,7 @@ from feature_signal.domain.models import Condition
 from feature_signal.domain.ports import MembershipSync
 from feature_signal.integrations.adapty.cli import AdaptyCommands, condition_to_filter, custom_attribute_filter
 from feature_signal.schemas.proposals import ProposalOut
+from feature_signal.services.membership_service import canonical_segment_keys
 from feature_signal.services.proposal_service import ProposalService, check_transition, to_out
 
 
@@ -138,6 +139,11 @@ class ActivationService:
     async def _ensure_segment(self, row: ProposalRow) -> tuple[str, bool]:
         values = row.condition.get("value")
         values = [str(v) for v in (values if isinstance(values, list | tuple) else [values])]
+        if values == [row.segment_key]:  # not edited by a human: proposals with the same behaviour share one key
+            canonical = canonical_segment_keys(await self._proposals.list(row.app_id))
+            values = [canonical.get(row.segment_key, row.segment_key)]
+        # Freeze the key: the membership sync must keep writing exactly what this segment filters on.
+        row.condition = {**row.condition, "value": values}
         filters = [custom_attribute_filter(row.condition.get("attribute", "p_segment"), values)]
         filters += [condition_to_filter(Condition(**f)) for f in row.adapty_filters or []]
         title = segment_title(row.segment_key)

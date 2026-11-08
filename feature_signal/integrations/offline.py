@@ -238,13 +238,18 @@ def build_outcomes(
     transactions: pd.DataFrame,
     *,
     as_of: str | datetime,
+    window_days: int = 90,
 ) -> pd.DataFrame:
     """One mature user per row, including nonpayers; refunds known by as_of contribute zero.
 
-    Purchases use [install, install + 90 days). Refunds marked in the export are
-    excluded once observed, including refunds after the purchase window. This
-    follows the role brief's non-refunded-purchase definition, not cash-flow LTV.
+    Purchases use [install, install + window_days), 90 by default. A user is mature once the whole window has passed.
+    Refunds marked in the export are excluded once observed, including refunds after the purchase window. This
+    follows the role brief's non-refunded-purchase definition, not cash-flow LTV. The `*_90d` column names are
+    historical; the real window is `window_days` and is recorded in `attrs["outcome_window_days"]`.
     """
+    if isinstance(window_days, bool) or not isinstance(window_days, int) or not 1 <= window_days <= 365:
+        raise ValueError("window_days must be a whole number of days between 1 and 365")
+    window_length = pd.Timedelta(days=window_days)
     _required(users, {"user_id", "install_at"}, "users")
     _required(transactions, {"user_id", "purchased_at", "price_usd", "refunded_at"}, "transactions")
     users, transactions = users.copy(), transactions.copy()
@@ -270,10 +275,10 @@ def build_outcomes(
     if not transactions.price_usd.map(math.isfinite).all() or (transactions.price_usd < 0).any():
         raise ValueError("price_usd must be finite and nonnegative")
 
-    mature = users.loc[users.install_at + pd.Timedelta(days=90) <= cutoff].copy()
+    mature = users.loc[users.install_at + window_length <= cutoff].copy()
     joined = transactions.merge(mature[["user_id", "install_at"]], on="user_id", validate="many_to_one")
     window = joined.loc[
-        (joined.purchased_at >= joined.install_at) & (joined.purchased_at < joined.install_at + pd.Timedelta(days=90))
+        (joined.purchased_at >= joined.install_at) & (joined.purchased_at < joined.install_at + window_length)
     ].copy()
     refunded = window.refunded_at.notna() & (window.refunded_at <= cutoff)
     paid = window.price_usd > 0
@@ -285,5 +290,5 @@ def build_outcomes(
     for name, values in aggregates.items():
         mature[name] = mature.user_id.map(values).fillna(0).astype(float if name == "net_revenue_90d" else int)
     mature = mature.sort_values("user_id").reset_index(drop=True)
-    mature.attrs.update(as_of=cutoff.isoformat(), outcome_window_days=90, synthetic=True)
+    mature.attrs.update(as_of=cutoff.isoformat(), outcome_window_days=window_days, synthetic=True)
     return mature

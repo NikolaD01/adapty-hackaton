@@ -22,6 +22,17 @@ unchanged profiles or leaking history into the 30 attribute slots.
 5. `SqlMembershipSync(session_factory, writer)` is the `MembershipSync` port A calls after ingest (own session, commits state).
    `POST /membership:sync` uses the same service on the request session; the writer is `app.state.attribute_writer` or the real client.
 
+6. **One `p_segment` per user, shared by identical behaviour.** B splits one behaviour group by native filters (platform,
+   country), which Adapty applies itself. Proposals whose `segment_conditions` are identical therefore share the key of the
+   earliest of them (`canonical_segment_keys`; drafts count so activating a later one never re-keys users, rejected and failed
+   ones do not). Activation (C4) uses the same function for the segment filter (`p_segment IN [<shared key>] AND platform IN
+   [Android]`), unless a human edited `condition_value`. Found on 2026-11-08 with B's real drafts: without it the Android
+   segments had no members.
+7. **The key is frozen on activation** (fix, 2026-11-08). Activation stores the key it used in `condition.value`; for
+   `live`/`awaiting_publish` proposals (or any value that differs from the proposal's own key, e.g. a human edit)
+   `canonical_segment_keys` uses that value first. Before, rejecting the earlier draft re-keyed the users and left the
+   live Adapty segment empty; a human-edited value also differed from what sync wrote.
+
 ## Contract touched
 `POST /apps/{app_id}/membership:sync`, port `MembershipSync`, table `adapty_attribute_state`.
 **Gap found:** a proposal stores only `condition = {attribute: "p_segment", ...}`, not the rule that puts a user in the

@@ -8,6 +8,7 @@ from feature_signal.integrations.adapty.cli import AdaptyCommands
 from feature_signal.repositories.decisions import DecisionRepository
 from feature_signal.schemas.proposals import AppSettings, ProposalIn
 from feature_signal.services.activation_service import ActivationService
+from feature_signal.services.membership_service import canonical_segment_keys
 from feature_signal.services.proposal_service import ProposalService
 from tests.integration.adapty_helpers import make_factory
 
@@ -153,6 +154,45 @@ async def test_segment_filters_are_p_segment_and_the_adapty_filters(factory):
         "attributes__p_segment@string:IN:power_editor",
         "subscription_state:IN:never_subscribed",
     ]
+
+
+RULE = [{"field": "edits_1d", "op": ">=", "value": 5}]
+
+
+async def test_segments_with_the_same_behaviour_filter_on_one_shared_p_segment_key(factory):
+    """iOS and Android variants differ only by a native filter, so both must filter on the first one's key."""
+    ios = proposal_input(
+        segment_key="ios_key",
+        condition={"attribute": "p_segment", "op": "IN", "value": ["ios_key"]},
+        evidence={"segment_conditions": RULE},
+    )
+    android = proposal_input(
+        segment_key="android_key",
+        condition={"attribute": "p_segment", "op": "IN", "value": ["android_key"]},
+        evidence={"segment_conditions": RULE},
+        adapty_filters=[{"field": "platform", "op": "IN", "value": ["Android"]}],
+    )
+    async with factory() as s:
+        await ProposalService(s).create(APP, [ios, android])
+        ids = {p.segment_key: p.proposal_id for p in await ProposalService(s).list(APP)}
+    world = World()
+    async with factory() as s:
+        await ActivationService(s, AdaptyCommands(world, ADAPTY), world).approve(ids["android_key"])
+    create = next(c for c in world.cli_calls if c[:2] == ("segments", "create"))
+    assert arg(create, "--title") == "[fs] android_key"
+    assert [create[i + 1] for i, a in enumerate(create) if a == "--filter"] == [
+        "attributes__p_segment@string:IN:ios_key",
+        "platform:IN:Android",
+    ]
+    # The key is frozen on the activated proposal: rejecting the iOS draft later must not re-key its users.
+    async with factory() as s:
+        stored = {p.segment_key: p for p in await ProposalService(s).list(APP)}
+    assert stored["android_key"].condition.value == ["ios_key"]
+    async with factory() as s:
+        await ProposalService(s).reject(ids["ios_key"], "not now")
+    async with factory() as s:
+        keys = canonical_segment_keys(await ProposalService(s).list(APP))
+    assert keys["android_key"] == "ios_key"
 
 
 async def test_a_human_edited_condition_value_is_what_the_segment_targets(factory):

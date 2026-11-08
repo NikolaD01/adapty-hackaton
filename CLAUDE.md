@@ -84,7 +84,9 @@ The LLM touches exactly two services: `rule_suggest_service` (B) and `paywall_se
   `kpotehin/adapty-seed-data-hack` (50,000 users; columns incl. `ai_edits_first_day`, `placement`,
   `flow`, `ab_test`). Key numbers: `ai_edits_first_day` ARPU $3.73→$16.57, `photos_imported` flat
   $8.73–$9.55; lifetime anchor +$14.40 for 5+ edits vs +$5.36 for 0 (randomized); weekly refund 6.9%.
-- Metric: **net revenue in 90 days** (refunds subtracted, same window for both arms). Never conversion alone.
+- Metric: **net revenue in N days** (refunds subtracted, same window for both arms). Never conversion alone. N = 90 by default
+  (offline analyses, historical numbers); the **live demo uses 60** (team decision 2026-11-08: the seed data covers ~4
+  months, 90 days leaves too few users; `docs/brain/10-outcome-window.md`). Say so on stage.
 - Adapty CLI 0.18 has **no delete** for segments or placements (only create/get/list/update); deleting is
   manual in the dashboard. So: create segments only on approve, idempotent by title `[fs] <segment_key>`
   (look up with `segments list` first, then `update`); never create throwaway segments in tests or loops;

@@ -118,7 +118,12 @@ async def test_only_passed_tiers_are_written_and_at_most_ten():
 
 async def test_the_first_matching_live_proposal_wins_and_other_statuses_are_ignored():
     always = [{"field": "edits_1d", "op": ">=", "value": 0}]
-    proposals = [proposal("draft_one", always, status="draft"), proposal("second", always), proposal("third", always)]
+    other_rule = [{"field": "edits_1d", "op": ">=", "value": 1}]  # a draft with a DIFFERENT rule never matters
+    proposals = [
+        proposal("draft_one", other_rule, status="draft"),
+        proposal("second", always),
+        proposal("third", always),
+    ]
     service, writer, _ = await build({"edits_1d": {"u1": 3.0}}, tiers=(), proposals=proposals)
     await service.sync_users(APP, ["u1"])
     assert writer.writes == [("u1", {"p_segment": "second"})]
@@ -132,6 +137,44 @@ async def test_a_proposal_being_activated_already_counts():
         )
         await service.sync_users(APP, ["u1"])
         assert writer.writes == ([("u1", {"p_segment": "p"})] if expected else []), status
+
+
+async def test_proposals_with_the_same_behaviour_share_the_first_segment_key():
+    rule = [{"field": "edits_1d", "op": ">=", "value": 5}]
+    props = [proposal("ios_key", rule), proposal("android_key", rule)]  # same behaviour, split later by platform
+    service, writer, _ = await build({"edits_1d": {"u1": 6.0}}, tiers=(), proposals=props)
+    await service.sync_users(APP, ["u1"])
+    assert writer.writes == [("u1", {"p_segment": "ios_key"})]
+
+
+async def test_an_earlier_draft_with_the_same_behaviour_decides_the_shared_key():
+    rule = [{"field": "edits_1d", "op": ">=", "value": 5}]
+    props = [proposal("first_draft", rule, status="draft"), proposal("later_live", rule)]
+    service, writer, _ = await build({"edits_1d": {"u1": 6.0}}, tiers=(), proposals=props)
+    await service.sync_users(APP, ["u1"])
+    assert writer.writes == [("u1", {"p_segment": "first_draft"})]  # activating the draft later must not re-key users
+
+
+async def test_a_rejected_or_failed_proposal_does_not_decide_the_shared_key():
+    rule = [{"field": "edits_1d", "op": ">=", "value": 5}]
+    props = [
+        proposal("rejected_one", rule, status="rejected"),
+        proposal("failed_one", rule, status="failed"),
+        proposal("real", rule),
+    ]
+    service, writer, _ = await build({"edits_1d": {"u1": 6.0}}, tiers=(), proposals=props)
+    await service.sync_users(APP, ["u1"])
+    assert writer.writes == [("u1", {"p_segment": "real"})]
+
+
+async def test_different_behaviour_keeps_its_own_key():
+    props = [
+        proposal("many", [{"field": "edits_1d", "op": ">=", "value": 5}]),
+        proposal("few", [{"field": "edits_1d", "op": "<", "value": 5}]),
+    ]
+    service, writer, _ = await build({"edits_1d": {"u1": 6.0, "u2": 1.0}}, tiers=(), proposals=props)
+    await service.sync_users(APP, ["u1", "u2"])
+    assert dict(writer.writes) == {"u1": {"p_segment": "many"}, "u2": {"p_segment": "few"}}
 
 
 async def test_none_means_every_user_with_values():
@@ -202,3 +245,39 @@ def test_segment_matches_numbers_tiers_and_missing_fields():
     assert segment_matches([{"field": "edits", "op": "=", "value": 6}], values, tiers)  # B may write "=" / "=="
     assert segment_matches([{"field": "f_x_tier", "op": "==", "value": "high"}], values, tiers)
     assert not segment_matches([{"field": "edits", "op": "!=", "value": 6}], values, tiers)
+
+
+def activated(key, conditions, value, status="live"):
+    return SimpleNamespace(
+        status=status,
+        segment_key=key,
+        evidence={"segment_conditions": conditions},
+        condition=SimpleNamespace(value=value),
+    )
+
+
+async def test_rejecting_an_earlier_draft_does_not_re_key_an_activated_segment():
+    rule = [{"field": "edits_1d", "op": ">=", "value": 5}]
+    # Android was activated while the iOS draft decided the shared key; the iOS draft is rejected afterwards.
+    props = [proposal("ios_key", rule, status="rejected"), activated("android_key", rule, ["ios_key"])]
+    service, writer, _ = await build({"edits_1d": {"u1": 6.0}}, tiers=(), proposals=props)
+    await service.sync_users(APP, ["u1"])
+    assert writer.writes == [("u1", {"p_segment": "ios_key"})]  # still what the live Adapty segment filters on
+
+
+async def test_a_human_edited_value_on_an_activated_proposal_is_what_sync_writes():
+    rule = [{"field": "edits_1d", "op": ">=", "value": 5}]
+    props = [activated("power_editor", rule, ["heavy"])]
+    service, writer, _ = await build({"edits_1d": {"u1": 6.0}}, tiers=(), proposals=props)
+    await service.sync_users(APP, ["u1"])
+    assert writer.writes == [("u1", {"p_segment": "heavy"})]
+
+
+async def test_later_drafts_share_the_frozen_key_of_an_activated_proposal():
+    rule = [{"field": "edits_1d", "op": ">=", "value": 5}]
+    from feature_signal.services.membership_service import canonical_segment_keys
+
+    keys = canonical_segment_keys(
+        [proposal("old_draft", rule, status="draft"), activated("live_one", rule, ["frozen"])]
+    )
+    assert keys == {"live_one": "frozen", "old_draft": "frozen"}

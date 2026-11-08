@@ -191,6 +191,8 @@ Also in the response:
                "low_max": 2, "mid_max": 7, "passed": true } ],
   "hypotheses": ["regenerate_rate_7d", "tokens_exhausted_7d"]
 ```
+- `tiers`: only a run whose effective source is `live` writes them to the TierStore (they become `f_<feature>_tier`);
+  an offline run reports tiers but never stores or clears them.
 - `tiers`: measured cut points turning one value per feature into `low` / `mid` / `high`
   (`value <= low_max` → low, `<= mid_max` → mid, else high). Only `passed: true` tiers are written to Adapty.
 - `hypotheses`: rules with no purchase outcome yet (new events). They are not ranked; they can only
@@ -219,10 +221,15 @@ Also in the response:
 - `status` ∈ `draft` → `approved` → `executing` → `live` | `failed`; or `draft` → `rejected`.
   With `action.needs_publish: true` (a new AI paywall, still a draft flow): `executing` → `awaiting_publish`
   → (human publishes the flow) → `live`. This holds in autopilot too.
+- `expected_effect.metric` is `net_revenue_<N>d`, N = the outcome window of the insight run (`BrainRuntime.outcome_window_days`,
+  default 90; the live demo uses 60, see `docs/brain/10-outcome-window.md`). `diff`, `ci_*` and the `*_90d` field names of
+  `InsightRun` (`net_arpu_90d`, `diff_net_90d`) keep their historical names; the window is in `evidence.outcome_window_days`.
 - `evidence.segment_conditions` (B writes, C's membership sync reads): `[{"field", "op", "value"}]`, all must
   hold, empty = nobody. `field` = one of our rule keys (number) or `f_<feature>_tier` (text); `op` ∈
   `> >= < <= = == IN NOT IN`. This is the rule that decides who gets `p_segment`; `condition` only names the
   segment for Adapty. Adapty-known fields go to `adapty_filters`, never here. (`docs/adapty/05-membership-sync.md`)
+- Shared `p_segment` key: proposals with identical `segment_conditions` share the earliest one's key; on activation the
+  key used is stored in `condition.value` and is **frozen** (rejecting an earlier draft later never re-keys users).
 - `adapty_filters`: fields Adapty already knows (e.g. no active subscription), ANDed with `condition` in the
   same Adapty segment. We don't copy subscription state into our attributes.
 - `decided_by` ∈ `human` | `autopilot`. Every edit is appended to `edits` (a human correction is data).
@@ -251,8 +258,14 @@ autopilot runs end to end only with already published flows; a new AI paywall wa
 ```json
 POST /v1/apps/{app_id}/lookup { "placement": "main", "customer_user_ids": ["lumen_282506_00007", "lumen_282506_00042"] }
 → 200 { "results": [ { "customer_user_id": "lumen_282506_00007", "segment_hash": "7f21e4f3bfaed5b9",
-                       "flow_id": "4d8837b5-...", "flow_name": "main_lifetime" } ] }
+                       "flow_id": "4d8837b5-...", "flow_name": "main_lifetime",
+                       "audience_name": "[fs] power_editor", "ab_test_name": "[fs] power_editor pr_01",
+                       "arms": [ { "flow_id": "...", "flow_name": "Main - 3 plans", "weight": 20, "name": "control" },
+                                 { "flow_id": "4d8837b5-...", "flow_name": "main_lifetime", "weight": 80, "name": "offer" } ] } ] }
 ```
+- In an A/B test Adapty returns every arm and the SDK on the device picks one; the profile has no arm field. So `arms` lists
+  them and `flow_*` is the largest arm, **not** the arm this user sees. Outside a test `arms` is empty and `ab_test_name` null.
+  `audience_name` is the proof: our segment (`[fs] …`) versus the default (`All Users`). The fields after `flow_name` are additive.
 
 ### Membership sync (C) — the fast loop
 ```json
@@ -262,7 +275,8 @@ POST /v1/apps/{app_id}/membership:sync { "customer_user_ids": ["u_42"] }   // nu
 For each user: compute `f_<feature>_tier` from the passed tiers and `p_segment` from the live proposals'
 conditions; PATCH only keys whose value changed (`null` when the user left). A calls the same service
 after every ingest batch commits (`MembershipSync` port), so a click reaches the Adapty segment in seconds.
-Wiring: C sets `app.state.membership_sync = <MembershipSync>` in `create_app()`; the ingest route runs it as a
+Wiring: when the real server starts (`main.py:wire_running_app`, the app's lifespan) C sets
+`app.state.membership_sync`; never in `create_app()` or on import, so tests never reach Adapty. The ingest route runs it as a
 background task with the users of the batch (no-op while unset; a failure is logged, never fails ingest).
 
 ### Paywall draft (C, Phase 5)

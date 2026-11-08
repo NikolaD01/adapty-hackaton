@@ -98,7 +98,8 @@ Part of the segment sees the existing paywall, part the new one. We measure net 
 parts, not the share who buy. The control part is a requirement, not a
 loss: without it we can't tell whether the difference came from our change or from who those people are, and
 once we act on findings it is the only thing that keeps measurement possible.
-We measure purchases minus refunds, in the same window for both sides. Conversion alone misleads: the weekly
+We measure purchases minus refunds, in the same window for both sides (90 days by default; the live demo uses 60
+days, because the seed data covers about four months and 90 days leaves too few users per group). Conversion alone misleads: the weekly
 plan has 6.9% refunds here. The data already contains randomized A/B arms, so we see which offer lifts which
 group before our first test: the lifetime offer is worth $14.40 for users with 5+ edits and $5.36 for users
 with none — the group changes which offer is better, not just how much people pay.
