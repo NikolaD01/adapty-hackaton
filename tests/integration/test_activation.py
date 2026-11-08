@@ -155,6 +155,36 @@ async def test_segment_filters_are_p_segment_and_the_adapty_filters(factory):
     ]
 
 
+RULE = [{"field": "edits_1d", "op": ">=", "value": 5}]
+
+
+async def test_segments_with_the_same_behaviour_filter_on_one_shared_p_segment_key(factory):
+    """iOS and Android variants differ only by a native filter, so both must filter on the first one's key."""
+    ios = proposal_input(
+        segment_key="ios_key",
+        condition={"attribute": "p_segment", "op": "IN", "value": ["ios_key"]},
+        evidence={"segment_conditions": RULE},
+    )
+    android = proposal_input(
+        segment_key="android_key",
+        condition={"attribute": "p_segment", "op": "IN", "value": ["android_key"]},
+        evidence={"segment_conditions": RULE},
+        adapty_filters=[{"field": "platform", "op": "IN", "value": ["Android"]}],
+    )
+    async with factory() as s:
+        await ProposalService(s).create(APP, [ios, android])
+        ids = {p.segment_key: p.proposal_id for p in await ProposalService(s).list(APP)}
+    world = World()
+    async with factory() as s:
+        await ActivationService(s, AdaptyCommands(world, ADAPTY), world).approve(ids["android_key"])
+    create = next(c for c in world.cli_calls if c[:2] == ("segments", "create"))
+    assert arg(create, "--title") == "[fs] android_key"
+    assert [create[i + 1] for i, a in enumerate(create) if a == "--filter"] == [
+        "attributes__p_segment@string:IN:ios_key",
+        "platform:IN:Android",
+    ]
+
+
 async def test_a_human_edited_condition_value_is_what_the_segment_targets(factory):
     async with factory() as s:
         (created,) = await ProposalService(s).create(APP, [proposal_input()])
