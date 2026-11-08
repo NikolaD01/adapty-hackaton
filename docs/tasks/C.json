@@ -6,7 +6,7 @@
     {
       "id": "C1",
       "title": "Profile client (AttributeWriter)",
-      "status": "todo",
+      "status": "done",
       "brief": "C ch.1",
       "steps": [
         "httpx PATCH with list body",
@@ -28,7 +28,7 @@
     {
       "id": "C2",
       "title": "Adapty CLI adapter",
-      "status": "todo",
+      "status": "done",
       "brief": "C ch.2",
       "steps": [
         "Subprocess runner with ADAPTY_CLI prefix and --json",
@@ -50,7 +50,7 @@
     {
       "id": "C3",
       "title": "Proposals store, API and settings",
-      "status": "todo",
+      "status": "done",
       "brief": "C ch.3",
       "steps": [
         "ProposalSink.create_many (used by B)",
@@ -80,7 +80,7 @@
     {
       "id": "C4",
       "title": "Activation on approve",
-      "status": "todo",
+      "status": "done",
       "brief": "C ch.4",
       "steps": [
         "Run membership sync for all users with values (p_segment + passed f_<feature>_tier)",
@@ -133,7 +133,7 @@
     {
       "id": "C9",
       "title": "Membership sync (fast loop)",
-      "status": "todo",
+      "status": "done",
       "brief": "C ch.7",
       "steps": [
         "MembershipService.sync_users: passed tiers -> f_<feature>_tier, first matching live proposal -> p_segment else null",
@@ -177,7 +177,7 @@
     {
       "id": "C5",
       "title": "Decision log API",
-      "status": "todo",
+      "status": "done",
       "brief": "C ch.4",
       "steps": [
         "GET /decisions with steps and decided_by",
@@ -201,7 +201,7 @@
     {
       "id": "C6",
       "title": "Served-flow lookup",
-      "status": "todo",
+      "status": "done",
       "brief": "C ch.5",
       "steps": [
         "GET profile -> segment_hash",
@@ -223,7 +223,7 @@
     {
       "id": "C7",
       "title": "Autopilot mode",
-      "status": "todo",
+      "status": "done",
       "brief": "C ch.4",
       "steps": [
         "Same activation with decided_by=autopilot",
@@ -248,7 +248,7 @@
     {
       "id": "C8",
       "title": "Paywall draft from live config",
-      "status": "todo",
+      "status": "done",
       "brief": "C ch.6",
       "steps": [
         "flows config get -> copy",

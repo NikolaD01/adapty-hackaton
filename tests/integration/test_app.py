@@ -1,14 +1,24 @@
-from tests.conftest import LUMEN_APP_ID
-
-
 def test_health_ok(client):
     r = client.get("/v1/health")
     assert r.status_code == 200
     assert r.json() == {"status": "ok"}
 
 
-def test_unbuilt_route_returns_501_with_error_shape(client):
-    r = client.get(f"/v1/apps/{LUMEN_APP_ID}/proposals")
+def test_not_implemented_helper_returns_501_with_error_shape():
+    # Every contract route is built now, so check the shape the helper produces on a throwaway route.
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    from feature_signal.core.errors import ApiError, api_error_handler, not_implemented
+
+    app = FastAPI()
+    app.add_exception_handler(ApiError, api_error_handler)
+
+    @app.get("/unbuilt")
+    async def unbuilt() -> None:
+        raise not_implemented("unbuilt")
+
+    r = TestClient(app).get("/unbuilt")
     assert r.status_code == 501
     body = r.json()["error"]
     assert body["code"] == "not_implemented"
@@ -42,7 +52,8 @@ def test_every_contract_route_is_mounted(client):
     assert expected <= paths
 
 
-def test_approve_route_does_not_swallow_suffix(client):
-    r = client.post("/v1/proposals/pr_01:approve")
-    assert r.status_code == 501
-    assert "approve_proposal" in r.json()["error"]["message"]
+def test_approve_route_does_not_swallow_suffix(api):
+    # The route is built: it reaches the handler (unknown id -> 404 from our code), not the path-parameter route.
+    r = api.post("/v1/proposals/pr_01:approve")
+    assert r.status_code == 404
+    assert r.json()["error"]["code"] == "proposal_not_found"
